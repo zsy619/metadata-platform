@@ -30,6 +30,10 @@ type Services struct {
 	APIGenerator     APIGenerator
 	Validator        DataValidator
 	QueryTemplate    QueryTemplateService
+	Tree             TreeService
+	MasterDetail     MasterDetailService
+	DataIO           DataIOService
+	Audit            AuditService
 }
 
 // NewServices 创建元数据模块服务集合
@@ -42,6 +46,11 @@ func NewServices(db *gorm.DB, repos *repository.Repositories) *Services {
 	// 初始化 SQL 引擎
 	sqlBuilder := engine.NewSQLBuilder(db, repos.Model)
 	sqlExecutor := engine.NewSQLExecutor(db, repos.Conn)
+	auditSvc := NewAuditService(db)
+	crudSvc := NewCRUDService(sqlBuilder, sqlExecutor, validator, queryTemplateService, auditSvc)
+	treeSvc := NewTreeService(repos.Model, crudSvc, sqlExecutor)
+	masterDetailSvc := NewMasterDetailService(crudSvc, repos.ModelRelation, repos.Model, sqlExecutor)
+	dataIOSvc := NewDataIOService(crudSvc, repos.Model, repos.ModelField, validator)
 
 	return &Services{
 		API:              NewAPIService(repos.API),
@@ -50,10 +59,14 @@ func NewServices(db *gorm.DB, repos *repository.Repositories) *Services {
 		TableField:       NewMdTableFieldService(repos.TableField),
 		Model:            NewMdModelService(repos.Model, repos.ModelField, connService),
 		FieldEnhancement: NewMdModelFieldEnhancementService(repos.FieldEnhancement),
-		CRUD:             NewCRUDService(sqlBuilder, sqlExecutor, validator, queryTemplateService),
+		CRUD:             crudSvc,
 		APIGenerator:     NewAPIGenerator(repos.Model, repos.API),
 		Validator:        validator,
 		QueryTemplate:    queryTemplateService,
+		Tree:             treeSvc,
+		MasterDetail:     masterDetailSvc,
+		DataIO:           dataIOSvc,
+		Audit:            auditSvc,
 	}
 }
 

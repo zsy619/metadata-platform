@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"metadata-platform/internal/module/metadata/engine"
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/repository"
@@ -69,8 +70,9 @@ func TestCRUDService_Lifecycle(t *testing.T) {
 	queryTemplateRepo := repository.NewMdQueryTemplateRepository(metaDB)
 	queryConditionRepo := repository.NewMdQueryConditionRepository(metaDB)
 	queryTemplateService := NewQueryTemplateService(queryTemplateRepo, queryConditionRepo)
+	auditSvc := NewAuditService(metaDB) // Use metaDB for audit logs in test
 
-	svc := NewCRUDService(builder, executor, validator, queryTemplateService)
+	svc := NewCRUDService(builder, executor, validator, queryTemplateService, auditSvc)
 
 	// 3. Prepare Metadata in metaDB (since SQLBuilder.LoadModelData queries metaDB)
 	metaDB.AutoMigrate(&model.MdModelTable{}, &model.MdModelField{}, &model.MdModelSql{})
@@ -84,7 +86,7 @@ func TestCRUDService_Lifecycle(t *testing.T) {
 	// 4. Test Create
 	t.Run("Create", func(t *testing.T) {
 		data := map[string]any{"id": 1, "name": "Alice", "age": 25}
-		res, err := svc.Create(modelID, data)
+		res, err := svc.Create(context.Background(), modelID, data)
 		assert.NoError(t, err)
 		assert.NotNil(t, res)
 	})
@@ -100,7 +102,7 @@ func TestCRUDService_Lifecycle(t *testing.T) {
 
 	// 6. Test Update
 	t.Run("Update", func(t *testing.T) {
-		err := svc.Update(modelID, "1", map[string]any{"name": "Alice Smith"})
+		err := svc.Update(context.Background(), modelID, "1", map[string]any{"name": "Alice Smith"})
 		assert.NoError(t, err)
 
 		res, _ := svc.Get(modelID, "1")
@@ -109,7 +111,7 @@ func TestCRUDService_Lifecycle(t *testing.T) {
 
 	// 7. Test Delete
 	t.Run("Delete", func(t *testing.T) {
-		err := svc.Delete(modelID, "1")
+		err := svc.Delete(context.Background(), modelID, "1")
 		assert.NoError(t, err)
 
 		res, _ := svc.Get(modelID, "1")

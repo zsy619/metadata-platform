@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"metadata-platform/internal/module/metadata/api"
+	"metadata-platform/internal/module/metadata/api/middleware"
 	"metadata-platform/internal/module/metadata/repository"
 	"metadata-platform/internal/module/metadata/service"
 	"metadata-platform/internal/utils"
@@ -25,9 +26,14 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB) {
 	fieldHandler := api.NewMdTableFieldHandler(services.TableField)
 	modelHandler := api.NewMdModelHandler(services.Model)
 	templateHandler := api.NewQueryTemplateHandler(services.QueryTemplate)
+	enhancementHandler := api.NewFieldEnhancementHandler(services.FieldEnhancement)
+	treeHandler := api.NewTreeHandler(services.Tree)
+	masterDetailHandler := api.NewMasterDetailHandler(services.MasterDetail)
+	dataIOHandler := api.NewDataIOHandler(services.DataIO)
 
 	// 元数据模块路由组
 	metadataGroup := r.Group("/api/metadata")
+	metadataGroup.Use(middleware.AuditMiddleware(services.Audit))
 
 	// API路由
 	apiGroup := metadataGroup.Group("/apis")
@@ -107,6 +113,39 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB) {
 			templateGroup.DELETE("/:templateId", templateHandler.DeleteTemplate)
 			templateGroup.POST("/:templateId/set-default", templateHandler.SetDefault)
 		}
+
+		// 字段增强配置路由
+		modelGroup.GET("/:id/fields/enhancements", enhancementHandler.GetEnhancementsByModelID)
+		modelGroup.PUT("/:id/fields/enhancements", enhancementHandler.UpdateEnhancements)
+		modelGroup.POST("/:id/fields/batch-enhancements", enhancementHandler.BatchUpdateEnhancements)
+	}
+
+	// 树形结构 API
+	treeGroup := r.Group("/api/tree")
+	treeGroup.Use(middleware.AuditMiddleware(services.Audit))
+	{
+		treeGroup.GET("/:model_id", treeHandler.GetTree)
+		treeGroup.POST("/:model_id/node", treeHandler.AddNode)
+		treeGroup.PUT("/:model_id/node/:id/move", treeHandler.MoveNode) // 注意：TargetParentID 在 body 中
+		treeGroup.DELETE("/:model_id/node/:id", treeHandler.DeleteNode)
+		treeGroup.GET("/:model_id/node/:id/children", treeHandler.GetChildren)
+		treeGroup.GET("/:model_id/node/:id/path", treeHandler.GetPath)
+	}
+
+	// 主子表管理路由
+	mdGroup := r.Group("/api/master-detail")
+	mdGroup.Use(middleware.AuditMiddleware(services.Audit))
+	{
+		mdGroup.POST("/:master/:detail", masterDetailHandler.CreateMasterDetail)
+	}
+
+	// 数据导入导出路由
+	ioGroup := r.Group("/api/data")
+	ioGroup.Use(middleware.AuditMiddleware(services.Audit))
+	{
+		ioGroup.GET("/:model_id/export", dataIOHandler.ExportData)
+		ioGroup.GET("/:model_id/import-template", dataIOHandler.ImportTemplate)
+		ioGroup.POST("/:model_id/import", dataIOHandler.ImportData)
 	}
 
 	// 注册动态路由

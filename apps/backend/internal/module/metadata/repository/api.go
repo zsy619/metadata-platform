@@ -27,6 +27,7 @@ type Repositories struct {
 	FieldEnhancement MdModelFieldEnhancementRepository
 	QueryTemplate    MdQueryTemplateRepository
 	QueryCondition   MdQueryConditionRepository
+	ModelRelation    MdModelRelationRepository
 }
 
 // NewRepositories 创建元数据模块仓库集合
@@ -41,6 +42,7 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		FieldEnhancement: NewMdModelFieldEnhancementRepository(db),
 		QueryTemplate:    NewMdQueryTemplateRepository(db),
 		QueryCondition:   NewMdQueryConditionRepository(db),
+		ModelRelation:    NewMdModelRelationRepository(db),
 	}
 }
 

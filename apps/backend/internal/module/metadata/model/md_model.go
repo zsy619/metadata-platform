@@ -16,6 +16,10 @@ type MdModel struct {
 	ModelKind   int        `json:"model_kind" gorm:"not null;default:0"`
 	IsPublic    bool       `json:"is_public" gorm:"not null;default:false"`
 	IsLocked    bool       `json:"is_locked" gorm:"default:false"`
+	IsTree      bool       `json:"is_tree" gorm:"default:false"`                   // 是否树形结构
+	TreeParentField string `json:"tree_parent_field" gorm:"size:64;default:''"`    // 父节点字段名
+	TreePathField   string `json:"tree_path_field" gorm:"size:64;default:''"`      // 路径字段名
+	TreeLevelField  string `json:"tree_level_field" gorm:"size:64;default:''"`     // 层级字段名
 	IsDeleted   bool       `json:"is_deleted" gorm:"default:false"`
 	CreateID    string     `json:"create_id" gorm:"size:64;default:'0'"`
 	CreateBy    string     `json:"create_by" gorm:"size:64;default:'';uniqueIndex:uix_md_model_title_creator"`

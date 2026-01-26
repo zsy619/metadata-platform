@@ -38,27 +38,40 @@ func (g *apiGenerator) BatchGenerate(modelID string, userID string, tenantID str
 	// 基础路径，例如 /api/data/user
 	basePath := "/api/data/" + strings.ToLower(md.ModelCode)
 	
-	// 定义标准 CRUD 模板
+	// 定义标准 CRUD 模板及扩展接口
 	templates := []struct {
-		Name   string
-		Suffix string
-		Method string
-		Remark string
+		Name       string
+		Suffix     string
+		Method     string
+		CodeSuffix string // 可选，默认使用Method
+		Remark     string
 	}{
-		{"创建" + md.ModelName, "", "POST", "自动生成的创建接口"},
-		{"查询" + md.ModelName + "列表", "", "GET", "自动生成的列表查询接口"},
-		{"获取" + md.ModelName + "详情", "/:id", "GET", "自动生成的单条查询接口"},
-		{"更新" + md.ModelName, "/:id", "PUT", "自动生成的更新接口"},
-		{"删除" + md.ModelName, "/:id", "DELETE", "自动生成的删除接口"},
+		{"创建" + md.ModelName, "", "POST", "", "自动生成的创建接口"},
+		{"查询" + md.ModelName + "列表", "", "GET", "", "自动生成的列表查询接口"},
+		{"获取" + md.ModelName + "详情", "/:id", "GET", "", "自动生成的单条查询接口"},
+		{"更新" + md.ModelName, "/:id", "PUT", "", "自动生成的更新接口"},
+		{"删除" + md.ModelName, "/:id", "DELETE", "", "自动生成的删除接口"},
+		
+		// 统一查询与批量操作接口
+		{"通用查询" + md.ModelName, "/query", "POST", "QUERY", "自动生成的通用查询接口"},
+		{"批量创建" + md.ModelName, "/batch-create", "POST", "BATCH_CREATE", "自动生成的批量创建接口"},
+		{"批量删除" + md.ModelName, "/batch-delete", "POST", "BATCH_DELETE", "自动生成的批量删除接口"},
+		{"数据统计" + md.ModelName, "/statistics", "POST", "STATISTICS", "自动生成的数据统计接口"},
+		{"聚合查询" + md.ModelName, "/aggregate", "POST", "AGGREGATE", "自动生成的聚合查询接口"},
 	}
 
 	apis := make([]*model.API, 0)
 	for _, t := range templates {
+		codeSuffix := t.CodeSuffix
+		if codeSuffix == "" {
+			codeSuffix = t.Method
+		}
+
 		api := &model.API{
 			ID:        g.snowflake.GenerateIDString(),
 			TenantID:  tenantID,
 			Name:      t.Name,
-			Code:      fmt.Sprintf("%s_%s", md.ModelCode, t.Method),
+			Code:      fmt.Sprintf("%s_%s", md.ModelCode, codeSuffix),
 			Path:      basePath + t.Suffix,
 			Method:    t.Method,
 			IsPublic:  false,

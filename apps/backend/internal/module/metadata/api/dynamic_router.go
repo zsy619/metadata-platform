@@ -3,8 +3,10 @@ package api
 import (
 	"context"
 	"fmt"
+	"metadata-platform/internal/module/metadata/api/middleware"
 	"metadata-platform/internal/module/metadata/service"
 	"metadata-platform/internal/utils"
+	"strings"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
@@ -13,15 +15,17 @@ import (
 
 // DynamicRouter 动态路由注册器
 type DynamicRouter struct {
-	hertz   *server.Hertz
-	svc     *service.Services
+	hertz        *server.Hertz
+	svc          *service.Services
+	queryHandler *DataQueryHandler
 }
 
 // NewDynamicRouter 创建动态路由注册器实例
 func NewDynamicRouter(hertz *server.Hertz, svc *service.Services) *DynamicRouter {
 	return &DynamicRouter{
-		hertz: hertz,
-		svc:   svc,
+		hertz:        hertz,
+		svc:          svc,
+		queryHandler: NewDataQueryHandler(svc.CRUD, svc.Model),
 	}
 }
 
@@ -50,17 +54,42 @@ func (r *DynamicRouter) RegisterAPI(method, path, apiCode string) {
 	// 后续可以增加 MdModelAPI 关联表来更精确对应
 	
 	handler := r.getGenericHandler(apiCode)
-	r.hertz.Handle(method, path, handler)
+	
+	// 添加审计中间件
+	auditMiddleware := middleware.AuditMiddleware(r.svc.Audit)
+	
+	r.hertz.Handle(method, path, auditMiddleware, handler)
 }
 
 func (r *DynamicRouter) getGenericHandler(apiCode string) app.HandlerFunc {
 	return func(c context.Context, ctx *app.RequestContext) {
 		// 1. 获取 ModelID (解析 apiCode)
 		modelCode := ""
-		if idx := lastIndex(apiCode, "_"); idx != -1 {
-			modelCode = apiCode[:idx]
+		
+		// 优先匹配特殊后缀
+		var handlerType string
+		if strings.HasSuffix(apiCode, "_QUERY") {
+			modelCode = strings.TrimSuffix(apiCode, "_QUERY")
+			handlerType = "QUERY"
+		} else if strings.HasSuffix(apiCode, "_BATCH_CREATE") {
+			modelCode = strings.TrimSuffix(apiCode, "_BATCH_CREATE")
+			handlerType = "BATCH_CREATE"
+		} else if strings.HasSuffix(apiCode, "_BATCH_DELETE") {
+			modelCode = strings.TrimSuffix(apiCode, "_BATCH_DELETE")
+			handlerType = "BATCH_DELETE"
+		} else if strings.HasSuffix(apiCode, "_STATISTICS") {
+			modelCode = strings.TrimSuffix(apiCode, "_STATISTICS")
+			handlerType = "STATISTICS"
+		} else if strings.HasSuffix(apiCode, "_AGGREGATE") {
+			modelCode = strings.TrimSuffix(apiCode, "_AGGREGATE")
+			handlerType = "AGGREGATE"
 		} else {
-			modelCode = apiCode
+			// 默认逻辑：取最后一个下划线前缀
+			if idx := lastIndex(apiCode, "_"); idx != -1 {
+				modelCode = apiCode[:idx]
+			} else {
+				modelCode = apiCode
+			}
 		}
 
 		md, err := r.svc.Model.GetModelByCode(modelCode)
@@ -71,6 +100,25 @@ func (r *DynamicRouter) getGenericHandler(apiCode string) app.HandlerFunc {
 
 		method := string(ctx.Method())
 
+		// 特殊处理器分发
+		switch handlerType {
+		case "QUERY":
+			r.queryHandler.HandleUnifiedQueryWithModelID(ctx, md.ID)
+			return
+		case "BATCH_CREATE":
+			r.queryHandler.HandleBatchCreateWithModelID(ctx, md.ID)
+			return
+		case "BATCH_DELETE":
+			r.queryHandler.HandleBatchDeleteWithModelID(ctx, md.ID)
+			return
+		case "STATISTICS":
+			r.queryHandler.HandleStatisticsWithModelID(ctx, md.ID)
+			return
+		case "AGGREGATE":
+			r.queryHandler.HandleAggregateWithModelID(ctx, md.ID)
+			return
+		}
+
 		// 2. 根据方法分发逻辑
 		switch method {
 		case "POST":
@@ -79,12 +127,17 @@ func (r *DynamicRouter) getGenericHandler(apiCode string) app.HandlerFunc {
 				utils.ErrorResponse(ctx, consts.StatusBadRequest, "参数解析失败")
 				return
 			}
-			res, err := r.svc.CRUD.Create(md.ID, data)
+			// 从 Handler 中获取 Context
+			// Hertz HandlerFunc: func(c context.Context, ctx *app.RequestContext)
+			// 但是 DynamicRouter 的 HandleCreate 签名目前是 func(c context.Context, ctx *app.RequestContext)
+			// 所以直接使用 c 即可
+			
+			result, err := r.svc.CRUD.Create(c, md.ID, data)
 			if err != nil {
 				utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
 				return
 			}
-			utils.SuccessResponse(ctx, res)
+			utils.SuccessResponse(ctx, result)
 
 		case "GET":
 			id := ctx.Param("id")
@@ -118,8 +171,7 @@ func (r *DynamicRouter) getGenericHandler(apiCode string) app.HandlerFunc {
 				utils.ErrorResponse(ctx, consts.StatusBadRequest, "参数解析失败")
 				return
 			}
-			err := r.svc.CRUD.Update(md.ID, id, data)
-			if err != nil {
+			if err := r.svc.CRUD.Update(c, md.ID, id, data); err != nil {
 				utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
 				return
 			}
@@ -127,8 +179,7 @@ func (r *DynamicRouter) getGenericHandler(apiCode string) app.HandlerFunc {
 
 		case "DELETE":
 			id := ctx.Param("id")
-			err := r.svc.CRUD.Delete(md.ID, id)
-			if err != nil {
+			if err := r.svc.CRUD.Delete(c, md.ID, id); err != nil {
 				utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
 				return
 			}

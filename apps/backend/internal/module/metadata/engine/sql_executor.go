@@ -58,6 +58,26 @@ func (e *SQLExecutor) Execute(connID string, sqlStr string, args ...any) ([]map[
 	return results, nil
 }
 
+// ExecuteWithTx 在事务中执行 SQL
+func (e *SQLExecutor) ExecuteWithTx(tx *gorm.DB, sqlStr string, args ...any) ([]map[string]any, error) {
+	start := time.Now()
+	rows, err := tx.Raw(sqlStr, args...).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	results, err := e.parseRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	duration := time.Since(start)
+	utils.SugarLogger.Infof("SQL Executed [TX] [%v]: %s | Args: %v", duration, sqlStr, args)
+
+	return results, nil
+}
+
 // ExecuteCount 执行 COUNT 查询并返回总数
 func (e *SQLExecutor) ExecuteCount(connID string, sqlStr string, args ...any) (int64, error) {
 	db, err := e.GetConnection(connID)
@@ -72,6 +92,16 @@ func (e *SQLExecutor) ExecuteCount(connID string, sqlStr string, args ...any) (i
 		return 0, err
 	}
 
+	return count, nil
+}
+
+// ExecuteCountWithTx 在事务中执行 COUNT 查询
+func (e *SQLExecutor) ExecuteCountWithTx(tx *gorm.DB, sqlStr string, args ...any) (int64, error) {
+	countSQL := fmt.Sprintf("SELECT COUNT(*) FROM (%s) AS total", sqlStr)
+	var count int64
+	if err := tx.Raw(countSQL, args...).Scan(&count).Error; err != nil {
+		return 0, err
+	}
 	return count, nil
 }
 
