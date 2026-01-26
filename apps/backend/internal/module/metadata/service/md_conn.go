@@ -1,0 +1,195 @@
+package service
+
+import (
+	"errors"
+
+	"fmt"
+
+	"metadata-platform/internal/module/metadata/adapter"
+	"metadata-platform/internal/module/metadata/model"
+	"metadata-platform/internal/module/metadata/repository"
+	"metadata-platform/internal/utils"
+)
+
+// MdConnService 数据连接服务接口
+type MdConnService interface {
+	CreateConn(conn *model.MdConn) error
+	GetConnByID(id string) (*model.MdConn, error)
+	GetConnByName(name string) (*model.MdConn, error)
+	UpdateConn(conn *model.MdConn) error
+	DeleteConn(id string) error
+	GetAllConns(tenantID string) ([]model.MdConn, error)
+	GetConnsByParentID(parentID string) ([]model.MdConn, error)
+	TestConnection(conn *model.MdConn) error
+	GetTables(conn *model.MdConn, schema string) ([]adapter.TableInfo, error)
+	GetViews(conn *model.MdConn, schema string) ([]adapter.ViewInfo, error)
+	GetTableStructure(conn *model.MdConn, schema, table string) ([]adapter.ColumnInfo, error)
+	PreviewTableData(conn *model.MdConn, schema, table string, limit int) ([]map[string]interface{}, error)
+}
+
+// mdConnService 数据连接服务实现
+type mdConnService struct {
+	connRepo   repository.MdConnRepository
+	snowflake  *utils.Snowflake
+}
+
+// NewMdConnService 创建数据连接服务实例
+func NewMdConnService(connRepo repository.MdConnRepository) MdConnService {
+	// 创建雪花算法生成器实例，使用默认数据中心ID和机器ID
+	snowflake := utils.NewSnowflake(1, 1)
+	return &mdConnService{
+		connRepo:  connRepo,
+		snowflake: snowflake,
+	}
+}
+
+// CreateConn 创建数据连接
+func (s *mdConnService) CreateConn(conn *model.MdConn) error {
+	// 检查数据连接名称是否已存在
+	existingConn, err := s.connRepo.GetConnByName(conn.ConnName)
+	if err == nil && existingConn != nil {
+		return errors.New("数据连接名称已存在")
+	}
+
+	// 使用雪花算法生成唯一ID
+	conn.ID = s.snowflake.GenerateIDString()
+
+	// 创建数据连接
+	return s.connRepo.CreateConn(conn)
+}
+
+// GetConnByID 根据ID获取数据连接
+func (s *mdConnService) GetConnByID(id string) (*model.MdConn, error) {
+	return s.connRepo.GetConnByID(id)
+}
+
+// GetConnByName 根据名称获取数据连接
+func (s *mdConnService) GetConnByName(name string) (*model.MdConn, error) {
+	return s.connRepo.GetConnByName(name)
+}
+
+// UpdateConn 更新数据连接
+func (s *mdConnService) UpdateConn(conn *model.MdConn) error {
+	// 检查数据连接是否存在
+	existingConn, err := s.connRepo.GetConnByID(conn.ID)
+	if err != nil {
+		return errors.New("数据连接不存在")
+	}
+
+	// 如果数据连接名称发生变化，检查新名称是否已存在
+	if existingConn.ConnName != conn.ConnName {
+		otherConn, err := s.connRepo.GetConnByName(conn.ConnName)
+		if err == nil && otherConn != nil {
+			return errors.New("数据连接名称已存在")
+		}
+	}
+
+	// 更新数据连接
+	return s.connRepo.UpdateConn(conn)
+}
+
+// DeleteConn 删除数据连接
+func (s *mdConnService) DeleteConn(id string) error {
+	// 检查数据连接是否存在
+	_, err := s.connRepo.GetConnByID(id)
+	if err != nil {
+		return errors.New("数据连接不存在")
+	}
+
+	// 删除数据连接
+	return s.connRepo.DeleteConn(id)
+}
+
+// GetAllConns 获取所有数据连接
+func (s *mdConnService) GetAllConns(tenantID string) ([]model.MdConn, error) {
+	return s.connRepo.GetAllConns(tenantID)
+}
+
+// GetConnsByParentID 根据父ID获取数据连接
+func (s *mdConnService) GetConnsByParentID(parentID string) ([]model.MdConn, error) {
+	return s.connRepo.GetConnsByParentID(parentID)
+}
+
+// getExtractor 根据数据连接获取元数据提取器
+func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtractor, error) {
+	switch conn.ConnKind {
+	case "MySQL":
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			conn.ConnUser,
+			conn.ConnPassword,
+			conn.ConnHost,
+			conn.ConnPort,
+			conn.ConnDatabase,
+		)
+		return adapter.NewMySQLExtractor(dsn)
+	default:
+		return nil, errors.New("不支持的数据源类型: " + conn.ConnKind)
+	}
+}
+
+// TestConnection 测试数据连接
+func (s *mdConnService) TestConnection(conn *model.MdConn) error {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return err
+	}
+	defer extractor.Close()
+
+	return extractor.TestConnection()
+}
+
+// GetTables 获取数据库表列表
+func (s *mdConnService) GetTables(conn *model.MdConn, schema string) ([]adapter.TableInfo, error) {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return nil, err
+	}
+	defer extractor.Close()
+
+	if schema == "" {
+		schema = conn.ConnDatabase
+	}
+	return extractor.GetTables(schema)
+}
+
+// GetViews 获取数据库视图列表
+func (s *mdConnService) GetViews(conn *model.MdConn, schema string) ([]adapter.ViewInfo, error) {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return nil, err
+	}
+	defer extractor.Close()
+
+	if schema == "" {
+		schema = conn.ConnDatabase
+	}
+	return extractor.GetViews(schema)
+}
+
+// GetTableStructure 获取表结构
+func (s *mdConnService) GetTableStructure(conn *model.MdConn, schema, table string) ([]adapter.ColumnInfo, error) {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return nil, err
+	}
+	defer extractor.Close()
+
+	if schema == "" {
+		schema = conn.ConnDatabase
+	}
+	return extractor.GetColumns(schema, table)
+}
+
+// PreviewTableData 预览表数据
+func (s *mdConnService) PreviewTableData(conn *model.MdConn, schema, table string, limit int) ([]map[string]interface{}, error) {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return nil, err
+	}
+	defer extractor.Close()
+
+	if schema == "" {
+		schema = conn.ConnDatabase
+	}
+	return extractor.PreviewData(schema, table, limit)
+}

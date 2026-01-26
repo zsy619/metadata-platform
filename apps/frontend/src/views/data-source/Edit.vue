@@ -1,0 +1,159 @@
+<template>
+    <div class="container-padding">
+        <div class="page-header">
+            <h1 class="text-primary">编辑数据源</h1>
+            <el-button @click="handleCancel" :icon="ArrowLeft">
+                返回列表
+            </el-button>
+        </div>
+        <el-card>
+            <el-form ref="dataSourceFormRef" :model="dataSourceForm" :rules="formRules" label-width="120px" class="edit-form" style="max-width: 900px; margin: 0 auto;">
+                <el-divider content-position="left">基础信息</el-divider>
+                <el-row :gutter="32">
+                    <el-col :span="12">
+                        <el-form-item label="数据源名称" prop="connName">
+                            <el-input v-model="dataSourceForm.connName" placeholder="请输入名称" clearable />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="数据源类型" prop="connKind">
+                            <el-select v-model="dataSourceForm.connKind" class="w-full">
+                                <el-option label="MySQL" value="MySQL" />
+                                <el-option label="PostgreSQL" value="PostgreSQL" />
+                                <el-option label="SQL Server" value="SQL Server" />
+                                <el-option label="Oracle" value="Oracle" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-divider content-position="left">连接配置</el-divider>
+                <el-row :gutter="32">
+                    <el-col :span="18">
+                        <el-form-item label="主机地址" prop="connHost">
+                            <el-input v-model="dataSourceForm.connHost" placeholder="例如: localhost 或 IP" clearable />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="6">
+                        <el-form-item label="端口" prop="connPort">
+                            <el-input-number v-model="dataSourceForm.connPort" :min="1" :max="65535" class="w-full" controls-position="right" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row :gutter="32">
+                    <el-col :span="12">
+                        <el-form-item label="数据库名" prop="connDatabase">
+                            <el-input v-model="dataSourceForm.connDatabase" placeholder="Database Name" clearable />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="版本" prop="connVersion">
+                            <el-input v-model="dataSourceForm.connVersion" placeholder="如: 8.0" clearable />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-divider content-position="left">身份验证</el-divider>
+                <el-row :gutter="32">
+                    <el-col :span="12">
+                        <el-form-item label="用户名" prop="connUser">
+                            <el-input v-model="dataSourceForm.connUser" placeholder="Username" clearable />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="密码" prop="connPassword">
+                            <el-input v-model="dataSourceForm.connPassword" type="password" placeholder="Password" show-password clearable />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-form-item label="备注说明" prop="remark">
+                    <el-input v-model="dataSourceForm.remark" type="textarea" :rows="4" placeholder="补充详细说明..." />
+                </el-form-item>
+                <div class="m-t-lg flex-center" style="gap: 16px;">
+                    <el-button @click="handleCancel" style="width: 120px;">取消</el-button>
+                    <el-button type="warning" @click="handleTestConnection" :loading="testingConnection" style="width: 120px;">
+                        测试连接
+                    </el-button>
+                    <el-button type="primary" @click="handleSubmit" :loading="submitting" style="width: 120px;">
+                        更新保存
+                    </el-button>
+                </div>
+            </el-form>
+        </el-card>
+    </div>
+</template>
+<script setup lang="ts">
+import type { DataSource } from '@/types/data-source'
+import { ArrowLeft } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+const dataSourceFormRef = ref()
+const testingConnection = ref(false)
+const submitting = ref(false)
+
+const dataSourceForm = reactive<Partial<DataSource>>({
+    connName: '',
+    connKind: 'MySQL',
+    connVersion: '',
+    connHost: '',
+    connPort: 3306,
+    connUser: '',
+    connPassword: '',
+    connDatabase: '',
+    remark: ''
+})
+
+const formRules = {
+    connName: [{ required: true, message: '名不能为空', trigger: 'blur' }],
+    connKind: [{ required: true, message: '必选', trigger: 'change' }],
+    connHost: [{ required: true, message: '地址必填', trigger: 'blur' }],
+    connPort: [{ required: true, message: '端口必填', trigger: 'blur' }],
+    connUser: [{ required: true, message: '用户必填', trigger: 'blur' }],
+    connDatabase: [{ required: true, message: '库名必填', trigger: 'blur' }]
+}
+
+onMounted(() => {
+    if (route.params.id) {
+        const id = Number(route.params.id)
+        console.log('Updating dataSource with id:', id)
+        fetchData(id)
+    }
+})
+
+const fetchData = async (id: number) => {
+    try {
+        // 模拟获取
+        const data = { connName: '生产数据库', connKind: 'MySQL', connHost: 'localhost', connPort: 3306 }
+        Object.assign(dataSourceForm, data)
+    } catch (err) {
+        ElMessage.error('获取详情失败')
+    }
+}
+
+const handleCancel = () => router.push('/data-sources')
+
+const handleTestConnection = async () => {
+    testingConnection.value = true
+    setTimeout(() => {
+        ElMessage.success('连接正常')
+        testingConnection.value = false
+    }, 1000)
+}
+
+const handleSubmit = async () => {
+    try {
+        await dataSourceFormRef.value.validate()
+        submitting.value = true
+        setTimeout(() => {
+            ElMessage.success('保存成功')
+            submitting.value = false
+            router.push('/data-sources')
+        }, 800)
+    } catch (err) { }
+}
+</script>
+<style scoped>
+/* 样式通过全局 base.css 和 components.css 驱动 */
+</style>

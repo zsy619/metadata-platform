@@ -1,0 +1,61 @@
+/* 
+  元数据平台 - 全局设计变量
+  遵循 前端设计规范 v2.1
+*/
+
+:root {
+  /* ========== 品牌主色 (Brand Primary) - Indigo ========== */
+  --el-color-primary: #4051B5;
+  --el-color-primary-light-3: #7986cb;
+  --el-color-primary-light-5: #9fa8da;
+  --el-color-primary-light-7: #c5cae9;
+  --el-color-primary-light-8: #e8eaf6;
+  --el-color-primary-light-9: #f5f6fa;
+  --el-color-primary-dark-2: #303F9F;
+
+  /* ========== 品牌点缀 (Accent) - Orange ========== */
+  --el-color-accent: #FF9800;
+  --el-color-accent-light: #FFB74D;
+  --el-color-accent-dark: #F57C00;
+
+  /* ========== 功能色 (Functional) ========== */
+  --el-color-success: #67C23A;
+  --el-color-success-light: #e1f3d8;
+  --el-color-warning: #E6A23C;
+  --el-color-warning-light: #fdf6ec;
+  --el-color-danger: #F56C6C;
+  --el-color-danger-light: #fef0f0;
+  --el-color-info: #909399;
+  --el-color-info-light: #f4f4f5;
+
+  /* ========== 结构背景 (Structure) ========== */
+  --el-bg-color-page: #F0F2F5;        /* 页面底色 */
+  --el-bg-color: #FFFFFF;             /* 容器/卡片背景 */
+  --el-bg-color-overlay: #FFFFFF;     /* 弹窗背景 */
+  --el-fill-color-light: #F5F7FA;     /* 表头背景 */
+  --el-fill-color-lighter: #FAFAFA;   /* 悬停背景 */
+
+  /* ========== 文字体系 (Typography) ========== */
+  --el-text-color-primary: #303133;   /* 主要文字 */
+  --el-text-color-regular: #606266;   /* 常规文字 */
+  --el-text-color-secondary: #909399; /* 次要文字 */
+  --el-text-color-placeholder: #C0C4CC;
+  --el-text-color-disabled: #C0C4CC;
+
+  /* ========== 边框与圆角 (Borders & Radius) ========== */
+  --el-border-color: #DCDFE6;
+  --el-border-color-light: #E4E7ED;
+  --el-border-color-lighter: #EBEEF5;
+  --el-border-radius-base: 4px;
+  --el-border-radius-medium: 8px;
+  --el-border-radius-large: 16px;
+
+  /* ========== 阴影系统 (Shadows) ========== */
+  --el-box-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  --el-box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
+  --el-box-shadow-dark: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
+
+  /* ========== 变换与过渡 (Transitions) ========== */
+  --el-transition-duration: 0.3s;
+  --el-transition-function-ease-in-out-bezier: cubic-bezier(0.4, 0, 0.2, 1);
+}

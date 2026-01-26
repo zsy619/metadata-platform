@@ -1,0 +1,148 @@
+/* 
+  元数据平台 - 组件细化样式
+  深度覆盖 Element Plus
+*/
+
+/* ========== 按钮 (Button) ========== */
+.el-button {
+    font-weight: 500;
+    border-radius: var(--el-border-radius-base);
+    transition: all var(--el-transition-duration);
+}
+
+.el-button--primary {
+    box-shadow: 0 2px 6px rgba(64, 81, 181, 0.2);
+}
+
+.el-button--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(64, 81, 181, 0.3);
+}
+
+/* ========== 输入框 (Input) ========== */
+.el-input__wrapper {
+    background-color: var(--el-bg-color) !important;
+    box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+    transition: all var(--el-transition-duration);
+}
+
+.el-input__wrapper:hover {
+    box-shadow: 0 0 0 1px var(--el-border-color-light) inset !important;
+}
+
+.el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px var(--el-color-primary) inset,
+        0 0 0 2px rgba(64, 81, 181, 0.1) !important;
+}
+
+/* ========== 表格 (Table) ========== */
+.el-table {
+    border-radius: var(--el-border-radius-medium);
+    overflow: hidden;
+}
+
+.el-table thead tr th {
+    background-color: var(--el-fill-color-light) !important;
+    color: var(--el-text-color-regular);
+    font-weight: 600;
+    height: 48px;
+}
+
+.el-table__row {
+    height: 48px;
+}
+
+.el-table--striped .el-table__row--striped td {
+    background-color: var(--el-fill-color-lighter) !important;
+}
+
+/* ========== 卡片 (Card) ========== */
+.el-card {
+    border: none !important;
+    border-radius: var(--el-border-radius-medium) !important;
+    box-shadow: var(--el-box-shadow) !important;
+}
+
+.el-card__header {
+    border-bottom: 1px solid var(--el-border-color-lighter) !important;
+    padding: 16px 20px !important;
+    font-weight: 600;
+}
+
+/* ========== 弹窗 (Dialog) ========== */
+.el-dialog {
+    border-radius: var(--el-border-radius-medium) !important;
+    overflow: hidden;
+    box-shadow: var(--el-box-shadow-dark) !important;
+}
+
+.el-dialog__header {
+    margin-right: 0 !important;
+    padding: 20px 24px !important;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background-color: var(--el-fill-color-lighter);
+}
+
+.el-dialog__title {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.el-dialog__body {
+    padding: 24px !important;
+}
+
+.divider {
+    position: relative;
+    height: 1px;
+    background-color: var(--el-border-color-lighter);
+    margin: 32px 0;
+    /* 增加上下外边距，确保物理空隙 */
+}
+
+.divider span {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--el-bg-color);
+    padding: 0 16px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    white-space: nowrap;
+    z-index: 1;
+    /* 确保文字在横线上方 */
+}
+
+.el-dialog__footer {
+    padding: 12px 24px !important;
+    border-top: 1px solid var(--el-border-color-lighter);
+}
+
+/* ========== 菜单 (Menu) ========== */
+.el-menu {
+    border-right: none !important;
+}
+
+.el-menu-item.is-active {
+    background-color: var(--el-color-primary-light-9) !important;
+    border-right: 3px solid var(--el-color-primary);
+}
+
+/* ========== 标签 (Tabs) ========== */
+.el-tabs--border-card {
+    border: none !important;
+    box-shadow: var(--el-box-shadow) !important;
+}
+
+.el-tabs__item.is-active {
+    font-weight: 600;
+}
+
+/* ========== 通用装饰类 (Custom) ========== */
+.accent-logo-box {
+    background-color: var(--el-color-accent);
+    color: #FFFFFF;
+    border-radius: var(--el-border-radius-large);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}

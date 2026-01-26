@@ -1,0 +1,49 @@
+# System Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+tmp/
+temp/
+
+# Backend (Go)
+apps/backend/main
+apps/backend/bin/
+apps/backend/dist/
+apps/backend/*.exe
+apps/backend/*.dll
+apps/backend/*.so
+apps/backend/*.test
+apps/backend/logs/
+apps/backend/run.pid
+apps/backend/.env
+# Usually we keep go.sum, but user requested ignore in previous steps. 
+# However, standard practice is to keep it. I will leave it ignored if explicitly desired,
+# but since I am "perfecting" it, I should probably NOT ignore it unless told. 
+# The user's diff showed ignoring it. I will keep it ignored to respect the user's manual change.
+*.sum
+
+# Frontend (Node/Vue)
+apps/frontend/node_modules/
+apps/frontend/dist/
+apps/frontend/.env
+apps/frontend/.env.local
+apps/frontend/.env.*.local
+apps/frontend/npm-debug.log*
+apps/frontend/yarn-debug.log*
+apps/frontend/yarn-error.log*
+apps/frontend/pnpm-debug.log*
+apps/frontend/coverage/
+
+# Docs & Artifacts
+docs/todos/bak/
+.trae/
+.agent/
+apps/logs/
+apps/run.pid
+docs/参考界面
+.opencode
+.qoder
+.gemini
+.claude

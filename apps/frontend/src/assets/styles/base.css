@@ -1,0 +1,155 @@
+/* 
+  元数据平台 - 基础样式标准
+  基于规范 v2.1
+*/
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--el-bg-color-page);
+    color: var(--el-text-color-primary);
+    line-height: 1.5;
+}
+
+#app {
+    height: 100%;
+}
+
+/* ========== 标题规范 ========== */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0;
+    color: var(--el-text-color-primary);
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 24px;
+}
+
+h2 {
+    font-size: 20px;
+}
+
+h3 {
+    font-size: 18px;
+}
+
+h4 {
+    font-size: 16px;
+}
+
+/* ========== 链接与文字 ========== */
+a {
+    color: var(--el-color-primary);
+    text-decoration: none;
+    transition: color var(--el-transition-duration);
+}
+
+a:hover {
+    color: var(--el-color-primary-light-3);
+}
+
+p {
+    margin: 0 0 1em 0;
+}
+
+/* ========== 基础容器 ========== */
+.container-padding {
+    padding: 24px;
+}
+
+.card-container {
+    background-color: var(--el-bg-color);
+    border-radius: var(--el-border-radius-medium);
+    box-shadow: var(--el-box-shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+/* ========== 工具类 ========== */
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.m-t-sm {
+    margin-top: 8px !important;
+}
+
+.m-t-md {
+    margin-top: 16px !important;
+}
+
+.m-t-lg {
+    margin-top: 24px !important;
+}
+
+.m-t-xl {
+    margin-top: 32px !important;
+}
+
+.m-b-sm {
+    margin-bottom: 8px !important;
+}
+
+.m-b-md {
+    margin-bottom: 16px !important;
+}
+
+.m-b-lg {
+    margin-bottom: 24px !important;
+}
+
+.text-primary {
+    color: var(--el-color-primary);
+}
+
+.text-secondary {
+    color: var(--el-text-color-secondary);
+}
+
+.text-danger {
+    color: var(--el-color-danger);
+}
+
+.text-success {
+    color: var(--el-color-success);
+}
