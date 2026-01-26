@@ -22,7 +22,7 @@
             </div>
         </el-card>
         <!-- 导入对话框 -->
-        <el-dialog v-model="importVisible" title="导入数据" width="400px">
+        <el-dialog v-model="importVisible" title="导入数据" width="400px" class="custom-dialog">
             <el-upload drag action="#" :auto-upload="false" :on-change="handleFileChange">
                 <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                 <div class="el-upload__text">拖拽文件或 <em>点击上传</em></div>

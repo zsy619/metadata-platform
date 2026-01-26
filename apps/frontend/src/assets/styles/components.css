@@ -77,15 +77,50 @@
 }
 
 .el-dialog__header {
-    margin-right: 0 !important;
+    text-align: left;
     padding: 20px 24px !important;
+    margin: 0 !important;
     border-bottom: 1px solid var(--el-border-color-lighter);
-    background-color: var(--el-fill-color-lighter);
+    display: flex;
+    align-items: center;
 }
 
 .el-dialog__title {
-    font-weight: 600;
     font-size: 18px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    flex: 1;
+}
+
+/* 关闭按钮圆形样式,垂直居中 */
+.el-dialog__headerbtn {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 50% !important;
+    background-color: var(--el-fill-color-light);
+    transition: all var(--el-transition-duration);
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.el-dialog__headerbtn:hover {
+    background-color: var(--el-fill-color);
+}
+
+.el-dialog__headerbtn .el-dialog__close {
+    font-size: 18px;
+    color: var(--el-text-color-secondary);
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+}
+
+.el-dialog__headerbtn:hover .el-dialog__close {
+    color: var(--el-text-color-primary);
 }
 
 .el-dialog__body {

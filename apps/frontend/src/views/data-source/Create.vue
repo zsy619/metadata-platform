@@ -10,13 +10,13 @@
             <el-form ref="dataSourceFormRef" :model="dataSourceForm" :rules="formRules" label-width="120px" class="create-form">
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item label="数据源名称" prop="connName">
-                            <el-input v-model="dataSourceForm.connName" placeholder="请输入数据源名称" clearable />
+                        <el-form-item label="数据源名称" prop="conn_name">
+                            <el-input v-model="dataSourceForm.conn_name" placeholder="请输入数据源名称" clearable />
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item label="数据源类型" prop="connKind">
-                            <el-select v-model="dataSourceForm.connKind" placeholder="请选择数据源类型" class="w-full" @change="handleKindChange">
+                        <el-form-item label="数据源类型" prop="conn_kind">
+                            <el-select v-model="dataSourceForm.conn_kind" placeholder="请选择数据源类型" class="w-full" @change="handleKindChange">
                                 <el-option-group label="关系型">
                                     <el-option label="MySQL" value="MySQL" />
                                     <el-option label="PostgreSQL" value="PostgreSQL" />
@@ -46,37 +46,37 @@
                 </el-row>
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item label="数据库版本" prop="connVersion">
-                            <el-input v-model="dataSourceForm.connVersion" placeholder="请输入数据库版本，如：8.0" clearable />
+                        <el-form-item label="版本" prop="conn_version">
+                            <el-input v-model="dataSourceForm.conn_version" placeholder="如: 8.0" clearable />
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item label="主机地址" prop="connHost">
-                            <el-input v-model="dataSourceForm.connHost" placeholder="请输入主机地址，如：localhost" clearable />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="端口号" prop="connPort">
-                            <el-input-number v-model="dataSourceForm.connPort" :min="1" :max="65535" placeholder="请输入端口号" class="w-full" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="数据库名" prop="connDatabase">
-                            <el-input v-model="dataSourceForm.connDatabase" placeholder="请输入数据库名称" clearable />
+                        <el-form-item label="主机地址" prop="conn_host">
+                            <el-input v-model="dataSourceForm.conn_host" placeholder="例如: localhost 或 IP" clearable />
                         </el-form-item>
                     </el-col>
                 </el-row>
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item label="用户名" prop="connUser">
-                            <el-input v-model="dataSourceForm.connUser" placeholder="请输入数据库用户名" clearable />
+                        <el-form-item label="端口" prop="conn_port">
+                            <el-input-number v-model="dataSourceForm.conn_port" :min="1" :max="65535" class="w-full" controls-position="right" />
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item label="密码" prop="connPassword">
-                            <el-input v-model="dataSourceForm.connPassword" type="password" placeholder="请输入数据库密码" clearable show-password />
+                        <el-form-item label="数据库名" prop="conn_database">
+                            <el-input v-model="dataSourceForm.conn_database" placeholder="Database Name" clearable />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="用户名" prop="conn_user">
+                            <el-input v-model="dataSourceForm.conn_user" placeholder="Username" clearable />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="密码" prop="conn_password">
+                            <el-input v-model="dataSourceForm.conn_password" type="password" placeholder="Password" show-password clearable />
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -112,14 +112,14 @@ const testingConnection = ref(false)
 const submitting = ref(false)
 
 const dataSourceForm = reactive<Partial<MdConn>>({
-    connName: '',
-    connKind: 'MySQL',
-    connVersion: '8.0',
-    connHost: 'localhost',
-    connPort: 3306,
-    connUser: 'root',
-    connPassword: '',
-    connDatabase: '',
+    conn_name: '',
+    conn_kind: 'MySQL',
+    conn_version: '8.0',
+    conn_host: 'localhost',
+    conn_port: 3306,
+    conn_user: 'root',
+    conn_password: '',
+    conn_database: '',
     remark: ''
 })
 
@@ -145,32 +145,32 @@ const defaultConfigs: Record<string, any> = {
 const handleKindChange = (kind: string) => {
     const config = defaultConfigs[kind]
     if (config) {
-        dataSourceForm.connPort = config.port
-        dataSourceForm.connUser = config.user
-        dataSourceForm.connVersion = config.version
+        dataSourceForm.conn_port = config.port
+        dataSourceForm.conn_user = config.user
+        dataSourceForm.conn_version = config.version
     }
 }
 
 // 表单验证规则
 const formRules = reactive({
-    connName: [
+    conn_name: [
         { required: true, message: '请输入数据源名称', trigger: 'blur' },
         { min: 2, max: 100, message: '数据源名称长度在 2 到 100 个字符', trigger: 'blur' }
     ],
-    connKind: [
+    conn_kind: [
         { required: true, message: '请选择数据源类型', trigger: 'change' }
     ],
-    connHost: [
+    conn_host: [
         { required: true, message: '请输入主机地址', trigger: 'blur' }
     ],
-    connPort: [
+    conn_port: [
         { required: true, message: '请输入端口号', trigger: 'blur' },
         { type: 'number', message: '端口号必须是数字', trigger: 'blur' }
     ],
-    connUser: [
+    conn_user: [
         { required: true, message: '请输入用户名', trigger: 'blur' }
     ],
-    connDatabase: [
+    conn_database: [
         { required: true, message: '请输入数据库名', trigger: 'blur' }
     ]
 })

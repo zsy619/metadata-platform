@@ -98,7 +98,7 @@
             <p>© 2026 元数据管理平台 Copyright. All Rights Reserved.</p>
         </div>
         <!-- 弹窗：注册 -->
-        <el-dialog v-model="showRegisterDialog" title="注册新账号" width="460px" :close-on-click-modal="false" destroy-on-close>
+        <el-dialog v-model="showRegisterDialog" title="注册新账号" width="460px" :close-on-click-modal="false" destroy-on-close class="custom-dialog">
             <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" label-position="top">
                 <el-form-item label="用户名" prop="username">
                     <el-input v-model="registerForm.username" placeholder="建议使用字母数字组合" />
@@ -121,7 +121,7 @@
             </template>
         </el-dialog>
         <!-- 弹窗：重置密码 -->
-        <el-dialog v-model="showForgotDialog" title="重置密码" width="420px" :close-on-click-modal="false">
+        <el-dialog v-model="showForgotDialog" title="重置密码" width="420px" :close-on-click-modal="false" class="custom-dialog">
             <el-form label-position="top">
                 <el-form-item label="注册邮箱">
                     <el-input placeholder="请输入您的注册邮箱" />

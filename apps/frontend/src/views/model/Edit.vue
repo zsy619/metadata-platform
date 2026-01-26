@@ -180,7 +180,7 @@
             </el-tabs>
         </el-card>
         <!-- 增强配置对话框 -->
-        <el-dialog v-model="enhancementVisible" title="字段增强配置" width="600px">
+        <el-dialog v-model="enhancementVisible" title="字段增强配置" width="600px" class="custom-dialog">
             <el-form :model="currentField" label-width="120px">
                 <el-form-item label="允许为空"><el-switch v-model="currentField.isNullable" /></el-form-item>
                 <el-form-item label="主键"><el-switch v-model="currentField.isPrimaryKey" /></el-form-item>

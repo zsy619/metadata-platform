@@ -40,12 +40,12 @@
                 </el-button>
             </div>
             <el-table v-loading="loading" :data="dataSources" border stripe style="width: 100%">
-                <el-table-column prop="connName" label="数据源名称" width="200" />
-                <el-table-column prop="connKind" label="数据源类型" width="150" />
-                <el-table-column prop="connVersion" label="版本" width="120" />
-                <el-table-column prop="connHost" label="主机地址" width="200" />
-                <el-table-column prop="connPort" label="端口" width="80" />
-                <el-table-column prop="connDatabase" label="数据库" width="150" />
+                <el-table-column prop="conn_name" label="数据源名称" width="200" />
+                <el-table-column prop="conn_kind" label="数据源类型" width="150" />
+                <el-table-column prop="conn_version" label="版本" width="120" />
+                <el-table-column prop="conn_host" label="主机地址" width="200" />
+                <el-table-column prop="conn_port" label="端口" width="80" />
+                <el-table-column prop="conn_database" label="数据库" width="150" />
                 <el-table-column prop="state" label="状态" width="120">
                     <template #default="scope">
                         <el-tag :type="scope.row.state === 1 ? 'success' :
@@ -56,7 +56,11 @@
                         </el-tag>
                     </template>
                 </el-table-column>
-                <el-table-column prop="createAt" label="创建时间" width="180" />
+                <el-table-column prop="create_at" label="创建时间" width="180">
+                    <template #default="scope">
+                        {{ formatDateTime(scope.row.create_at) }}
+                    </template>
+                </el-table-column>
                 <el-table-column label="操作" width="220" fixed="right" align="center">
                     <template #default="scope">
                         <el-button type="primary" size="small" text :icon="Connection" @click="handleTestConnection(scope.row)" :disabled="scope.row.state === 1">
@@ -103,6 +107,21 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 
+// 时间格式化函数
+const formatDateTime = (dateStr: string | undefined) => {
+    if (!dateStr) return '-'
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return '-'
+
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+
+    return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
 // 生命周期钩子
 onMounted(() => {
     fetchDataSources()
@@ -115,13 +134,13 @@ const fetchDataSources = async () => {
         // 后端返回结构为 { code: 200, message: "...", data: [...] }
         const data = response?.data || []
 
-        // 过滤和搜索（前端模拟，如果后端没有搜索接口）
+        // 过滤和搜索(前端模拟,如果后端没有搜索接口)
         let result = [...data]
         if (searchQuery.value) {
-            result = result.filter(item => item.connName.includes(searchQuery.value))
+            result = result.filter(item => item.conn_name.includes(searchQuery.value))
         }
         if (filterType.value) {
-            result = result.filter(item => item.connKind === filterType.value)
+            result = result.filter(item => item.conn_kind === filterType.value)
         }
 
         dataSources.value = result
@@ -154,7 +173,7 @@ const handleCreate = () => router.push('/data-sources/create')
 const handleEdit = (row: MdConn) => router.push(`/data-sources/${row.id}/edit`)
 
 const handleDelete = (row: MdConn) => {
-    ElMessageBox.confirm(`确定要删除数据源 "${row.connName}" 吗？`, '删除确认', {
+    ElMessageBox.confirm(`确定要删除数据源 "${row.conn_name}" 吗?`, '删除确认', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
