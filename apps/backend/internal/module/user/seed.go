@@ -1,6 +1,8 @@
 package user
 
 import (
+	"time"
+
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/utils"
 
@@ -12,6 +14,7 @@ func SeedData(db *gorm.DB) {
 	utils.SugarLogger.Info("Seeding user database...")
 
 	// sf := utils.NewSnowflake(1, 1)
+	now := time.Now()
 
 	// 1. 初始化超管租户
 	defaultTenant := model.SsoTenant{
@@ -21,6 +24,9 @@ func SeedData(db *gorm.DB) {
 		TenantCode: "system",
 		State:      1,
 		CreateBy:   "system",
+		CreateAt:   now,
+		UpdateBy:   "system",
+		UpdateAt:   now,
 	}
 
 	var count int64
@@ -45,6 +51,9 @@ func SeedData(db *gorm.DB) {
 		State:    1,
 		Kind:     1, // 1: 系统管理员
 		CreateBy: "system",
+		CreateAt: now,
+		UpdateBy: "system",
+		UpdateAt: now,
 	}
 
 	db.Model(&model.SsoUser{}).Where("account = ?", "admin").Count(&count)
@@ -65,6 +74,9 @@ func SeedData(db *gorm.DB) {
 			State:           1,
 			Remark:          "核心元数据管理系统",
 			CreateBy:        "system",
+			CreateAt:        now,
+			UpdateBy:        "system",
+			UpdateAt:        now,
 		},
 		{
 			ID:              "2",
@@ -73,6 +85,9 @@ func SeedData(db *gorm.DB) {
 			State:           1,
 			Remark:          "统一账号认证与权限管理系统",
 			CreateBy:        "system",
+			CreateAt:        now,
+			UpdateBy:        "system",
+			UpdateAt:        now,
 		},
 	}
 

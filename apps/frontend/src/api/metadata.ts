@@ -1,22 +1,20 @@
 /**
  * 元数据模块API服务
  */
-import request from '@/utils/request'
 import type { MdConn, MdTable, MdTableField } from '@/types/metadata'
+import request from '@/utils/request'
 
 // ==================== 数据连接相关API ====================
 
 /**
  * 获取数据连接列表
- * @param tenantID 租户ID
  * @returns 数据连接列表
  */
-export const getConns = async (tenantID: string): Promise<MdConn[]> => {
-  return request({
-    url: '/api/metadata/conns',
-    method: 'get',
-    params: { tenant_id: tenantID }
-  })
+export const getConns = async (): Promise<MdConn[]> => {
+    return request({
+        url: '/api/metadata/conns',
+        method: 'get'
+    })
 }
 
 /**
@@ -25,10 +23,10 @@ export const getConns = async (tenantID: string): Promise<MdConn[]> => {
  * @returns 数据连接详情
  */
 export const getConnById = async (id: string): Promise<MdConn> => {
-  return request({
-    url: `/api/metadata/conns/${id}`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/metadata/conns/${id}`,
+        method: 'get'
+    })
 }
 
 /**
@@ -37,11 +35,11 @@ export const getConnById = async (id: string): Promise<MdConn> => {
  * @returns 创建结果
  */
 export const createConn = async (data: Partial<MdConn>): Promise<MdConn> => {
-  return request({
-    url: '/api/metadata/conns',
-    method: 'post',
-    data
-  })
+    return request({
+        url: '/api/metadata/conns',
+        method: 'post',
+        data
+    })
 }
 
 /**
@@ -51,11 +49,11 @@ export const createConn = async (data: Partial<MdConn>): Promise<MdConn> => {
  * @returns 更新结果
  */
 export const updateConn = async (id: string, data: Partial<MdConn>): Promise<MdConn> => {
-  return request({
-    url: `/api/metadata/conns/${id}`,
-    method: 'put',
-    data
-  })
+    return request({
+        url: `/api/metadata/conns/${id}`,
+        method: 'put',
+        data
+    })
 }
 
 /**
@@ -64,10 +62,10 @@ export const updateConn = async (id: string, data: Partial<MdConn>): Promise<MdC
  * @returns 删除结果
  */
 export const deleteConn = async (id: string): Promise<void> => {
-  return request({
-    url: `/api/metadata/conns/${id}`,
-    method: 'delete'
-  })
+    return request({
+        url: `/api/metadata/conns/${id}`,
+        method: 'delete'
+    })
 }
 
 /**
@@ -76,10 +74,10 @@ export const deleteConn = async (id: string): Promise<void> => {
  * @returns 数据连接列表
  */
 export const getConnsByParentId = async (parentID: string): Promise<MdConn[]> => {
-  return request({
-    url: `/api/metadata/conns/parent/${parentID}`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/metadata/conns/parent/${parentID}`,
+        method: 'get'
+    })
 }
 
 // ==================== 数据连接表相关API ====================
@@ -90,11 +88,11 @@ export const getConnsByParentId = async (parentID: string): Promise<MdConn[]> =>
  * @returns 表列表
  */
 export const getTables = async (tenantID: string): Promise<MdTable[]> => {
-  return request({
-    url: '/api/metadata/tables',
-    method: 'get',
-    params: { tenant_id: tenantID }
-  })
+    return request({
+        url: '/api/metadata/tables',
+        method: 'get',
+        params: { tenant_id: tenantID }
+    })
 }
 
 /**
@@ -103,10 +101,10 @@ export const getTables = async (tenantID: string): Promise<MdTable[]> => {
  * @returns 表详情
  */
 export const getTableById = async (id: string): Promise<MdTable> => {
-  return request({
-    url: `/api/metadata/tables/${id}`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/metadata/tables/${id}`,
+        method: 'get'
+    })
 }
 
 /**
@@ -115,10 +113,10 @@ export const getTableById = async (id: string): Promise<MdTable> => {
  * @returns 表列表
  */
 export const getTablesByConnId = async (connID: string): Promise<MdTable[]> => {
-  return request({
-    url: `/api/metadata/tables/conn/${connID}`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/metadata/tables/conn/${connID}`,
+        method: 'get'
+    })
 }
 
 /**
@@ -127,11 +125,11 @@ export const getTablesByConnId = async (connID: string): Promise<MdTable[]> => {
  * @returns 创建结果
  */
 export const createTable = async (data: Partial<MdTable>): Promise<MdTable> => {
-  return request({
-    url: '/api/metadata/tables',
-    method: 'post',
-    data
-  })
+    return request({
+        url: '/api/metadata/tables',
+        method: 'post',
+        data
+    })
 }
 
 /**
@@ -141,11 +139,11 @@ export const createTable = async (data: Partial<MdTable>): Promise<MdTable> => {
  * @returns 更新结果
  */
 export const updateTable = async (id: string, data: Partial<MdTable>): Promise<MdTable> => {
-  return request({
-    url: `/api/metadata/tables/${id}`,
-    method: 'put',
-    data
-  })
+    return request({
+        url: `/api/metadata/tables/${id}`,
+        method: 'put',
+        data
+    })
 }
 
 /**
@@ -154,10 +152,10 @@ export const updateTable = async (id: string, data: Partial<MdTable>): Promise<M
  * @returns 删除结果
  */
 export const deleteTable = async (id: string): Promise<void> => {
-  return request({
-    url: `/api/metadata/tables/${id}`,
-    method: 'delete'
-  })
+    return request({
+        url: `/api/metadata/tables/${id}`,
+        method: 'delete'
+    })
 }
 
 // ==================== 数据连接表字段相关API ====================
@@ -168,11 +166,11 @@ export const deleteTable = async (id: string): Promise<void> => {
  * @returns 字段列表
  */
 export const getFields = async (tenantID: string): Promise<MdTableField[]> => {
-  return request({
-    url: '/api/metadata/fields',
-    method: 'get',
-    params: { tenant_id: tenantID }
-  })
+    return request({
+        url: '/api/metadata/fields',
+        method: 'get',
+        params: { tenant_id: tenantID }
+    })
 }
 
 /**
@@ -181,10 +179,10 @@ export const getFields = async (tenantID: string): Promise<MdTableField[]> => {
  * @returns 字段详情
  */
 export const getFieldById = async (id: string): Promise<MdTableField> => {
-  return request({
-    url: `/api/metadata/fields/${id}`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/metadata/fields/${id}`,
+        method: 'get'
+    })
 }
 
 /**
@@ -193,10 +191,10 @@ export const getFieldById = async (id: string): Promise<MdTableField> => {
  * @returns 字段列表
  */
 export const getFieldsByTableId = async (tableID: string): Promise<MdTableField[]> => {
-  return request({
-    url: `/api/metadata/fields/table/${tableID}`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/metadata/fields/table/${tableID}`,
+        method: 'get'
+    })
 }
 
 /**
@@ -205,11 +203,11 @@ export const getFieldsByTableId = async (tableID: string): Promise<MdTableField[
  * @returns 创建结果
  */
 export const createField = async (data: Partial<MdTableField>): Promise<MdTableField> => {
-  return request({
-    url: '/api/metadata/fields',
-    method: 'post',
-    data
-  })
+    return request({
+        url: '/api/metadata/fields',
+        method: 'post',
+        data
+    })
 }
 
 /**
@@ -219,11 +217,11 @@ export const createField = async (data: Partial<MdTableField>): Promise<MdTableF
  * @returns 更新结果
  */
 export const updateField = async (id: string, data: Partial<MdTableField>): Promise<MdTableField> => {
-  return request({
-    url: `/api/metadata/fields/${id}`,
-    method: 'put',
-    data
-  })
+    return request({
+        url: `/api/metadata/fields/${id}`,
+        method: 'put',
+        data
+    })
 }
 
 /**
@@ -232,10 +230,10 @@ export const updateField = async (id: string, data: Partial<MdTableField>): Prom
  * @returns 删除结果
  */
 export const deleteField = async (id: string): Promise<void> => {
-  return request({
-    url: `/api/metadata/fields/${id}`,
-    method: 'delete'
-  })
+    return request({
+        url: `/api/metadata/fields/${id}`,
+        method: 'delete'
+    })
 }
 
 /**
@@ -244,8 +242,75 @@ export const deleteField = async (id: string): Promise<void> => {
  * @returns 删除结果
  */
 export const deleteFieldsByTableId = async (tableID: string): Promise<void> => {
-  return request({
-    url: `/api/metadata/fields/table/${tableID}`,
-    method: 'delete'
-  })
+    return request({
+        url: `/api/metadata/fields/table/${tableID}`,
+        method: 'delete'
+    })
+}
+
+// ==================== 增强功能相关API ====================
+
+/**
+ * 测试数据连接
+ * @param id 数据连接ID
+ * @returns 测试结果
+ */
+export const testConn = async (id: string): Promise<{ success: boolean; message: string }> => {
+    return request({
+        url: `/api/metadata/conns/${id}/test`,
+        method: 'post'
+    })
+}
+
+/**
+ * 测试原始数据连接（创建前测试）
+ * @param data 数据连接及其配置
+ * @returns 测试结果
+ */
+export const testRawConn = async (data: Partial<MdConn>): Promise<{ success: boolean; message: string }> => {
+    return request({
+        url: '/api/metadata/conns/test-raw',
+        method: 'post',
+        data
+    })
+}
+
+/**
+ * 获取数据库所有表名称
+ * @param id 数据连接ID
+ * @returns 表名列表
+ */
+export const getDBTables = async (id: string, schema?: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/conns/${id}/tables`,
+        method: 'get',
+        params: { schema }
+    })
+}
+
+/**
+ * 获取数据库所有视图名称
+ * @param id 数据连接ID
+ * @returns 视图名列表
+ */
+export const getDBViews = async (id: string, schema?: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/conns/${id}/views`,
+        method: 'get',
+        params: { schema }
+    })
+}
+
+/**
+ * 获取表结构信息
+ * @param id 数据连接ID
+ * @param tableName 表名
+ * @returns 表结构详情
+ */
+export const getTableStructureFromDB = async (id: string, tableName: string, schema?: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/conns/${id}/tables/${tableName}/structure`,
+        method: 'get',
+        params: { schema }
+    })
 }

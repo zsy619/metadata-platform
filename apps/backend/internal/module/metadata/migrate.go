@@ -28,6 +28,8 @@ func Migrate(db *gorm.DB) error {
 		&model.MdModelWhere{},
 		&model.MdModelFieldEnhancement{},
 		&model.MdModelRelation{},
+		&model.MdQueryTemplate{},
+		&model.MdQueryCondition{},
 		&model.SysOperationLog{},
 		&model.SysDataChangeLog{},
 	)

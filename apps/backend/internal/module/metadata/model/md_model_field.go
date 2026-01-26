@@ -33,10 +33,10 @@ type MdModelField struct {
 	IsDeleted    bool      `json:"is_deleted" gorm:"default:false"`
 	CreateID     string    `json:"create_id" gorm:"size:64;default:'0'"`
 	CreateBy     string    `json:"create_by" gorm:"size:64;default:''"`
-	CreateAt     time.Time `json:"create_at"`
+	CreateAt     time.Time `json:"create_at" gorm:"autoCreateTime"`
 	UpdateID     string    `json:"update_id" gorm:"size:64;default:'0'"`
 	UpdateBy     string    `json:"update_by" gorm:"size:64;default:''"`
-	UpdateAt     time.Time `json:"update_at"`
+	UpdateAt     time.Time `json:"update_at" gorm:"autoUpdateTime"`
 }
 
 // TableName 指定表名

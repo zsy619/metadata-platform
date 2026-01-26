@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	globalMiddleware "metadata-platform/internal/middleware"
 	"metadata-platform/internal/module/metadata/api"
 	"metadata-platform/internal/module/metadata/api/middleware"
 	"metadata-platform/internal/module/metadata/repository"
@@ -33,6 +34,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB) {
 
 	// 元数据模块路由组
 	metadataGroup := r.Group("/api/metadata")
+	metadataGroup.Use(globalMiddleware.TenantMiddleware())
 	metadataGroup.Use(middleware.AuditMiddleware(services.Audit))
 
 	// API路由
@@ -43,6 +45,8 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB) {
 		apiGroup.PUT("/:id", apiHandler.UpdateAPI)
 		apiGroup.DELETE("/:id", apiHandler.DeleteAPI)
 		apiGroup.GET("", apiHandler.GetAllAPIs)
+		apiGroup.POST("/:id/enable", apiHandler.EnableAPI)
+		apiGroup.POST("/:id/test", apiHandler.TestAPI)
 	}
 
 	// 数据连接路由
@@ -54,6 +58,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB) {
 		connGroup.DELETE("/:id", connHandler.DeleteConn)
 		connGroup.GET("", connHandler.GetAllConns)
 		connGroup.GET("/parent/:parent_id", connHandler.GetConnsByParentID)
+		connGroup.POST("/test-raw", connHandler.TestRawConnection)
 		connGroup.POST("/:id/test", connHandler.TestConnection)
 		connGroup.GET("/:id/tables", connHandler.GetTables)
 		connGroup.GET("/:id/views", connHandler.GetViews)
@@ -112,6 +117,8 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB) {
 			templateGroup.PUT("/:templateId", templateHandler.UpdateTemplate)
 			templateGroup.DELETE("/:templateId", templateHandler.DeleteTemplate)
 			templateGroup.POST("/:templateId/set-default", templateHandler.SetDefault)
+			templateGroup.POST("/:templateId/duplicate", templateHandler.DuplicateTemplate)
+			templateGroup.GET("/:templateId/preview", templateHandler.PreviewTemplate)
 		}
 
 		// 字段增强配置路由

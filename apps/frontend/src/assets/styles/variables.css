@@ -4,14 +4,14 @@
 */
 
 :root {
-  /* ========== 品牌主色 (Brand Primary) - Indigo ========== */
-  --el-color-primary: #4051B5;
+  /* ========== 品牌主色 (Brand Primary) - Royal Blue ========== */
+  --el-color-primary: #3f51b5;
   --el-color-primary-light-3: #7986cb;
   --el-color-primary-light-5: #9fa8da;
   --el-color-primary-light-7: #c5cae9;
   --el-color-primary-light-8: #e8eaf6;
   --el-color-primary-light-9: #f5f6fa;
-  --el-color-primary-dark-2: #303F9F;
+  --el-color-primary-dark-2: #303f9f;
 
   /* ========== 品牌点缀 (Accent) - Orange ========== */
   --el-color-accent: #FF9800;

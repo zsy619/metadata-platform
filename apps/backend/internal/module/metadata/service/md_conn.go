@@ -113,7 +113,7 @@ func (s *mdConnService) GetConnsByParentID(parentID string) ([]model.MdConn, err
 // getExtractor 根据数据连接获取元数据提取器
 func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtractor, error) {
 	switch conn.ConnKind {
-	case "MySQL":
+	case "MySQL", "TiDB", "OceanBase", "Doris", "StarRocks":
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			conn.ConnUser,
 			conn.ConnPassword,
@@ -122,6 +122,15 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnDatabase,
 		)
 		return adapter.NewMySQLExtractor(dsn)
+	case "PostgreSQL", "OpenGauss", "Kingbase":
+		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			conn.ConnHost,
+			conn.ConnPort,
+			conn.ConnUser,
+			conn.ConnPassword,
+			conn.ConnDatabase,
+		)
+		return adapter.NewPostgreSQLExtractor(dsn)
 	default:
 		return nil, errors.New("不支持的数据源类型: " + conn.ConnKind)
 	}

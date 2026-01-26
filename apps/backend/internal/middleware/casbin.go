@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 
-	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v3"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"

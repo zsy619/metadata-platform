@@ -141,7 +141,7 @@ func TestSQLBuilder_BuildLimitClause(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			data := &ModelData{Limit: tt.limit}
-			got, err := builder.buildLimitClause(data)
+			got, err := builder.buildLimitClause(data, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expect, got)
 		})
@@ -150,7 +150,7 @@ func TestSQLBuilder_BuildLimitClause(t *testing.T) {
 
 func BenchmarkSQLBuilder_BuildFromMetadata(b *testing.B) {
 	builder := &SQLBuilder{}
-	
+
 	// Prepare complex data
 	data := &ModelData{
 		Model: &model.MdModel{ID: "benchmark", ConnID: "c1"},
@@ -184,7 +184,7 @@ func BenchmarkSQLBuilder_BuildFromMetadata(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_, _, _ = builder.BuildFromMetadata(data)
+			_, _, _ = builder.BuildFromMetadata(data, nil)
 		}
 	})
 }

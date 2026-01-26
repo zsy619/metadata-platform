@@ -18,6 +18,12 @@
                         </template>
                         <el-menu-item index="/data-sources">数据源列表</el-menu-item>
                         <el-menu-item index="/data-sources/create">创建数据源</el-menu-item>
+                        <!-- 元数据管理子菜单 -->
+                        <el-sub-menu index="1-3">
+                            <template #title>元数据管理</template>
+                            <el-menu-item index="/metadata/tables">表与视图</el-menu-item>
+                            <el-menu-item index="/metadata/fields">字段列表</el-menu-item>
+                        </el-sub-menu>
                     </el-sub-menu>
                     <!-- 模型管理 -->
                     <el-sub-menu index="2">

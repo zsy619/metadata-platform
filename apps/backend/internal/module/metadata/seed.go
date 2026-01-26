@@ -3,6 +3,7 @@ package metadata
 import (
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/utils"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -13,6 +14,8 @@ func SeedData(db *gorm.DB) {
 
 	sf := utils.NewSnowflake(1, 1)
 
+	now := time.Now()
+
 	// 1. 初始化默认数据连接组 (ParentID = "0")
 	defaultConnGroup := model.MdConn{
 		ID:          sf.GenerateIDString(),
@@ -22,6 +25,9 @@ func SeedData(db *gorm.DB) {
 		ConnKind:    "FOLDER",
 		IsDeleted:   false,
 		CreateBy:    "system",
+		CreateAt:    now,
+		UpdateBy:    "system",
+		UpdateAt:    now,
 	}
 
 	// 检查是否已存在
@@ -45,6 +51,9 @@ func SeedData(db *gorm.DB) {
 		ModelKind:   0, // 0 as folder/group
 		IsDeleted:   false,
 		CreateBy:    "system",
+		CreateAt:    now,
+		UpdateBy:    "system",
+		UpdateAt:    now,
 	}
 
 	db.Model(&model.MdModel{}).Where("model_code = ?", "default_group").Count(&count)

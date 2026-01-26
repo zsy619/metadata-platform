@@ -107,7 +107,7 @@ func (s *crudService) Create(ctx context.Context, modelID string, data map[strin
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 3. 记录审计日志
 	s.recordAudit(ctx, modelID, "", "CREATE", nil, data)
 
@@ -122,7 +122,7 @@ func (s *crudService) Get(modelID string, id string) (map[string]any, error) {
 	}
 
 	pkField := s.getPrimaryKey(modelData)
-	sqlStr, args, err := s.builder.BuildSQL(modelID)
+	sqlStr, args, err := s.builder.BuildSQL(modelID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (s *crudService) Get(modelID string, id string) (map[string]any, error) {
 func (s *crudService) Update(ctx context.Context, modelID string, id string, data map[string]any) error {
 	// 获取变更前数据 (Audit)
 	beforeData, _ := s.Get(modelID, id)
-	
+
 	modelData, err := s.builder.LoadModelData(modelID)
 	if err != nil {
 		return err
@@ -191,10 +191,10 @@ func (s *crudService) Update(ctx context.Context, modelID string, id string, dat
 	if err != nil {
 		return err
 	}
-	
+
 	// 记录审计日志
 	s.recordAudit(ctx, modelID, id, "UPDATE", beforeData, data)
-	
+
 	return nil
 }
 
@@ -221,10 +221,10 @@ func (s *crudService) Delete(ctx context.Context, modelID string, id string) err
 	if err != nil {
 		return err
 	}
-	
+
 	// 记录审计日志
 	s.recordAudit(ctx, modelID, id, "DELETE", beforeData, nil)
-	
+
 	return nil
 }
 
@@ -350,7 +350,7 @@ func (s *crudService) List(modelID string, queryParams map[string]any) ([]map[st
 	s.applyListFilters(modelData, queryParams)
 
 	// 现在根据合并后的 metadata 生成 SQL
-	sqlStr, args, err := s.builder.BuildFromMetadata(modelData)
+	sqlStr, args, err := s.builder.BuildFromMetadata(modelData, queryParams)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -379,7 +379,7 @@ func (s *crudService) Statistics(modelID string, queryParams map[string]any) (ma
 
 	s.applyListFilters(modelData, queryParams)
 
-	sqlStr, args, err := s.builder.BuildFromMetadata(modelData)
+	sqlStr, args, err := s.builder.BuildFromMetadata(modelData, queryParams)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +442,7 @@ func (s *crudService) recordAudit(ctx context.Context, modelID, recordID, action
 	if s.auditService == nil {
 		return
 	}
-	
+
 	// 从 context 获取 trace info
 	var traceID string
 	if v := ctx.Value("trace_id"); v != nil {
@@ -474,7 +474,6 @@ func (s *crudService) recordAudit(ctx context.Context, modelID, recordID, action
 		CreateAt:   time.Now(),
 	})
 }
-
 
 // ------------------------------------------------------------------------------------------------
 // Transactional Methods
@@ -516,7 +515,7 @@ func (s *crudService) CreateWithTx(ctx context.Context, modelID string, data map
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Record audit
 	s.recordAudit(ctx, modelID, "", "CREATE_TX", nil, data)
 
@@ -526,7 +525,7 @@ func (s *crudService) CreateWithTx(ctx context.Context, modelID string, data map
 func (s *crudService) UpdateWithTx(ctx context.Context, modelID string, id string, data map[string]any, tx *gorm.DB) error {
 	// 获取变更前数据 (Audit) - 注意：事务内查询应该使用 txExecutor，但 Get 没 exposing withTx?
 	// 简单实现：使用 id 查，如果事务隔离级别允许读取已提交，或者就是查旧值。
-	// 但这里我们没有 GetWithTx. 
+	// 但这里我们没有 GetWithTx.
 	// 优化：暂时略过 BeforeData 获取，或者假设事务内不影响旧数据读取（只要没改id）
 	// 或者 we assume we update an existing record visible to outside or same txn?
 	// 事务内 visible? Get uses `s.executor.Execute` which uses a NEW connection/session unless we propagate tx context.
@@ -539,7 +538,7 @@ func (s *crudService) UpdateWithTx(ctx context.Context, modelID string, id strin
 	// If `Get` uses a DIFFERENT connection, it sees committed data.
 	// If `CreateMasterDetail` locks the rows (e.g. SelectForUpdate), `Get` might block?
 	// Usually Update doesn't block Reader (MVCC).
-	
+
 	beforeData, _ := s.Get(modelID, id)
 	modelData, err := s.builder.LoadModelData(modelID)
 	if err != nil {
@@ -635,14 +634,14 @@ func (s *crudService) BatchCreateWithTx(ctx context.Context, modelID string, dat
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 批量审计
 	// 记录一次操作，包含 list count? 或者 逐条？
 	// 逐条太慢。
 	// AuditService.RecordDataChange 只支持单条。
 	// 这里这做简化：只记录 Action=BATCH_CREATE, Before=nil, After={"count": len(dataList)}
 	// 或者循环调用 recordAudit
-	
+
 	// 暂时只记录最后一条或者 summary
 	s.recordAudit(ctx, modelID, "BATCH", "BATCH_CREATE_TX", nil, map[string]any{"count": len(dataList)})
 

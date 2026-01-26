@@ -2,13 +2,12 @@ package api
 
 import (
 	"context"
-
-	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/protocol/consts"
-
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/service"
 	"metadata-platform/internal/utils"
+
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/protocol/consts"
 )
 
 // APIHandler API处理器结构体
@@ -160,4 +159,71 @@ func (h *APIHandler) GetAllAPIs(c context.Context, ctx *app.RequestContext) {
 	}
 
 	utils.SuccessResponse(ctx, apis)
+}
+
+// EnableAPI 启用/禁用API
+func (h *APIHandler) EnableAPI(c context.Context, ctx *app.RequestContext) {
+	id := ctx.Param("id")
+
+	// 获取当前API
+	api, err := h.apiService.GetAPIByID(id)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusNotFound, "API不存在")
+		return
+	}
+
+	// 切换状态: 1=启用, 0=禁用
+	if api.State == 1 {
+		api.State = 0
+	} else {
+		api.State = 1
+	}
+
+	// 更新API
+	if err := h.apiService.UpdateAPI(api); err != nil {
+		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, map[string]interface{}{
+		"id":    api.ID,
+		"state": api.State,
+		"message": func() string {
+			if api.State == 1 {
+				return "API已启用"
+			}
+			return "API已禁用"
+		}(),
+	})
+}
+
+// TestAPI 测试API执行
+func (h *APIHandler) TestAPI(c context.Context, ctx *app.RequestContext) {
+	id := ctx.Param("id")
+
+	// 获取API配置
+	api, err := h.apiService.GetAPIByID(id)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusNotFound, "API不存在")
+		return
+	}
+
+	// 返回API配置信息供测试
+	// 注意: 实际的API测试需要根据API类型执行相应逻辑
+	// 这里返回基本信息,前端可以据此构造测试请求
+	utils.SuccessResponse(ctx, map[string]interface{}{
+		"api": api,
+		"test_info": map[string]string{
+			"method": api.Method,
+			"path":   api.Path,
+			"state": func() string {
+				if api.State == 1 {
+					return "enabled"
+				} else {
+					return "disabled"
+				}
+			}(),
+			"message": "请使用返回的API信息构造测试请求",
+		},
+	})
 }

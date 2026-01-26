@@ -1,8 +1,8 @@
 /**
  * 模型API服务
  */
+import type { Model, ModelBuildParams, ModelField, ModelQueryParams, ModelResponse } from '@/types/model'
 import request from '@/utils/request'
-import type { Model, ModelField, ModelQueryParams, ModelResponse, ModelBuildParams } from '@/types/model'
 
 /**
  * 获取模型列表
@@ -10,11 +10,11 @@ import type { Model, ModelField, ModelQueryParams, ModelResponse, ModelBuildPara
  * @returns 模型列表
  */
 export const getModels = async (params?: ModelQueryParams): Promise<ModelResponse> => {
-  return request({
-    url: '/api/models',
-    method: 'get',
-    params
-  })
+    return request({
+        url: '/api/metadata/models',
+        method: 'get',
+        params
+    })
 }
 
 /**
@@ -23,10 +23,10 @@ export const getModels = async (params?: ModelQueryParams): Promise<ModelRespons
  * @returns 模型详情
  */
 export const getModelById = async (id: number): Promise<Model> => {
-  return request({
-    url: `/api/models/${id}`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/metadata/models/${id}`,
+        method: 'get'
+    })
 }
 
 /**
@@ -35,11 +35,11 @@ export const getModelById = async (id: number): Promise<Model> => {
  * @returns 创建结果
  */
 export const createModel = async (data: Partial<Model>): Promise<Model> => {
-  return request({
-    url: '/api/models',
-    method: 'post',
-    data
-  })
+    return request({
+        url: '/api/metadata/models',
+        method: 'post',
+        data
+    })
 }
 
 /**
@@ -49,11 +49,11 @@ export const createModel = async (data: Partial<Model>): Promise<Model> => {
  * @returns 更新结果
  */
 export const updateModel = async (id: number, data: Partial<Model>): Promise<Model> => {
-  return request({
-    url: `/api/models/${id}`,
-    method: 'put',
-    data
-  })
+    return request({
+        url: `/api/metadata/models/${id}`,
+        method: 'put',
+        data
+    })
 }
 
 /**
@@ -62,10 +62,10 @@ export const updateModel = async (id: number, data: Partial<Model>): Promise<Mod
  * @returns 删除结果
  */
 export const deleteModel = async (id: number): Promise<void> => {
-  return request({
-    url: `/api/models/${id}`,
-    method: 'delete'
-  })
+    return request({
+        url: `/api/metadata/models/${id}`,
+        method: 'delete'
+    })
 }
 
 /**
@@ -74,11 +74,11 @@ export const deleteModel = async (id: number): Promise<void> => {
  * @returns 构建结果
  */
 export const buildModelFromTable = async (params: ModelBuildParams): Promise<Model> => {
-  return request({
-    url: '/api/models/build-from-table',
-    method: 'post',
-    data: params
-  })
+    return request({
+        url: '/api/metadata/models/build-from-table',
+        method: 'post',
+        data: params
+    })
 }
 
 /**
@@ -87,11 +87,11 @@ export const buildModelFromTable = async (params: ModelBuildParams): Promise<Mod
  * @returns 构建结果
  */
 export const buildModelFromView = async (params: ModelBuildParams): Promise<Model> => {
-  return request({
-    url: '/api/models/build-from-view',
-    method: 'post',
-    data: params
-  })
+    return request({
+        url: '/api/metadata/models/build-from-view',
+        method: 'post',
+        data: params
+    })
 }
 
 /**
@@ -100,10 +100,10 @@ export const buildModelFromView = async (params: ModelBuildParams): Promise<Mode
  * @returns 字段列表
  */
 export const getModelFields = async (modelId: number): Promise<ModelField[]> => {
-  return request({
-    url: `/api/models/${modelId}/fields`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/metadata/models/${modelId}/fields`,
+        method: 'get'
+    })
 }
 
 /**
@@ -113,11 +113,11 @@ export const getModelFields = async (modelId: number): Promise<ModelField[]> => 
  * @returns 添加结果
  */
 export const addModelField = async (modelId: number, data: Partial<ModelField>): Promise<ModelField> => {
-  return request({
-    url: `/api/models/${modelId}/fields`,
-    method: 'post',
-    data
-  })
+    return request({
+        url: `/api/metadata/models/${modelId}/fields`,
+        method: 'post',
+        data
+    })
 }
 
 /**
@@ -128,11 +128,11 @@ export const addModelField = async (modelId: number, data: Partial<ModelField>):
  * @returns 更新结果
  */
 export const updateModelField = async (modelId: number, fieldId: number, data: Partial<ModelField>): Promise<ModelField> => {
-  return request({
-    url: `/api/models/${modelId}/fields/${fieldId}`,
-    method: 'put',
-    data
-  })
+    return request({
+        url: `/api/metadata/models/${modelId}/fields/${fieldId}`,
+        method: 'put',
+        data
+    })
 }
 
 /**
@@ -142,10 +142,10 @@ export const updateModelField = async (modelId: number, fieldId: number, data: P
  * @returns 删除结果
  */
 export const deleteModelField = async (modelId: number, fieldId: number): Promise<void> => {
-  return request({
-    url: `/api/models/${modelId}/fields/${fieldId}`,
-    method: 'delete'
-  })
+    return request({
+        url: `/api/metadata/models/${modelId}/fields/${fieldId}`,
+        method: 'delete'
+    })
 }
 
 /**
@@ -155,11 +155,11 @@ export const deleteModelField = async (modelId: number, fieldId: number): Promis
  * @returns 预览数据
  */
 export const previewModelData = async (modelId: number, params?: any): Promise<any> => {
-  return request({
-    url: `/api/models/${modelId}/preview`,
-    method: 'post',
-    data: params
-  })
+    return request({
+        url: `/api/metadata/models/${modelId}/preview`,
+        method: 'post',
+        data: params
+    })
 }
 
 /**
@@ -168,8 +168,88 @@ export const previewModelData = async (modelId: number, params?: any): Promise<a
  * @returns 验证结果
  */
 export const validateModel = async (modelId: number): Promise<{ success: boolean; message: string }> => {
-  return request({
-    url: `/api/models/${modelId}/validate`,
-    method: 'post'
-  })
+    return request({
+        url: `/api/metadata/models/${modelId}/validate`,
+        method: 'post'
+    })
+}
+
+// ==================== 增强功能相关API ====================
+
+/**
+ * 获取模型字段增强配置
+ * @param modelId 模型ID
+ * @returns 增强配置列表
+ */
+export const getFieldEnhancements = async (modelId: string): Promise<any[]> => {
+    return request({
+        url: `/api/metadata/models/${modelId}/fields/enhancements`,
+        method: 'get'
+    })
+}
+
+/**
+ * 批量更新模型字段增强配置
+ * @param modelId 模型ID
+ * @param data 增强配置数据
+ * @returns 更新结果
+ */
+export const batchUpdateEnhancements = async (modelId: string, data: any[]): Promise<any> => {
+    return request({
+        url: `/api/metadata/models/${modelId}/fields/batch-enhancements`,
+        method: 'post',
+        data
+    })
+}
+
+/**
+ * 复制查询模板
+ * @param modelId 模型ID
+ * @param templateId 模板ID
+ * @returns 新模板详情
+ */
+export const duplicateQueryTemplate = async (modelId: string, templateId: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/models/${modelId}/query-templates/${templateId}/duplicate`,
+        method: 'post'
+    })
+}
+
+/**
+ * 预览查询模板
+ * @param modelId 模型ID
+ * @param templateId 模板ID
+ * @returns 预览信息
+ */
+export const previewQueryTemplate = async (modelId: string, templateId: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/models/${modelId}/query-templates/${templateId}/preview`,
+        method: 'get'
+    })
+}
+
+/**
+ * 获取模型关联的API列表
+ * @param modelId 模型ID
+ * @returns API列表
+ */
+export const getAPIsByModelId = async (modelId: string): Promise<any[]> => {
+    return request({
+        url: '/api/metadata/apis',
+        method: 'get',
+        params: { model_id: modelId }
+    })
+}
+
+/**
+ * 为模型批量生成CRUD接口
+ * @param modelId 模型ID
+ * @returns 生成结果
+ */
+export const batchGenerateAPIs = async (modelId: string): Promise<any> => {
+    return request({
+        url: '/api/metadata/apis/batch-generate',
+        method: 'post',
+        data: { model_id: modelId }
+    })
 }

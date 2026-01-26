@@ -28,6 +28,7 @@ type MdModelWhere struct {
 	WhereFunc         string    `json:"where_func" gorm:"size:64;not null;default:''"`
 	Value1            string    `json:"value1" gorm:"size:128;not null;default:''"`
 	Value2            string    `json:"value2" gorm:"size:128;not null;default:''"`
+	ParamKey          string    `json:"param_key" gorm:"size:128;not null;default:''"`
 	Brackets2         string    `json:"brackets2" gorm:"size:64;not null;default:''"`
 	IsDeleted         bool      `json:"is_deleted" gorm:"default:false"`
 	CreateID          string    `json:"create_id" gorm:"size:64;default:'0'"`

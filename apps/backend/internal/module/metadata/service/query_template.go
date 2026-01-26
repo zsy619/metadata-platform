@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"metadata-platform/internal/module/metadata/engine"
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/repository"
@@ -17,12 +18,13 @@ type QueryTemplateService interface {
 	SetDefault(modelID, templateID string) error
 	GetDefaultTemplate(modelID string) (*model.MdQueryTemplate, error)
 	ApplyTemplate(templateID string, sqlData *engine.ModelData) error
+	DuplicateTemplate(id string) (*model.MdQueryTemplate, error)
 }
 
 type queryTemplateService struct {
-	templateRepo repository.MdQueryTemplateRepository
+	templateRepo  repository.MdQueryTemplateRepository
 	conditionRepo repository.MdQueryConditionRepository
-	snowflake *utils.Snowflake
+	snowflake     *utils.Snowflake
 }
 
 func NewQueryTemplateService(
@@ -60,14 +62,14 @@ func (s *queryTemplateService) UpdateTemplate(template *model.MdQueryTemplate) e
 	if err != nil {
 		return err
 	}
-	
+
 	for i := range template.Conditions {
 		if template.Conditions[i].ID == "" {
 			template.Conditions[i].ID = s.snowflake.GenerateIDString()
 		}
 		template.Conditions[i].TemplateID = template.ID
 	}
-	
+
 	return s.templateRepo.UpdateTemplate(template)
 }
 
@@ -123,4 +125,52 @@ func (s *queryTemplateService) ApplyTemplate(templateID string, sqlData *engine.
 	}
 
 	return nil
+}
+
+func (s *queryTemplateService) DuplicateTemplate(id string) (*model.MdQueryTemplate, error) {
+	// 1. 获取原模板
+	original, err := s.GetTemplateByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if original == nil {
+		return nil, errors.New("original template not found")
+	}
+
+	// 2. 深度拷贝（通过重新构造）
+	newTemplate := &model.MdQueryTemplate{
+		ModelID:      original.ModelID,
+		TemplateName: original.TemplateName + " - Copy",
+		TemplateCode: original.TemplateCode + "_copy_" + s.snowflake.GenerateIDString(), // 确保 code 唯一
+		Remark:       original.Remark,
+		IsDefault:    false, // 复制品默认不生效
+		TenantID:     original.TenantID,
+	}
+
+	// 3. 复制条件
+	newConditions := make([]model.MdQueryCondition, len(original.Conditions))
+	for i, c := range original.Conditions {
+		newConditions[i] = model.MdQueryCondition{
+			// ID & TemplateID will be set in CreateTemplate
+			ColumnName:   c.ColumnName,
+			TableNameStr: c.TableNameStr,
+			TableSchema:  c.TableSchema,
+			Operator1:    c.Operator1,
+			Value1:       c.Value1,
+			Operator2:    c.Operator2,
+			Value2:       c.Value2,
+			Brackets1:    c.Brackets1,
+			Brackets2:    c.Brackets2,
+			Func:         c.Func,
+			Sort:         c.Sort,
+		}
+	}
+	newTemplate.Conditions = newConditions
+
+	// 4. 保存
+	if err := s.CreateTemplate(newTemplate); err != nil {
+		return nil, err
+	}
+
+	return newTemplate, nil
 }

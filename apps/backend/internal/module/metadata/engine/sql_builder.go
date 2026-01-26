@@ -38,7 +38,7 @@ func NewSQLBuilder(db *gorm.DB, modelRepo repository.MdModelRepository) *SQLBuil
 }
 
 // BuildSQL 主入口：分发元数据构建或原始 SQL 构建
-func (b *SQLBuilder) BuildSQL(modelID string) (sql string, args []any, err error) {
+func (b *SQLBuilder) BuildSQL(modelID string, params map[string]any) (sql string, args []any, err error) {
 	data, err := b.LoadModelData(modelID)
 	if err != nil {
 		return "", nil, err
@@ -46,10 +46,10 @@ func (b *SQLBuilder) BuildSQL(modelID string) (sql string, args []any, err error
 
 	if data.Model.ModelKind == 1 {
 		// 原始 SQL
-		sql, args, err = b.buildFromSQL(data)
+		sql, args, err = b.buildFromSQL(data, params)
 	} else {
 		// 元数据构建
-		sql, args, err = b.BuildFromMetadata(data)
+		sql, args, err = b.BuildFromMetadata(data, params)
 	}
 
 	if err != nil {
@@ -145,7 +145,7 @@ func (b *SQLBuilder) LoadModelData(modelID string) (*ModelData, error) {
 }
 
 // BuildFromMetadata 从元数据配置构建完整 SQL
-func (b *SQLBuilder) BuildFromMetadata(data *ModelData) (sql string, args []any, err error) {
+func (b *SQLBuilder) BuildFromMetadata(data *ModelData, params map[string]any) (sql string, args []any, err error) {
 	// 按顺序构建各子句
 	selectClause, err := b.buildSelectClause(data)
 	if err != nil {
@@ -162,7 +162,7 @@ func (b *SQLBuilder) BuildFromMetadata(data *ModelData) (sql string, args []any,
 		return "", nil, err
 	}
 
-	whereClause, whereArgs, err := b.buildWhereClause(data)
+	whereClause, whereArgs, err := b.buildWhereClause(data, params)
 	if err != nil {
 		return "", nil, err
 	}
@@ -173,7 +173,7 @@ func (b *SQLBuilder) BuildFromMetadata(data *ModelData) (sql string, args []any,
 		return "", nil, err
 	}
 
-	havingClause, havingArgs, err := b.buildHavingClause(data)
+	havingClause, havingArgs, err := b.buildHavingClause(data, params)
 	if err != nil {
 		return "", nil, err
 	}
@@ -184,7 +184,7 @@ func (b *SQLBuilder) BuildFromMetadata(data *ModelData) (sql string, args []any,
 		return "", nil, err
 	}
 
-	limitClause, err := b.buildLimitClause(data)
+	limitClause, err := b.buildLimitClause(data, params)
 	if err != nil {
 		return "", nil, err
 	}
@@ -381,7 +381,7 @@ func (b *SQLBuilder) buildJoinConditions(sb *strings.Builder, j *model.MdModelJo
 }
 
 // buildWhereClause 构建 WHERE 子句
-func (b *SQLBuilder) buildWhereClause(data *ModelData) (string, []any, error) {
+func (b *SQLBuilder) buildWhereClause(data *ModelData, params map[string]any) (string, []any, error) {
 	if len(data.Wheres) == 0 {
 		return "", nil, nil
 	}
@@ -405,7 +405,7 @@ func (b *SQLBuilder) buildWhereClause(data *ModelData) (string, []any, error) {
 			sb.WriteString(w.Brackets1)
 		}
 
-		condSQL, condArgs := b.buildSingleCondition(w)
+		condSQL, condArgs := b.buildSingleCondition(w, params)
 		sb.WriteString(condSQL)
 		args = append(args, condArgs...)
 
@@ -417,7 +417,7 @@ func (b *SQLBuilder) buildWhereClause(data *ModelData) (string, []any, error) {
 	return sb.String(), args, nil
 }
 
-func (b *SQLBuilder) buildSingleCondition(w *model.MdModelWhere) (string, []any) {
+func (b *SQLBuilder) buildSingleCondition(w *model.MdModelWhere, params map[string]any) (string, []any) {
 	leftExpr := ""
 	if w.TableNameStr != "" {
 		leftExpr = "`" + w.TableNameStr + "`.`" + w.ColumnName + "`"
@@ -444,7 +444,13 @@ func (b *SQLBuilder) buildSingleCondition(w *model.MdModelWhere) (string, []any)
 	case "IS NULL", "IS NOT NULL":
 		return leftExpr + " " + op, nil
 	case "IN", "NOT IN":
-		vals := strings.Split(w.Value1, ",")
+		value1 := w.Value1
+		if w.ParamKey != "" && params != nil {
+			if val, ok := params[w.ParamKey]; ok {
+				value1 = fmt.Sprintf("%v", val)
+			}
+		}
+		vals := strings.Split(value1, ",")
 		placeholders := make([]string, len(vals))
 		for i, v := range vals {
 			placeholders[i] = "?"
@@ -452,12 +458,46 @@ func (b *SQLBuilder) buildSingleCondition(w *model.MdModelWhere) (string, []any)
 		}
 		rightExpr = "(" + strings.Join(placeholders, ", ") + ")"
 	case "BETWEEN", "NOT BETWEEN":
+		value1 := w.Value1
+		value2 := w.Value2
+		if w.ParamKey != "" && params != nil {
+			if val, ok := params[w.ParamKey]; ok {
+				switch v := val.(type) {
+				case []any:
+					if len(v) >= 2 {
+						value1 = fmt.Sprintf("%v", v[0])
+						value2 = fmt.Sprintf("%v", v[1])
+					}
+				case map[string]any:
+					if minVal, ok := v["min"]; ok {
+						value1 = fmt.Sprintf("%v", minVal)
+					}
+					if maxVal, ok := v["max"]; ok {
+						value2 = fmt.Sprintf("%v", maxVal)
+					}
+				default:
+					value1 = fmt.Sprintf("%v", val)
+				}
+			}
+		}
 		rightExpr = "? AND ?"
-		args = append(args, w.Value1, w.Value2)
+		args = append(args, value1, value2)
 	case "LIKE", "NOT LIKE":
-		args = append(args, "%"+w.Value1+"%")
+		value1 := w.Value1
+		if w.ParamKey != "" && params != nil {
+			if val, ok := params[w.ParamKey]; ok {
+				value1 = fmt.Sprintf("%v", val)
+			}
+		}
+		args = append(args, "%"+value1+"%")
 	default:
-		args = append(args, w.Value1)
+		value1 := w.Value1
+		if w.ParamKey != "" && params != nil {
+			if val, ok := params[w.ParamKey]; ok {
+				value1 = fmt.Sprintf("%v", val)
+			}
+		}
+		args = append(args, value1)
 	}
 
 	return leftExpr + " " + op + " " + rightExpr, args
@@ -492,7 +532,7 @@ func (b *SQLBuilder) buildGroupByClause(data *ModelData) (string, error) {
 }
 
 // buildHavingClause 构建 HAVING 子句
-func (b *SQLBuilder) buildHavingClause(data *ModelData) (string, []any, error) {
+func (b *SQLBuilder) buildHavingClause(data *ModelData, params map[string]any) (string, []any, error) {
 	if len(data.Havings) == 0 {
 		return "", nil, nil
 	}
@@ -516,7 +556,7 @@ func (b *SQLBuilder) buildHavingClause(data *ModelData) (string, []any, error) {
 			sb.WriteString(h.Brackets1)
 		}
 
-		condSQL, condArgs := b.buildHavingCondition(h)
+		condSQL, condArgs := b.buildHavingCondition(h, params)
 		sb.WriteString(condSQL)
 		args = append(args, condArgs...)
 
@@ -528,7 +568,7 @@ func (b *SQLBuilder) buildHavingClause(data *ModelData) (string, []any, error) {
 	return sb.String(), args, nil
 }
 
-func (b *SQLBuilder) buildHavingCondition(h *model.MdModelHaving) (string, []any) {
+func (b *SQLBuilder) buildHavingCondition(h *model.MdModelHaving, params map[string]any) (string, []any) {
 	leftExpr := ""
 	if h.TableNameStr != "" {
 		leftExpr = "`" + h.TableNameStr + "`.`" + h.ColumnName + "`"
@@ -556,7 +596,13 @@ func (b *SQLBuilder) buildHavingCondition(h *model.MdModelHaving) (string, []any
 	case "IS NULL", "IS NOT NULL":
 		return leftExpr + " " + op, nil
 	case "IN", "NOT IN":
-		vals := strings.Split(h.Value1, ",")
+		value1 := h.Value1
+		if h.ParamKey != "" && params != nil {
+			if val, ok := params[h.ParamKey]; ok {
+				value1 = fmt.Sprintf("%v", val)
+			}
+		}
+		vals := strings.Split(value1, ",")
 		placeholders := make([]string, len(vals))
 		for i, v := range vals {
 			placeholders[i] = "?"
@@ -564,7 +610,13 @@ func (b *SQLBuilder) buildHavingCondition(h *model.MdModelHaving) (string, []any
 		}
 		rightExpr = "(" + strings.Join(placeholders, ", ") + ")"
 	default:
-		args = append(args, h.Value1)
+		value1 := h.Value1
+		if h.ParamKey != "" && params != nil {
+			if val, ok := params[h.ParamKey]; ok {
+				value1 = fmt.Sprintf("%v", val)
+			}
+		}
+		args = append(args, value1)
 	}
 
 	return leftExpr + " " + op + " " + rightExpr, args
@@ -605,19 +657,34 @@ func (b *SQLBuilder) buildOrderByClause(data *ModelData) (string, error) {
 }
 
 // buildLimitClause 构建 LIMIT 子句
-func (b *SQLBuilder) buildLimitClause(data *ModelData) (string, error) {
+func (b *SQLBuilder) buildLimitClause(data *ModelData, params map[string]any) (string, error) {
 	if data.Limit == nil || (data.Limit.Limit == 0 && data.Limit.Page == 0) {
 		return "", nil
 	}
 
 	limit := data.Limit.Limit
+	page := data.Limit.Page
+
+	if params != nil {
+		if val, ok := params["limit"]; ok {
+			if v, ok := val.(float64); ok && v > 0 {
+				limit = int(v)
+			}
+		}
+		if val, ok := params["page"]; ok {
+			if v, ok := val.(float64); ok && v > 0 {
+				page = int(v)
+			}
+		}
+	}
+
 	if limit <= 0 {
 		return "", nil
 	}
 
 	offset := 0
-	if data.Limit.Page > 1 {
-		offset = (data.Limit.Page - 1) * limit
+	if page > 1 {
+		offset = (page - 1) * limit
 	}
 
 	if offset > 0 {
@@ -627,29 +694,43 @@ func (b *SQLBuilder) buildLimitClause(data *ModelData) (string, error) {
 }
 
 // buildFromSQL 处理原始 SQL 模型
-func (b *SQLBuilder) buildFromSQL(data *ModelData) (string, []any, error) {
+func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (string, []any, error) {
 	if data.SQL == nil || data.SQL.Content == "" {
 		return "", nil, fmt.Errorf("raw SQL content is empty for model %s", data.Model.ID)
 	}
-	return data.SQL.Content, nil, nil
+
+	sql := data.SQL.Content
+	var args []any
+
+	if params != nil && len(params) > 0 {
+		for key, val := range params {
+			placeholder := ":" + key
+			if strings.Contains(sql, placeholder) {
+				args = append(args, val)
+				sql = strings.Replace(sql, placeholder, "?", 1)
+			}
+		}
+	}
+
+	return sql, args, nil
 }
 
 // validateSQL 执行基本的 SQL 安全检查
 func (b *SQLBuilder) validateSQL(sql string) error {
+	// 检查语句分隔符，防止多重语句注入
+	if strings.Contains(sql, ";") {
+		trimmed := strings.TrimSpace(sql)
+		if strings.Count(trimmed, ";") > 1 || (!strings.HasSuffix(trimmed, ";") && strings.Contains(trimmed, ";")) {
+			return fmt.Errorf("multiple SQL statements are not allowed")
+		}
+	}
+
 	dangerKeywords := []string{"DROP", "TRUNCATE", "ALTER", "GRANT", "REVOKE", "SHUTDOWN", "EXEC"}
 	upperSQL := strings.ToUpper(sql)
 
 	for _, kw := range dangerKeywords {
 		if strings.Contains(upperSQL, " "+kw+" ") || strings.HasPrefix(upperSQL, kw+" ") {
 			return fmt.Errorf("dangerous SQL keyword detected: %s", kw)
-		}
-	}
-
-	// 检查语句分隔符，防止多重语句注入
-	if strings.Contains(sql, ";") {
-		trimmed := strings.TrimSpace(sql)
-		if strings.Count(trimmed, ";") > 1 || (!strings.HasSuffix(trimmed, ";") && strings.Contains(trimmed, ";")) {
-			return fmt.Errorf("multiple SQL statements are not allowed")
 		}
 	}
 

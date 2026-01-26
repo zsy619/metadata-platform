@@ -81,7 +81,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import type { DataSource } from '@/types/data-source'
+import { getConnById, testConn, updateConn } from '@/api/metadata'
+import type { MdConn } from '@/types/metadata'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
@@ -93,7 +94,7 @@ const dataSourceFormRef = ref()
 const testingConnection = ref(false)
 const submitting = ref(false)
 
-const dataSourceForm = reactive<Partial<DataSource>>({
+const dataSourceForm = reactive<Partial<MdConn>>({
     connName: '',
     connKind: 'MySQL',
     connVersion: '',
@@ -116,18 +117,17 @@ const formRules = {
 
 onMounted(() => {
     if (route.params.id) {
-        const id = Number(route.params.id)
-        console.log('Updating dataSource with id:', id)
-        fetchData(id)
+        fetchData(route.params.id as string)
     }
 })
 
-const fetchData = async (id: number) => {
+const fetchData = async (id: string) => {
     try {
-        // 模拟获取
-        const data = { connName: '生产数据库', connKind: 'MySQL', connHost: 'localhost', connPort: 3306 }
+        const response: any = await getConnById(id)
+        const data = response?.data || response
         Object.assign(dataSourceForm, data)
     } catch (err) {
+        console.error('获取数据源详情失败:', err)
         ElMessage.error('获取详情失败')
     }
 }
@@ -135,23 +135,35 @@ const fetchData = async (id: number) => {
 const handleCancel = () => router.push('/data-sources')
 
 const handleTestConnection = async () => {
+    if (!route.params.id) {
+        ElMessage.warning('请先保存数据源')
+        return
+    }
     testingConnection.value = true
-    setTimeout(() => {
-        ElMessage.success('连接正常')
+    try {
+        await testConn(route.params.id as string)
+        ElMessage.success('连接测试成功')
+    } catch (error: any) {
+        console.error('连接测试失败:', error)
+        ElMessage.error(error?.message || '连接测试失败')
+    } finally {
         testingConnection.value = false
-    }, 1000)
+    }
 }
 
 const handleSubmit = async () => {
     try {
         await dataSourceFormRef.value.validate()
         submitting.value = true
-        setTimeout(() => {
-            ElMessage.success('保存成功')
-            submitting.value = false
-            router.push('/data-sources')
-        }, 800)
-    } catch (err) { }
+        await updateConn(route.params.id as string, dataSourceForm)
+        ElMessage.success('更新成功')
+        router.push('/data-sources')
+    } catch (error: any) {
+        console.error('更新数据源失败:', error)
+        ElMessage.error(error?.message || '更新失败')
+    } finally {
+        submitting.value = false
+    }
 }
 </script>
 <style scoped>
