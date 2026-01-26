@@ -1,14 +1,15 @@
 <template>
-    <div class="data-source-create">
+    <div class="container-padding">
         <div class="page-header">
-            <h1>创建数据源</h1>
+            <h1 class="text-primary">创建数据源</h1>
             <el-button @click="handleCancel" :icon="ArrowLeft">
                 返回列表
             </el-button>
         </div>
-        <el-card class="create-card">
-            <el-form ref="dataSourceFormRef" :model="dataSourceForm" :rules="formRules" label-width="120px" class="create-form">
-                <el-row :gutter="20">
+        <el-card>
+            <el-form ref="dataSourceFormRef" :model="dataSourceForm" :rules="formRules" label-width="120px" class="create-form" style="max-width: 900px; margin: 0 auto;">
+                <el-divider content-position="left">基础信息</el-divider>
+                <el-row :gutter="32">
                     <el-col :span="12">
                         <el-form-item label="数据源名称" prop="conn_name">
                             <el-input v-model="dataSourceForm.conn_name" placeholder="请输入数据源名称" clearable />
@@ -16,7 +17,7 @@
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="数据源类型" prop="conn_kind">
-                            <el-select v-model="dataSourceForm.conn_kind" placeholder="请选择数据源类型" class="w-full" @change="handleKindChange">
+                            <el-select v-model="dataSourceForm.conn_kind" placeholder="请选择类型" class="w-full" @change="handleKindChange">
                                 <el-option-group label="关系型">
                                     <el-option label="MySQL" value="MySQL" />
                                     <el-option label="PostgreSQL" value="PostgreSQL" />
@@ -44,31 +45,33 @@
                         </el-form-item>
                     </el-col>
                 </el-row>
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="版本" prop="conn_version">
-                            <el-input v-model="dataSourceForm.conn_version" placeholder="如: 8.0" clearable />
-                        </el-form-item>
-                    </el-col>
+                <el-divider content-position="left">连接配置</el-divider>
+                <el-row :gutter="32">
                     <el-col :span="12">
                         <el-form-item label="主机地址" prop="conn_host">
                             <el-input v-model="dataSourceForm.conn_host" placeholder="例如: localhost 或 IP" clearable />
                         </el-form-item>
                     </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="数据库名" prop="conn_database">
+                            <el-input v-model="dataSourceForm.conn_database" placeholder="数据库名称" clearable />
+                        </el-form-item>
+                    </el-col>
                 </el-row>
-                <el-row :gutter="20">
+                <el-row :gutter="32">
                     <el-col :span="12">
                         <el-form-item label="端口" prop="conn_port">
                             <el-input-number v-model="dataSourceForm.conn_port" :min="1" :max="65535" class="w-full" controls-position="right" />
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item label="数据库名" prop="conn_database">
-                            <el-input v-model="dataSourceForm.conn_database" placeholder="Database Name" clearable />
+                        <el-form-item label="版本" prop="conn_version">
+                            <el-input v-model="dataSourceForm.conn_version" placeholder="如: 8.0" clearable />
                         </el-form-item>
                     </el-col>
                 </el-row>
-                <el-row :gutter="20">
+                <el-divider content-position="left">身份验证</el-divider>
+                <el-row :gutter="32">
                     <el-col :span="12">
                         <el-form-item label="用户名" prop="conn_user">
                             <el-input v-model="dataSourceForm.conn_user" placeholder="Username" clearable />
@@ -80,16 +83,16 @@
                         </el-form-item>
                     </el-col>
                 </el-row>
-                <el-form-item label="备注">
-                    <el-input v-model="dataSourceForm.remark" type="textarea" placeholder="请输入备注信息" :rows="4" clearable />
+                <el-form-item label="备注说明">
+                    <el-input v-model="dataSourceForm.remark" type="textarea" placeholder="补充详细说明..." :rows="4" clearable />
                 </el-form-item>
-                <div class="form-actions">
-                    <el-button @click="handleCancel">取消</el-button>
-                    <el-button type="primary" @click="handleTestConnection" :loading="testingConnection">
-                        {{ testingConnection ? '测试连接中...' : '测试连接' }}
+                <div class="m-t-lg flex-center" style="gap: 16px;">
+                    <el-button @click="handleCancel" style="width: 120px;">取消</el-button>
+                    <el-button type="warning" @click="handleTestConnection" :loading="testingConnection" style="width: 120px;">
+                        测试连接
                     </el-button>
-                    <el-button type="success" @click="handleSubmit" :loading="submitting">
-                        {{ submitting ? '提交中...' : '提交' }}
+                    <el-button type="primary" @click="handleSubmit" :loading="submitting" style="width: 120px;">
+                        立即创建
                     </el-button>
                 </div>
             </el-form>

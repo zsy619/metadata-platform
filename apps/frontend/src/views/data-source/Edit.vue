@@ -18,10 +18,29 @@
                     <el-col :span="12">
                         <el-form-item label="数据源类型" prop="conn_kind">
                             <el-select v-model="dataSourceForm.conn_kind" class="w-full">
-                                <el-option label="MySQL" value="MySQL" />
-                                <el-option label="PostgreSQL" value="PostgreSQL" />
-                                <el-option label="SQL Server" value="SQL Server" />
-                                <el-option label="Oracle" value="Oracle" />
+                                <el-option-group label="关系型">
+                                    <el-option label="MySQL" value="MySQL" />
+                                    <el-option label="PostgreSQL" value="PostgreSQL" />
+                                    <el-option label="SQL Server" value="SQL Server" />
+                                    <el-option label="Oracle" value="Oracle" />
+                                    <el-option label="TiDB" value="TiDB" />
+                                    <el-option label="OceanBase" value="OceanBase" />
+                                    <el-option label="SQLite" value="SQLite" />
+                                </el-option-group>
+                                <el-option-group label="大数据/分析">
+                                    <el-option label="ClickHouse" value="ClickHouse" />
+                                    <el-option label="Doris" value="Doris" />
+                                    <el-option label="StarRocks" value="StarRocks" />
+                                </el-option-group>
+                                <el-option-group label="国产化">
+                                    <el-option label="Dameng (DM)" value="DM" />
+                                    <el-option label="Kingbase" value="Kingbase" />
+                                    <el-option label="OpenGauss" value="OpenGauss" />
+                                </el-option-group>
+                                <el-option-group label="NoSQL">
+                                    <el-option label="MongoDB" value="MongoDB" />
+                                    <el-option label="Redis" value="Redis" />
+                                </el-option-group>
                             </el-select>
                         </el-form-item>
                     </el-col>
