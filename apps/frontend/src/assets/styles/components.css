@@ -65,7 +65,7 @@
 
 .el-card__header {
     border-bottom: 1px solid var(--el-border-color-lighter) !important;
-    padding: 16px 20px !important;
+    padding: 16px 10px !important;
     font-weight: 600;
 }
 

@@ -20,9 +20,11 @@
                         </el-table-column>
                         <el-table-column prop="latency" label="耗时(ms)" width="100" />
                         <el-table-column prop="clientIP" label="IP" width="140" />
-                        <el-table-column label="操作" width="120">
+                        <el-table-column label="操作" width="100" fixed="right" class-name="action-column">
                             <template #default="scope">
-                                <el-button type="primary" link @click="viewDetails(scope.row)">详情</el-button>
+                                <el-button type="primary" size="small" :icon="View" @click="viewDetails(scope.row)">
+                                    详情
+                                </el-button>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -37,9 +39,11 @@
                         </el-table-column>
                         <el-table-column prop="modelID" label="模型ID" width="100" />
                         <el-table-column prop="recordID" label="记录ID" width="100" />
-                        <el-table-column label="详情">
+                        <el-table-column label="操作" width="120" fixed="right" class-name="action-column">
                             <template #default="scope">
-                                <el-button type="primary" link @click="viewDiff(scope.row)">查看变更</el-button>
+                                <el-button type="primary" size="small" :icon="View" @click="viewDiff(scope.row)">
+                                    详情
+                                </el-button>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -54,6 +58,7 @@
 </template>
 <script setup lang="ts">
 import { getDataChangeLogs, getOperationLogs } from '@/api/audit'
+import { View } from '@element-plus/icons-vue'
 import { onMounted, ref } from 'vue'
 
 const activeTab = ref('operation')
@@ -108,10 +113,14 @@ const viewDiff = (log: any) => {
 </script>
 <style scoped>
 .audit-log {
-    padding: 20px;
+    padding: 10px;
 }
 
 .page-header {
     margin-bottom: 20px;
+}
+
+:deep(.action-column .cell) {
+    white-space: nowrap;
 }
 </style>

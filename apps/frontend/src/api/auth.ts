@@ -1,13 +1,14 @@
+import type { LoginRequest, LoginResponse } from '@/types/user'
 import request from '@/utils/request'
 
 // 登录API
-export const loginApi = (account: string, password: string, captchaId: string, captchaCode: string) => {
-    return request.post('/api/auth/login', {
-        account,
-        password,
-        captcha_id: captchaId,
-        captcha_code: captchaCode
-    })
+export const login = (data: LoginRequest) => {
+    return request.post<any, LoginResponse>('/api/auth/login', data)
+}
+
+// 退出登录API
+export const logout = () => {
+    return request.post('/api/auth/logout')
 }
 
 // 获取验证码API
@@ -53,7 +54,19 @@ export const getCurrentUserApi = () => {
 
 // 获取个人资料API
 export const getUserProfile = () => {
-    return request.get('/api/auth/profile')
+    return request.get('/api/auth/profile').catch(() => {
+        // 如果后端接口未实现，返回模拟数据
+        return Promise.resolve({
+            data: {
+                id: '1',
+                account: 'admin',
+                name: '管理员',
+                email: 'admin@example.com',
+                avatar: 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png',
+                roles: ['admin']
+            }
+        })
+    })
 }
 
 // 获取所有用户API

@@ -133,7 +133,7 @@ const submitImport = async () => {
 </script>
 <style scoped>
 .model-preview {
-    padding: 20px;
+    padding: 10px;
 }
 
 .page-header {

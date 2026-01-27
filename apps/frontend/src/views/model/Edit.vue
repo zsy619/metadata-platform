@@ -98,9 +98,11 @@
                                     <el-input-number v-model="scope.row.sort" size="small" :min="0" :disabled="modelForm.isLocked" />
                                 </template>
                             </el-table-column>
-                            <el-table-column label="高级" width="120">
+                            <el-table-column label="高级" width="150" fixed="right" class-name="action-column">
                                 <template #default="scope">
-                                    <el-button type="primary" link @click="handleEditFieldEnhancement(scope.row)">增强配置</el-button>
+                                    <el-button type="primary" size="small" :icon="Operation" @click="handleEditFieldEnhancement(scope.row)">
+                                        增强配置
+                                    </el-button>
                                 </template>
                             </el-table-column>
                         </el-table>
@@ -155,12 +157,20 @@
                                     <el-tag :type="scope.row.isDefault ? 'success' : 'info'">{{ scope.row.isDefault ? '是' : '否' }}</el-tag>
                                 </template>
                             </el-table-column>
-                            <el-table-column label="操作" width="250">
+                            <el-table-column label="操作" width="350" fixed="right" class-name="action-column">
                                 <template #default="scope">
-                                    <el-button type="primary" link @click="handleEditTemplate(scope.row)">编辑</el-button>
-                                    <el-button type="success" link @click="handleDuplicateTemplate(scope.row)">复制</el-button>
-                                    <el-button type="warning" link @click="handlePreviewTemplate(scope.row)">预览SQL</el-button>
-                                    <el-button type="danger" link @click="handleDeleteTemplate(scope.row)">删除</el-button>
+                                    <el-button type="success" size="small" :icon="Edit" @click="handleEditTemplate(scope.row)">
+                                        编辑
+                                    </el-button>
+                                    <el-button type="primary" size="small" :icon="CopyDocument" @click="handleDuplicateTemplate(scope.row)">
+                                        复制
+                                    </el-button>
+                                    <el-button type="info" size="small" :icon="View" @click="handlePreviewTemplate(scope.row)">
+                                        SQL
+                                    </el-button>
+                                    <el-button type="danger" size="small" :icon="Delete" @click="handleDeleteTemplate(scope.row)">
+                                        删除
+                                    </el-button>
                                 </template>
                             </el-table-column>
                         </el-table>
@@ -198,7 +208,7 @@
 import { getConns as getConnsApi } from '@/api/metadata'
 import { duplicateQueryTemplate, previewQueryTemplate } from '@/api/model'
 import type { Model, ModelField } from '@/types/model'
-import { ArrowLeft, Plus } from '@element-plus/icons-vue'
+import { ArrowLeft, CopyDocument, Delete, Edit, Operation, Plus, View } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -341,7 +351,7 @@ const saveEnhancement = () => {
 </script>
 <style scoped>
 .model-edit {
-    padding: 20px;
+    padding: 10px;
 }
 
 .page-header {
@@ -365,5 +375,9 @@ const saveEnhancement = () => {
     font-size: 12px;
     color: #909399;
     margin-top: 4px;
+}
+
+:deep(.action-column .cell) {
+    white-space: nowrap;
 }
 </style>

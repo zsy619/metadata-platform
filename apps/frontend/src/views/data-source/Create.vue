@@ -223,7 +223,7 @@ const handleSubmit = async () => {
 </script>
 <style scoped>
 .data-source-create {
-    padding: 20px;
+    padding: 10px;
 }
 
 .page-header {

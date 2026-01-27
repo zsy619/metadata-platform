@@ -42,18 +42,18 @@
                         {{ formatDateTime(scope.row.create_at) }}
                     </template>
                 </el-table-column>
-                <el-table-column label="操作" width="300" fixed="right" align="center">
+                <el-table-column label="操作" width="320" fixed="right" class-name="action-column">
                     <template #default="scope">
-                        <el-button type="info" size="small" text :icon="View" @click="handleViewDetail(scope.row)">
+                        <el-button type="info" size="small" :icon="View" @click="handleViewDetail(scope.row)">
                             详情
                         </el-button>
-                        <el-button type="primary" size="small" text :icon="Refresh" @click="handleRefreshTable(scope.row)">
+                        <el-button type="primary" size="small" :icon="Refresh" @click="handleRefreshTable(scope.row)">
                             刷新
                         </el-button>
-                        <el-button type="warning" size="small" text :icon="Edit" @click="handleEdit(scope.row)">
+                        <el-button type="success" size="small" :icon="Edit" @click="handleEdit(scope.row)">
                             修改
                         </el-button>
-                        <el-button type="danger" size="small" text :icon="Delete" @click="handleDelete(scope.row)">
+                        <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">
                             删除
                         </el-button>
                     </template>
@@ -589,7 +589,7 @@ const handleDelete = async (row: MdTable) => {
 </script>
 <style scoped>
 .table-list {
-    padding: 20px;
+    padding: 10px;
 }
 
 .m-t-lg {
@@ -901,5 +901,9 @@ const handleDelete = async (row: MdTable) => {
 
 :deep(.full-width-transfer .el-transfer-panel__body:hover::-webkit-scrollbar-track) {
     background-color: #f5f7fa;
+}
+
+:deep(.action-column .cell) {
+    white-space: nowrap;
 }
 </style>

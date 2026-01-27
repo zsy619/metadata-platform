@@ -61,15 +61,15 @@
                         {{ formatDateTime(scope.row.create_at) }}
                     </template>
                 </el-table-column>
-                <el-table-column label="操作" width="220" fixed="right" align="center">
+                <el-table-column label="操作" width="240" fixed="right" class-name="action-column">
                     <template #default="scope">
-                        <el-button type="primary" size="small" text :icon="Connection" @click="handleTestConnection(scope.row)" :disabled="scope.row.state === 1">
+                        <el-button type="primary" size="small" :icon="Connection" @click="handleTestConnection(scope.row)" :disabled="scope.row.state === 1">
                             测试
                         </el-button>
-                        <el-button type="primary" size="small" text :icon="Edit" @click="handleEdit(scope.row)">
+                        <el-button type="success" size="small" :icon="Edit" @click="handleEdit(scope.row)">
                             编辑
                         </el-button>
-                        <el-button type="danger" size="small" text :icon="Delete" @click="handleDelete(scope.row)">
+                        <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">
                             删除
                         </el-button>
                     </template>
@@ -208,7 +208,7 @@ const handleTestConnection = async (row: MdConn) => {
 </script>
 <style scoped>
 .data-source-list {
-    padding: 20px;
+    padding: 10px;
 }
 
 .list-card {
@@ -253,5 +253,9 @@ const handleTestConnection = async (row: MdConn) => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+}
+
+:deep(.action-column .cell) {
+    white-space: nowrap;
 }
 </style>

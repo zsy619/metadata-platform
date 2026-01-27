@@ -108,7 +108,7 @@ const handleTableChange = () => {
 </script>
 <style scoped>
 .field-list {
-    padding: 20px;
+    padding: 10px;
 }
 
 .page-header {

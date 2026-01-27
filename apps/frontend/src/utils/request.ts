@@ -1,7 +1,5 @@
-/**
- * HTTP请求工具
- */
 import router from '@/router'
+import storage from '@/utils/storage'
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 
@@ -18,7 +16,7 @@ const request: AxiosInstance = axios.create({
 request.interceptors.request.use(
     (config: any) => {
         // 获取token
-        const token = localStorage.getItem('token')
+        const token = storage.get('token')
         if (token) {
             config.headers = config.headers || {}
             config.headers.Authorization = `Bearer ${token}`
@@ -58,18 +56,24 @@ request.interceptors.response.use(
         let errorMessage = '网络请求失败，请稍后重试'
 
         if (error.response) {
-            const { status, data: errorData } = error.response
+            const { status, data: errorData, config } = error.response
             const data = errorData as any
+            const isLoginRequest = config.url?.includes('/api/auth/login')
 
             switch (status) {
                 case 400:
                     errorMessage = data?.message || '请求参数错误'
                     break
                 case 401:
-                    errorMessage = '登录已过期，请重新登录'
-                    // 清除token并跳转到登录页
-                    localStorage.removeItem('token')
-                    router.push('/login')
+                    // 如果是登录接口返回401，说明是用户名密码错误，由业务层处理
+                    if (isLoginRequest) {
+                        errorMessage = data?.message || '用户名或密码错误'
+                    } else {
+                        errorMessage = '登录已过期，请重新登录'
+                        // 清除token并跳转到登录页
+                        storage.remove('token')
+                        router.push('/login')
+                    }
                     break
                 case 403:
                     errorMessage = '没有权限访问该资源'
