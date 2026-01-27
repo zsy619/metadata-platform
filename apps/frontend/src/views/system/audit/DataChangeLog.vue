@@ -25,10 +25,10 @@
         <el-card class="box-card" shadow="never" style="margin-top: 20px;">
             <el-table v-loading="loading" :data="tableData" border style="width: 100%">
                 <el-table-column prop="id" label="ID" width="80" align="center" />
-                <el-table-column prop="table_name" label="表名" width="150" align="center" />
-                <el-table-column prop="data_type" label="类型" width="100" align="center">
+                <el-table-column prop="model_id" label="表/模型" width="150" align="center" />
+                <el-table-column prop="action" label="类型" width="100" align="center">
                     <template #default="scope">
-                        <el-tag :type="getTypeTag(scope.row.data_type)">{{ scope.row.data_type }}</el-tag>
+                        <el-tag :type="getTypeTag(scope.row.action)">{{ scope.row.action }}</el-tag>
                     </template>
                 </el-table-column>
                 <el-table-column label="变更前数据" min-width="200">
@@ -53,15 +53,15 @@
                         <span v-else>-</span>
                     </template>
                 </el-table-column>
-                <el-table-column prop="operator" label="操作人" width="120" align="center" />
-                <el-table-column prop="create_time" label="变更时间" width="180" align="center">
+                <el-table-column prop="create_by" label="操作人" width="120" align="center" />
+                <el-table-column prop="create_at" label="变更时间" width="180" align="center">
                     <template #default="scope">
-                        {{ formatDate(scope.row.create_time) }}
+                        {{ formatDate(scope.row.create_at) }}
                     </template>
                 </el-table-column>
             </el-table>
             <div class="pagination-container">
-                <el-pagination v-model:current-page="queryParams.page" v-model:page-size="queryParams.pageSize" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+                <el-pagination v-model:currentPage="queryParams.page" v-model:pageSize="queryParams.pageSize" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
         </el-card>
     </div>

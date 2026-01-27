@@ -16,8 +16,7 @@ func NewAuditHandler(s service.AuditService) *AuditHandler {
 
 func getFilters(c *app.RequestContext) map[string]interface{} {
 	filters := make(map[string]interface{})
-	// Generic filter extraction, customize as needed
-	// e.g. user_id, module, status
+	// Generic filter extraction
 	if v := c.Query("user_id"); v != "" {
 		filters["user_id"] = v
 	}
@@ -25,7 +24,8 @@ func getFilters(c *app.RequestContext) map[string]interface{} {
 		filters["account"] = v
 	}
 	if v := c.Query("module"); v != "" {
-		filters["module"] = v
+		// Frontend uses module, backend model uses source
+		filters["source"] = v
 	}
 	if v := c.Query("status"); v != "" {
 		filters["status"] = v
@@ -35,6 +35,17 @@ func getFilters(c *app.RequestContext) map[string]interface{} {
 	}
 	if v := c.Query("end_time"); v != "" {
 		filters["end_time"] = v
+	}
+	// Data Change specific
+	if v := c.Query("table_name"); v != "" {
+		filters["model_id"] = v
+	}
+	if v := c.Query("data_type"); v != "" {
+		filters["action"] = v
+	}
+	// Operation specific
+	if v := c.Query("type"); v != "" {
+		filters["method"] = v
 	}
 	return filters
 }

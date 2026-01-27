@@ -18,16 +18,16 @@ func SeedData(db *gorm.DB) {
 
 	// 1. 初始化默认数据连接组 (ParentID = "0")
 	defaultConnGroup := model.MdConn{
-		ID:          sf.GenerateIDString(),
-		TenantID:    "1",
-		ParentID:    "0",
-		ConnName:    "默认连接组",
-		ConnKind:    "FOLDER",
-		IsDeleted:   false,
-		CreateBy:    "system",
-		CreateAt:    now,
-		UpdateBy:    "system",
-		UpdateAt:    now,
+		ID:        sf.GenerateIDString(),
+		TenantID:  "1",
+		ParentID:  "0",
+		ConnName:  "默认连接组",
+		ConnKind:  "MySQL",
+		IsDeleted: false,
+		CreateBy:  "system",
+		CreateAt:  now,
+		UpdateBy:  "system",
+		UpdateAt:  now,
 	}
 
 	// 检查是否已存在
@@ -43,17 +43,17 @@ func SeedData(db *gorm.DB) {
 
 	// 2. 初始化默认模型组 (ParentID = "0")
 	defaultModelGroup := model.MdModel{
-		ID:          sf.GenerateIDString(),
-		TenantID:    "1",
-		ParentID:    "0",
-		ModelName:   "默认模型组",
-		ModelCode:   "default_group",
-		ModelKind:   0, // 0 as folder/group
-		IsDeleted:   false,
-		CreateBy:    "system",
-		CreateAt:    now,
-		UpdateBy:    "system",
-		UpdateAt:    now,
+		ID:        sf.GenerateIDString(),
+		TenantID:  "1",
+		ParentID:  "0",
+		ModelName: "默认模型组",
+		ModelCode: "default_group",
+		ModelKind: 0, // 0 as folder/group
+		IsDeleted: false,
+		CreateBy:  "system",
+		CreateAt:  now,
+		UpdateBy:  "system",
+		UpdateAt:  now,
 	}
 
 	db.Model(&model.MdModel{}).Where("model_code = ?", "default_group").Count(&count)

@@ -19,40 +19,46 @@
         <!-- Table -->
         <el-card class="box-card" shadow="never" style="margin-top: 20px;">
             <el-table v-loading="loading" :data="tableData" border style="width: 100%">
-                <el-table-column prop="id" label="ID" width="80" align="center" />
-                <el-table-column prop="user_id" label="用户ID" width="100" align="center" />
-                <el-table-column prop="account" label="用户名" width="120" align="center" />
-                <el-table-column prop="login_ip" label="登录IP" width="140" align="center" />
-                <el-table-column label="位置" width="150" align="center">
-                    <template #default="scope">
-                        {{ scope.row.ip_location || '-' }}
-                    </template>
-                </el-table-column>
-                <el-table-column prop="os" label="操作系统" width="120" align="center" />
-                <el-table-column prop="browser" label="浏览器" width="120" align="center" />
-                <el-table-column prop="status" label="状态" width="100" align="center">
-                    <template #default="scope">
-                        <el-tag :type="scope.row.login_status === 1 ? 'success' : (scope.row.login_status === 2 ? 'warning' : 'danger')">
-                            {{ formatStatus(scope.row.login_status) }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="msg" label="提示信息" show-overflow-tooltip />
                 <el-table-column prop="create_at" label="登录时间" width="180" align="center">
                     <template #default="scope">
                         {{ formatDate(scope.row.create_at) }}
                     </template>
                 </el-table-column>
+                <el-table-column prop="user_id" label="用户ID" width="120" align="center" />
+                <el-table-column prop="account" label="账号" width="120" align="center" />
+                <el-table-column prop="client_ip" label="登录IP" width="140" align="center" />
+                <el-table-column prop="login_status" label="状态" width="100" align="center">
+                    <template #default="scope">
+                        <el-tag :type="scope.row.login_status === 1 ? 'success' : (scope.row.login_status === 2 ? 'info' : 'danger')">
+                            {{ scope.row.login_status === 1 ? '成功' : (scope.row.login_status === 2 ? '退出' : '失败') }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="browser" label="浏览器" width="120" align="center" />
+                <el-table-column prop="ip_location" label="归属地" align="center" />
+                <el-table-column prop="error_message" label="消息" show-overflow-tooltip />
+                <el-table-column label="操作" width="100" fixed="right" align="center">
+                    <template #default="scope">
+                        <el-button type="primary" size="small" :icon="View" @click="viewDetails(scope.row)">
+                            详情
+                        </el-button>
+                    </template>
+                </el-table-column>
             </el-table>
             <!-- Pagination -->
             <div class="pagination-container">
-                <el-pagination v-model:current-page="queryParams.page" v-model:page-size="queryParams.pageSize" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+                <el-pagination v-model:currentPage="queryParams.page" v-model:pageSize="queryParams.pageSize" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
         </el-card>
+        <!-- 详情对话框 -->
+        <el-dialog v-model="detailsVisible" title="登录详情" width="600px">
+            <pre v-if="currentLog">{{ JSON.stringify(currentLog, null, 2) }}</pre>
+        </el-dialog>
     </div>
 </template>
 <script setup lang="ts">
 import { exportLoginLogs, getLoginLogs } from '@/api/audit'
+import { View } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
@@ -61,6 +67,8 @@ const loading = ref(false)
 const total = ref(0)
 const tableData = ref([])
 const dateRange = ref([])
+const detailsVisible = ref(false)
+const currentLog = ref(null)
 
 const queryParams = reactive({
     page: 1,
@@ -69,15 +77,6 @@ const queryParams = reactive({
     start_time: '',
     end_time: ''
 })
-
-const formatStatus = (status: number) => {
-    const map: Record<number, string> = {
-        1: '登录成功',
-        0: '登录失败',
-        2: '退出登录'
-    }
-    return map[status] || '未知'
-}
 
 const formatDate = (date: string) => {
     return date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '-'
@@ -126,6 +125,11 @@ const handleSizeChange = (val: number) => {
 const handleCurrentChange = (val: number) => {
     queryParams.page = val
     getList()
+}
+
+const viewDetails = (log: any) => {
+    currentLog.value = log
+    detailsVisible.value = true
 }
 
 const handleExport = async () => {

@@ -22,7 +22,7 @@ func (s *auditService) GetOperationLogs(page, pageSize int, filters map[string]i
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	err := db.Scopes(utils.Paginate(page, pageSize)).Order("created_at DESC").Find(&logs).Error
+	err := db.Scopes(utils.Paginate(page, pageSize)).Order("create_at DESC").Find(&logs).Error
 	return logs, total, err
 }
 
@@ -31,6 +31,6 @@ func (s *auditService) GetAllOperationLogs(filters map[string]interface{}) ([]mo
 	var logs []model.SysOperationLog
 	db := s.db.Model(&model.SysOperationLog{})
 	db = applyFilters(db, filters)
-	err := db.Order("created_at DESC").Find(&logs).Error
+	err := db.Order("create_at DESC").Find(&logs).Error
 	return logs, err
 }

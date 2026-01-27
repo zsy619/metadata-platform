@@ -41,11 +41,12 @@ func applyFilters(db *gorm.DB, filters map[string]interface{}) *gorm.DB {
 		if v != nil && v != "" {
 			switch k {
 			case "start_time":
-				db = db.Where("create_at >= ? OR created_at >= ? OR create_time >= ?", v, v, v) // Hacky, better to pass semantic fields
+				db = db.Where("create_at >= ?", v)
 			case "end_time":
-				db = db.Where("create_at <= ? OR created_at <= ? OR create_time <= ?", v, v, v)
-			default:
-				db = db.Where(k+" = ?", v) // Exact match for others
+				db = db.Where("create_at <= ?", v)
+			case "source", "user_id", "trace_id", "module", "status", "action", "model_id", "record_id", "account", "method", "path", "client_ip":
+				// Only allow known safe columns to be passed directly to Where
+				db = db.Where(k+" = ?", v)
 			}
 		}
 	}

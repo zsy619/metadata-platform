@@ -17,8 +17,8 @@
             <el-table :data="tableData" border v-loading="loading">
                 <el-table-column v-for="col in columns" :key="col.columnName" :prop="col.columnName" :label="col.showTitle || col.columnTitle" />
             </el-table>
-            <div class="pagination">
-                <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :total="total" layout="total, prev, pager, next" @current-change="fetchData" />
+            <div class="pagination-container">
+                <el-pagination v-model:currentPage="page" v-model:pageSize="pageSize" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="fetchData" @current-change="fetchData" />
             </div>
         </el-card>
         <!-- 导入对话框 -->

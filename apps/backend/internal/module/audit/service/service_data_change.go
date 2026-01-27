@@ -22,7 +22,7 @@ func (s *auditService) GetDataChangeLogs(page, pageSize int, filters map[string]
 	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	err := db.Scopes(utils.Paginate(page, pageSize)).Order("create_time DESC").Find(&logs).Error
+	err := db.Scopes(utils.Paginate(page, pageSize)).Order("create_at DESC").Find(&logs).Error
 	return logs, total, err
 }
 
@@ -31,6 +31,6 @@ func (s *auditService) GetAllDataChangeLogs(filters map[string]interface{}) ([]m
 	var logs []model.SysDataChangeLog
 	db := s.db.Model(&model.SysDataChangeLog{})
 	db = applyFilters(db, filters)
-	err := db.Order("create_time DESC").Find(&logs).Error
+	err := db.Order("create_at DESC").Find(&logs).Error
 	return logs, err
 }
