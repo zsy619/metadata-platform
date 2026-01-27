@@ -109,7 +109,12 @@
                     <el-descriptions-item label="备注" :span="2">{{ currentTable.table_comment || '-' }}</el-descriptions-item>
                 </el-descriptions>
                 <div class="m-t-lg">
-                    <div class="field-title">字段列表 ({{ currentTableFields.length }})</div>
+                    <div class="field-header">
+                        <div class="field-title">字段列表 ({{ currentTableFields.length }})</div>
+                        <el-button type="primary" size="small" plain :icon="Refresh" @click="handleDetailSync" :loading="detailSyncing">
+                            同步数据库结构
+                        </el-button>
+                    </div>
                     <el-table :data="currentTableFields" border stripe size="small" height="400px">
                         <el-table-column prop="column_name" label="字段名称" min-width="150" />
                         <el-table-column prop="column_title" label="字段标题" min-width="150" />
@@ -366,21 +371,104 @@ const formatDateTime = (dateStr: string | undefined) => {
 
 // 查看详情
 const handleViewDetail = async (row: MdTable) => {
+    console.log('正在查看表详情, 参数 row:', JSON.parse(JSON.stringify(row)))
     currentTable.value = row
     detailDialogVisible.value = true
     detailLoading.value = true
+    currentTableFields.value = [] // 重置字段列表
+
+    if (!row.id) {
+        console.error('查看详情失败: row.id 为空')
+        ElMessage.error('该项目数据异常 (缺少ID)')
+        detailLoading.value = false
+        return
+    }
+
     try {
         const res: any = await getFieldsByTableId(row.id as string)
+        console.log('获取字段列表成功:', res)
         currentTableFields.value = Array.isArray(res) ? res : (res?.data || [])
-    } catch (error) {
-        console.error('获取字段列表失败:', error)
-        ElMessage.error('获取字段列表失败')
+    } catch (error: any) {
+        console.error('获取字段列表失败, ID:', row.id, '错误详情:', error)
+        // 允许继续显示基本信息, 但提示字段获取失败
+        ElMessage.warning('无法获取字段列表, 仅显示基本信息')
     } finally {
         detailLoading.value = false
     }
 }
 
-// 刷新表字段
+// 在详情中同步字段信息 (解决 500 报错或数据损坏)
+const detailSyncing = ref(false)
+const handleDetailSync = async () => {
+    if (!currentTable.value.id) return
+
+    try {
+        await ElMessageBox.confirm(
+            '同步将重新从数据库读取字段结构并更新当前元数据, 确认继续?',
+            '同步确认',
+            { type: 'info' }
+        )
+
+        detailSyncing.value = true
+        // 复用刷新逻辑的核心
+        await doRefreshTable(currentTable.value)
+
+        // 重新加载显示
+        const res: any = await getFieldsByTableId(currentTable.value.id as string)
+        currentTableFields.value = Array.isArray(res) ? res : (res?.data || [])
+        ElMessage.success('字段同步成功')
+    } catch (error: any) {
+        if (error !== 'cancel') {
+            console.error('详情同步失败:', error)
+            ElMessage.error(error?.message || '同步失败')
+        }
+    } finally {
+        detailSyncing.value = false
+    }
+}
+
+// 提取公共的刷新逻辑
+const doRefreshTable = async (table: any) => {
+    // 1. 删除现有字段
+    await deleteFieldsByTableId(table.id as string)
+
+    // 2. 从数据库获取最新表结构
+    const structureRes = await getTableStructureFromDB(table.conn_id, table.table_name)
+    const tableStructure = structureRes?.data || structureRes?.result || structureRes
+
+    if (!tableStructure || (!tableStructure.columns && !tableStructure.fields)) {
+        throw new Error('获取表结构失败 (数据库返回为空)')
+    }
+
+    // 3. 批量创建字段记录
+    const columns = tableStructure.columns || tableStructure.fields || []
+    if (columns.length > 0) {
+        const fieldPromises = columns.map((col: any, index: number) => {
+            const fieldData: Partial<MdTableField> = {
+                conn_id: table.conn_id,
+                table_id: table.id,
+                table_title: table.table_title || table.table_name,
+                column_name: col.name || col.column_name,
+                column_title: col.name || col.column_name,
+                column_type: col.type || col.data_type || '',
+                column_length: col.length || col.character_maximum_length || 0,
+                column_comment: col.comment || col.column_comment || '',
+                is_nullable: col.nullable === true || col.is_nullable === 'YES',
+                is_primary_key: col.primary_key === true || col.column_key === 'PRI',
+                is_auto_increment: col.auto_increment === true || (col.extra || '').includes('auto_increment'),
+                default_value: col.default_value || col.column_default || '',
+                extra_info: col.extra || '',
+                state: 1,
+                sort: index
+            }
+            return createField(fieldData)
+        })
+
+        await Promise.all(fieldPromises)
+    }
+}
+
+// 刷新表字段 (主页面调用)
 const handleRefreshTable = async (row: MdTable) => {
     ElMessageBox.confirm(
         `刷新将删除现有字段并重新从数据库同步,确定要刷新表 "${row.table_title || row.table_name}" 吗?`,
@@ -393,50 +481,16 @@ const handleRefreshTable = async (row: MdTable) => {
     ).then(async () => {
         const loading = ElLoading.service({ text: '正在刷新...' })
         try {
-            // 1. 删除现有字段
-            await deleteFieldsByTableId(row.id as string)
-
-            // 2. 从数据库获取最新表结构
-            const structureRes = await getTableStructureFromDB(row.conn_id, row.table_name)
-            // 兼容不同的后端返回结构
-            const tableStructure = structureRes?.data || structureRes?.result || structureRes
-
-            if (!tableStructure || (!tableStructure.columns && !tableStructure.fields)) {
-                ElMessage.error('获取表结构失败')
-                return
-            }
-
-            // 3. 批量创建字段记录
-            const columns = tableStructure.columns || tableStructure.fields || []
-            if (columns.length > 0) {
-                const fieldPromises = columns.map((col: any, index: number) => {
-                    const fieldData: Partial<MdTableField> = {
-                        conn_id: row.conn_id,
-                        table_id: row.id,
-                        table_title: row.table_title || row.table_name,
-                        column_name: col.name || col.column_name,
-                        column_title: col.name || col.column_name,
-                        column_type: col.type || col.data_type || '',
-                        column_length: col.length || col.character_maximum_length || 0,
-                        column_comment: col.comment || col.column_comment || '',
-                        is_nullable: col.nullable === true || col.is_nullable === 'YES',
-                        is_primary_key: col.primary_key === true || col.column_key === 'PRI',
-                        is_auto_increment: col.auto_increment === true || (col.extra || '').includes('auto_increment'),
-                        default_value: col.default_value || col.column_default || '',
-                        extra_info: col.extra || '',
-                        state: 1,
-                        sort: index
-                    }
-                    return createField(fieldData)
-                })
-
-                await Promise.all(fieldPromises)
-            }
-
+            await doRefreshTable(row)
             ElMessage.success('刷新成功')
-        } catch (error) {
+            // 如果刷新的是当前正在查看的详情, 则也更新详情列表
+            if (detailDialogVisible.value && currentTable.value.id === row.id) {
+                const res: any = await getFieldsByTableId(row.id as string)
+                currentTableFields.value = Array.isArray(res) ? res : (res?.data || [])
+            }
+        } catch (error: any) {
             console.error('刷新失败:', error)
-            ElMessage.error('刷新失败')
+            ElMessage.error(error?.message || '刷新失败')
         } finally {
             loading.close()
         }
@@ -542,11 +596,18 @@ const handleDelete = async (row: MdTable) => {
     margin-top: 24px;
 }
 
+.field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-right: 4px;
+}
+
 .field-title {
     font-size: 16px;
     font-weight: 600;
     color: #303133;
-    margin-bottom: 16px;
     padding-left: 10px;
     border-left: 4px solid #409eff;
 }

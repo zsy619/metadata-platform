@@ -1,10 +1,9 @@
 package user
 
 import (
-	"time"
-
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/utils"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -98,6 +97,59 @@ func SeedData(db *gorm.DB) {
 				utils.SugarLogger.Errorf("Failed to seed application %s: %v", app.ApplicationName, err)
 			} else {
 				utils.SugarLogger.Infof("Seeded application: %s", app.ApplicationName)
+			}
+		}
+	}
+
+	// 4. 初始化默认角色
+	roles := []model.SsoRole{
+		{
+			ID:        "1",
+			TenantID:  "1",
+			RoleName:  "超级管理员",
+			RoleCode:  "super_role",
+			State:     1,
+			DataScope: "1", // 1: 全部数据权限
+			Remark:    "系统最高权限管理员",
+			CreateBy:  "system",
+			CreateAt:  now,
+			UpdateBy:  "system",
+			UpdateAt:  now,
+		},
+	}
+
+	for _, role := range roles {
+		db.Model(&model.SsoRole{}).Where("role_code = ?", role.RoleCode).Count(&count)
+		if count == 0 {
+			if err := db.Create(&role).Error; err != nil {
+				utils.SugarLogger.Errorf("Failed to seed role %s: %v", role.RoleName, err)
+			} else {
+				utils.SugarLogger.Infof("Seeded role: %s", role.RoleName)
+			}
+		}
+	}
+
+	// 5. 初始化默认用户角色
+	userRoles := []model.SsoUserRole{
+		{
+			ID:       "1",
+			TenantID: "1",
+			UserID:   "1",
+			RoleID:   "1",
+			CreateBy: "system",
+			CreateAt: now,
+			UpdateBy: "system",
+			UpdateAt: now,
+		},
+	}
+
+	for _, userRole := range userRoles {
+		db.Model(&model.SsoUserRole{}).Where("user_id = ? AND role_id = ?", userRole.UserID, userRole.RoleID).Count(&count)
+		if count == 0 {
+			if err := db.Create(&userRole).Error; err != nil {
+				utils.SugarLogger.Errorf("Failed to seed user role %s: %v", userRole.UserID, err)
+			} else {
+				utils.SugarLogger.Infof("Seeded user role: %s", userRole.UserID)
 			}
 		}
 	}

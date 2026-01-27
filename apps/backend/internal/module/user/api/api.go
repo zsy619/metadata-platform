@@ -1,6 +1,7 @@
 package api
 
 import (
+	"metadata-platform/internal/middleware"
 	"metadata-platform/internal/module/user/service"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
@@ -50,7 +51,8 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		authRouter.POST("/login", h.AuthHandler.Login)
 		authRouter.POST("/refresh", h.AuthHandler.Refresh)
 		authRouter.POST("/logout", h.AuthHandler.Logout)
-		authRouter.GET("/profile", h.AuthHandler.GetProfile)
+		authRouter.POST("/password", middleware.AuthMiddleware(), h.AuthHandler.ChangePassword)
+		authRouter.GET("/profile", middleware.AuthMiddleware(), h.AuthHandler.GetProfile)
 		authRouter.GET("/captcha", h.AuthHandler.GetCaptcha)
 	}
 

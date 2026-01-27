@@ -11,7 +11,10 @@ type SsoUserRepository interface {
 	CreateUser(user *model.SsoUser) error
 	GetUserByID(id string) (*model.SsoUser, error)
 	GetUserByAccount(account string) (*model.SsoUser, error)
+	GetUserWithDetails(id string) (*model.SsoUser, error)
 	UpdateUser(user *model.SsoUser) error
+	UpdateLoginInfo(id string, ip string) error
+	IncrementLoginError(id string) error
 	DeleteUser(id string) error
 	GetAllUsers() ([]model.SsoUser, error)
 }

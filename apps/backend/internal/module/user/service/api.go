@@ -78,9 +78,10 @@ type SsoPositionService interface {
 
 // SsoAuthService 认证服务接口
 type SsoAuthService interface {
-	Login(account string, password string, tenantID uint) (accessToken string, refreshToken string, err error)
+	Login(account string, password string, tenantID uint, ip string) (accessToken string, refreshToken string, err error)
 	Refresh(refreshToken string) (newAccessToken string, err error)
 	GetUserInfo(userID string) (*model.SsoUser, error)
+	ChangePassword(userID string, oldPassword string, newPassword string) error
 }
 
 // Services 用户模块服务集合

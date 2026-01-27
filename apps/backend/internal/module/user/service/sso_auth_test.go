@@ -51,6 +51,24 @@ func (m *MockSsoUserRepository) GetAllUsers() ([]model.SsoUser, error) {
 	return args.Get(0).([]model.SsoUser), args.Error(1)
 }
 
+func (m *MockSsoUserRepository) GetUserWithDetails(id string) (*model.SsoUser, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.SsoUser), args.Error(1)
+}
+
+func (m *MockSsoUserRepository) UpdateLoginInfo(id string, ip string) error {
+	args := m.Called(id, ip)
+	return args.Error(0)
+}
+
+func (m *MockSsoUserRepository) IncrementLoginError(id string) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
+
 func TestSsoAuthService_Login(t *testing.T) {
 	mockRepo := new(MockSsoUserRepository)
 	authSvc := NewSsoAuthService(mockRepo)
@@ -65,8 +83,9 @@ func TestSsoAuthService_Login(t *testing.T) {
 			Salt:     salt,
 		}
 		mockRepo.On("GetUserByAccount", "admin").Return(user, nil).Once()
+		mockRepo.On("UpdateLoginInfo", "1", "127.0.0.1").Return(nil).Once()
 
-		access, refresh, err := authSvc.Login("admin", "password123", 1)
+		access, refresh, err := authSvc.Login("admin", "password123", 1, "127.0.0.1")
 		assert.NoError(t, err)
 		assert.NotEmpty(t, access)
 		assert.NotEmpty(t, refresh)
@@ -84,7 +103,7 @@ func TestSsoAuthService_Login(t *testing.T) {
 		}
 		mockRepo.On("GetUserByAccount", "admin").Return(user, nil).Once()
 
-		_, _, err := authSvc.Login("admin", "wrongpassword", 1)
+		_, _, err := authSvc.Login("admin", "wrongpassword", 1, "127.0.0.1")
 		assert.Error(t, err)
 		assert.Equal(t, "invalid credentials", err.Error())
 	})

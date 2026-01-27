@@ -76,27 +76,27 @@
                     </el-breadcrumb>
                 </div>
                 <div class="header-right">
-                    <el-dropdown>
+                    <el-dropdown @command="handleUserCommand">
                         <span class="user-info">
                             <el-avatar :size="32">
                                 <el-icon>
                                     <User />
                                 </el-icon>
                             </el-avatar>
-                            <span class="username">管理员</span>
+                            <span class="username">{{ currentUsername }}</span>
                             <el-icon class="el-icon--right">
                                 <CaretBottom />
                             </el-icon>
                         </span>
                         <template #dropdown>
                             <el-dropdown-menu>
-                                <el-dropdown-item>
+                                <el-dropdown-item command="profile">
                                     <el-icon>
                                         <Setting />
                                     </el-icon>
                                     <span>个人设置</span>
                                 </el-dropdown-item>
-                                <el-dropdown-item divided>
+                                <el-dropdown-item divided command="logout">
                                     <el-icon>
                                         <SwitchButton />
                                     </el-icon>
@@ -126,6 +126,7 @@ import {
     SwitchButton,
     User
 } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -151,6 +152,29 @@ const toggleSidebar = () => {
 
 const handleMenuSelect = (index: string) => {
     router.push(index)
+}
+
+const currentUsername = ref(localStorage.getItem('username') || '管理员')
+
+const handleUserCommand = (command: string) => {
+    if (command === 'profile') {
+        router.push('/profile')
+    } else if (command === 'logout') {
+        ElMessageBox.confirm(
+            '确定要退出登录吗？',
+            '退出确认',
+            {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning',
+            }
+        ).then(() => {
+            localStorage.removeItem('token')
+            localStorage.removeItem('username')
+            ElMessage.success('已安全退出')
+            router.push('/login')
+        }).catch(() => { })
+    }
 }
 </script>
 <style scoped>

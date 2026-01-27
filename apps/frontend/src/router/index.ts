@@ -100,6 +100,14 @@ const routes: RouteRecordRaw[] = [
                 name: 'AuditLog',
                 component: () => import('@/views/system/AuditLog.vue'),
                 meta: { title: '审计日志' }
+            },
+
+            // 个人设置
+            {
+                path: '/profile',
+                name: 'UserProfile',
+                component: () => import('@/views/profile/Index.vue'),
+                meta: { title: '个人设置' }
             }
         ]
     },

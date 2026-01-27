@@ -54,7 +54,8 @@ func (h *SsoAuthHandler) Login(c context.Context, ctx *app.RequestContext) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.authService.Login(req.Account, req.Password, req.TenantID)
+	ip := ctx.ClientIP()
+	accessToken, refreshToken, err := h.authService.Login(req.Account, req.Password, req.TenantID, ip)
 	if err != nil {
 		ctx.JSON(consts.StatusUnauthorized, map[string]any{
 			"code":    401,
@@ -156,5 +157,45 @@ func (h *SsoAuthHandler) GetProfile(c context.Context, ctx *app.RequestContext) 
 		"code":    200,
 		"message": "success",
 		"data":    user,
+	})
+}
+
+// ChangePasswordRequest 修改密码请求
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" form:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" form:"new_password" binding:"required"`
+}
+
+// ChangePassword 修改密码
+func (h *SsoAuthHandler) ChangePassword(c context.Context, ctx *app.RequestContext) {
+	userId, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(consts.StatusUnauthorized, map[string]any{
+			"code":    401,
+			"message": "未登录",
+		})
+		return
+	}
+
+	var req ChangePasswordRequest
+	if err := ctx.BindAndValidate(&req); err != nil {
+		ctx.JSON(consts.StatusBadRequest, map[string]any{
+			"code":    400,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	if err := h.authService.ChangePassword(userId.(string), req.OldPassword, req.NewPassword); err != nil {
+		ctx.JSON(consts.StatusBadRequest, map[string]any{
+			"code":    400,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(consts.StatusOK, map[string]any{
+		"code":    200,
+		"message": "密码修改成功",
 	})
 }

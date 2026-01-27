@@ -18,8 +18,6 @@ type SsoUser struct {
 	Email           string     `json:"email" form:"email" gorm:"size:128;column:email"`
 	Avatar          string     `json:"avatar" form:"avatar" gorm:"size:128;column:avatar"`
 	OrganizationID  string     `json:"organization_id" form:"organization_id" gorm:"type:varchar(64);column:organization_id"`
-	School          string     `json:"school" form:"school" gorm:"size:128;column:school"`
-	Class           string     `json:"class" form:"class" gorm:"size:128;column:class"`
 	State           int        `json:"state" form:"state" gorm:"not null;default:1;column:state"`
 	EndTime         *time.Time `json:"end_time" form:"end_time" gorm:"type:datetime;column:end_time"`
 	Kind            int        `json:"kind" form:"kind" gorm:"default:2;column:kind"`
@@ -37,6 +35,11 @@ type SsoUser struct {
 	UpdateID        string     `json:"update_id" form:"update_id" gorm:"size:64;default:'0';column:update_id"`
 	UpdateBy        string     `json:"update_by" form:"update_by" gorm:"size:64;column:update_by"`
 	UpdateAt        time.Time  `json:"update_at" form:"update_at" gorm:"column:update_at;autoUpdateTime"`
+
+	// 关联数据 (不存入 sso_user 表)
+	Roles         []SsoRole         `json:"roles" gorm:"many2many:sso_user_role;joinForeignKey:UserID;joinReferences:RoleID"`
+	Positions     []SsoPosition     `json:"positions" gorm:"many2many:sso_user_position;joinForeignKey:UserID;joinReferences:PositionID"`
+	Organizations []SsoOrganization `json:"organizations" gorm:"many2many:sso_organization_user;joinForeignKey:UserID;joinReferences:OrganizationID"`
 }
 
 // TableName 指定表名

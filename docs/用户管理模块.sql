@@ -443,8 +443,6 @@ CREATE TABLE `sso_user` (
     `email` varchar(128) DEFAULT '' COMMENT '电子邮箱',
     `avatar` varchar(128) DEFAULT '' COMMENT '头像',
     `organization_id` varchar(64) DEFAULT '' COMMENT '组织id',
-    `school` varchar(128) DEFAULT '' COMMENT '学校',
-    `class` varchar(128) DEFAULT '' COMMENT '班级',
     `state` int NOT NULL DEFAULT '1' COMMENT '是否可用:1 可用 0 禁用',
     `end_time` datetime DEFAULT NULL COMMENT '结束时间',
     `kind` int DEFAULT '2' COMMENT '分类（1：超级管理员 2：子管理员 99：其他）',
@@ -542,6 +540,7 @@ CREATE TABLE `sso_user_position` (
     UNIQUE KEY `index_sso_user_position_user_position` (`user_id`, `position_id`) USING BTREE,
     KEY `idx_sso_user_position_tenant_id` (`tenant_id`)
 ) ENGINE = InnoDB AUTO_INCREMENT = 3 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '用户职位表';
+
 
 -- ----------------------------
 -- Table structure for sso_user_role
