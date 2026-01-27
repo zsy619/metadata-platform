@@ -1,6 +1,7 @@
 package user
 
 import (
+	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/repository"
 	"metadata-platform/internal/module/user/service"
 
@@ -13,6 +14,6 @@ func GetRepositories(db *gorm.DB) *repository.Repositories {
 }
 
 // GetServices 暴露服务集创建方法
-func GetServices(repos *repository.Repositories) *service.Services {
-	return service.NewServices(repos)
+func GetServices(repos *repository.Repositories, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *service.Services {
+	return service.NewServices(repos, auditDB, auditQueue)
 }

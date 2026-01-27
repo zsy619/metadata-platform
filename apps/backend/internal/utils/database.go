@@ -17,6 +17,7 @@ import (
 type DBManager struct {
 	MetadataDB  *gorm.DB        // 元数据数据库连接
 	UserDB      *gorm.DB        // 用户管理数据库连接
+	AuditDB     *gorm.DB        // 审计日志数据库连接
 	Config      *configs.Config // 数据库配置
 	HealthCheck chan bool       // 健康检查通道
 	shutdown    chan bool       // 关闭通道
@@ -36,9 +37,16 @@ func NewDBManager(cfg *configs.Config) (*DBManager, error) {
 		return nil, fmt.Errorf("failed to initialize user database: %w", err)
 	}
 
+	// 初始化审计日志数据库连接
+	auditDB, err := initDB(cfg.AppMode, cfg.AuditDB)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize audit database: %w", err)
+	}
+
 	dbm := &DBManager{
 		MetadataDB:  metadataDB,
 		UserDB:      userDB,
+		AuditDB:     auditDB,
 		Config:      cfg,
 		HealthCheck: make(chan bool, 1),
 		shutdown:    make(chan bool, 1),
@@ -113,9 +121,11 @@ func (dbm *DBManager) checkHealth() {
 	metadataHealthy := dbm.checkSingleDBHealth(dbm.MetadataDB, "metadata")
 	// 检查用户管理数据库
 	userHealthy := dbm.checkSingleDBHealth(dbm.UserDB, "user")
+	// 检查审计日志数据库
+	auditHealthy := dbm.checkSingleDBHealth(dbm.AuditDB, "audit")
 	
-	// 只有两个数据库都健康时才发送健康信号
-	dbm.HealthCheck <- metadataHealthy && userHealthy
+	// 只有所有数据库都健康时才发送健康信号
+	dbm.HealthCheck <- metadataHealthy && userHealthy && auditHealthy
 }
 
 // checkSingleDBHealth 检查单个数据库连接健康状态
@@ -200,6 +210,29 @@ func (dbm *DBManager) reconnectSingleDB(dbType string) error {
 		if err == nil {
 			dbm.UserDB = newDB
 		}
+	} else if dbType == "audit" {
+		// 关闭现有连接
+		sqlDB, err := dbm.AuditDB.DB()
+		if err == nil {
+			if err := sqlDB.Close(); err != nil {
+				SugarLogger.Warnf("Failed to close old audit database connection: %v", err)
+			}
+		}
+		
+		// 尝试重新连接，最多尝试3次
+		for i := 0; i < 3; i++ {
+			SugarLogger.Infof("Attempting to reconnect to audit database (attempt %d/3)", i+1)
+			newDB, err = initDB(dbm.Config.AppMode, dbm.Config.AuditDB)
+			if err == nil {
+				break
+			}
+			// 等待一段时间后重试
+			time.Sleep(time.Duration(i+1) * time.Second)
+		}
+		
+		if err == nil {
+			dbm.AuditDB = newDB
+		}
 	} else {
 		return fmt.Errorf("unknown database type: %s", dbType)
 	}
@@ -233,6 +266,15 @@ func (dbm *DBManager) Close() error {
 		return fmt.Errorf("failed to close user database connection: %w", err)
 	}
 
+	// 关闭审计日志数据库连接
+	sqlDB, err = dbm.AuditDB.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get audit sql.DB: %w", err)
+	}
+	if err := sqlDB.Close(); err != nil {
+		return fmt.Errorf("failed to close audit database connection: %w", err)
+	}
+
 	SugarLogger.Info("All database connections closed")
 	return nil
 }
@@ -247,14 +289,21 @@ func (dbm *DBManager) GetUserDB() *gorm.DB {
 	return dbm.UserDB
 }
 
+// GetAuditDB 获取审计日志数据库连接
+func (dbm *DBManager) GetAuditDB() *gorm.DB {
+	return dbm.AuditDB
+}
+
 // IsHealthy 检查数据库是否健康
 func (dbm *DBManager) IsHealthy() bool {
 	// 检查元数据数据库
 	metadataHealthy := dbm.isSingleDBHealthy(dbm.MetadataDB)
 	// 检查用户管理数据库
 	userHealthy := dbm.isSingleDBHealthy(dbm.UserDB)
+	// 检查审计日志数据库
+	auditHealthy := dbm.isSingleDBHealthy(dbm.AuditDB)
 	
-	return metadataHealthy && userHealthy
+	return metadataHealthy && userHealthy && auditHealthy
 }
 
 // isSingleDBHealthy 检查单个数据库是否健康
@@ -278,11 +327,14 @@ func (dbm *DBManager) GetConnectionStats() map[string]any {
 	metadataStats := dbm.getSingleDBStats(dbm.MetadataDB, "metadata")
 	// 获取用户管理数据库统计信息
 	userStats := dbm.getSingleDBStats(dbm.UserDB, "user")
+	// 获取审计日志数据库统计信息
+	auditStats := dbm.getSingleDBStats(dbm.AuditDB, "audit")
 	
 	// 合并统计信息
 	return map[string]any{
 		"MetadataDB": metadataStats,
 		"UserDB":     userStats,
+		"AuditDB":    auditStats,
 		"Timestamp":  time.Now(),
 	}
 }

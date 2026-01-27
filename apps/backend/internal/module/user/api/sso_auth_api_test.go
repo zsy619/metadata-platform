@@ -3,9 +3,9 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"testing"
-
 	"metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/module/user/service"
+	"testing"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/stretchr/testify/mock"
@@ -16,9 +16,14 @@ type MockSsoAuthService struct {
 	mock.Mock
 }
 
-func (m *MockSsoAuthService) Login(account string, password string, tenantID uint, ip string) (string, string, error) {
-	args := m.Called(account, password, tenantID, ip)
+func (m *MockSsoAuthService) Login(account string, password string, tenantID uint, clientInfo service.ClientInfo) (string, string, error) {
+	args := m.Called(account, password, tenantID, clientInfo)
 	return args.String(0), args.String(1), args.Error(2)
+}
+
+func (m *MockSsoAuthService) Logout(ctx context.Context, userID string, clientInfo service.ClientInfo) error {
+	args := m.Called(ctx, userID, clientInfo)
+	return args.Error(0)
 }
 
 func (m *MockSsoAuthService) Refresh(refreshToken string) (string, error) {
@@ -43,6 +48,7 @@ func BenchmarkSsoAuthLogin(b *testing.B) {
 	mockSvc := new(MockSsoAuthService)
 	handler := NewSsoAuthHandler(mockSvc)
 
+	// Pre-setup expectations
 	// Pre-setup expectations
 	mockSvc.On("Login", "admin", "123456", mock.Anything, mock.Anything).Return("access-token", "refresh-token", nil)
 

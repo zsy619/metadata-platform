@@ -50,7 +50,7 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 	{
 		authRouter.POST("/login", h.AuthHandler.Login)
 		authRouter.POST("/refresh", h.AuthHandler.Refresh)
-		authRouter.POST("/logout", h.AuthHandler.Logout)
+		authRouter.POST("/logout", middleware.AuthMiddleware(), h.AuthHandler.Logout)
 		authRouter.POST("/password", middleware.AuthMiddleware(), h.AuthHandler.ChangePassword)
 		authRouter.GET("/profile", middleware.AuthMiddleware(), h.AuthHandler.GetProfile)
 		authRouter.GET("/captcha", h.AuthHandler.GetCaptcha)

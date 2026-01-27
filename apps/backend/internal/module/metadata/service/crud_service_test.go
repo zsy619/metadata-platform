@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"metadata-platform/internal/module/audit"
+	auditService "metadata-platform/internal/module/audit/service"
 	"metadata-platform/internal/module/metadata/engine"
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/repository"
@@ -70,7 +72,10 @@ func TestCRUDService_Lifecycle(t *testing.T) {
 	queryTemplateRepo := repository.NewMdQueryTemplateRepository(metaDB)
 	queryConditionRepo := repository.NewMdQueryConditionRepository(metaDB)
 	queryTemplateService := NewQueryTemplateService(queryTemplateRepo, queryConditionRepo)
-	auditSvc := NewAuditService(metaDB) // Use metaDB for audit logs in test
+	
+	// Create Audit logging tables in metaDB for testing
+	audit.Migrate(metaDB)
+	auditSvc := auditService.NewAuditService(metaDB, nil) // Use metaDB for audit logs in test, queue nil
 
 	svc := NewCRUDService(builder, executor, validator, queryTemplateService, auditSvc)
 

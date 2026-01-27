@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"testing"
 
+	auditModel "metadata-platform/internal/module/audit/model"
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/utils"
 
@@ -69,9 +71,47 @@ func (m *MockSsoUserRepository) IncrementLoginError(id string) error {
 	return args.Error(0)
 }
 
+// MockAuditService
+type MockAuditService struct {
+	mock.Mock
+}
+
+func (m *MockAuditService) RecordOperation(ctx context.Context, log *auditModel.SysOperationLog) {
+	m.Called(ctx, log)
+}
+
+func (m *MockAuditService) RecordDataChange(ctx context.Context, log *auditModel.SysDataChangeLog) {
+	m.Called(ctx, log)
+}
+
+func (m *MockAuditService) RecordLogin(ctx context.Context, log *auditModel.SysLoginLog) {
+	m.Called(ctx, log)
+}
+
+// Stub implementations for new methods
+func (m *MockAuditService) GetLoginLogs(page, pageSize int, filters map[string]interface{}) ([]auditModel.SysLoginLog, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockAuditService) GetOperationLogs(page, pageSize int, filters map[string]interface{}) ([]auditModel.SysOperationLog, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockAuditService) GetDataChangeLogs(page, pageSize int, filters map[string]interface{}) ([]auditModel.SysDataChangeLog, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockAuditService) GetAllLoginLogs(filters map[string]interface{}) ([]auditModel.SysLoginLog, error) {
+	return nil, nil
+}
+func (m *MockAuditService) GetAllOperationLogs(filters map[string]interface{}) ([]auditModel.SysOperationLog, error) {
+	return nil, nil
+}
+func (m *MockAuditService) GetAllDataChangeLogs(filters map[string]interface{}) ([]auditModel.SysDataChangeLog, error) {
+	return nil, nil
+}
+
 func TestSsoAuthService_Login(t *testing.T) {
 	mockRepo := new(MockSsoUserRepository)
-	authSvc := NewSsoAuthService(mockRepo)
+	mockAudit := new(MockAuditService)
+	authSvc := NewSsoAuthService(mockRepo, mockAudit)
 
 	t.Run("Success", func(t *testing.T) {
 		salt := utils.GenerateSalt()
@@ -81,15 +121,20 @@ func TestSsoAuthService_Login(t *testing.T) {
 			Account:  "admin",
 			Password: hashedPassword,
 			Salt:     salt,
+			State:    1,
 		}
-		mockRepo.On("GetUserByAccount", "admin").Return(user, nil).Once()
+		mockRepo.On("GetUserByAccount", "admin").Return(user, nil).Twice() // Once in Login body, once in defer
 		mockRepo.On("UpdateLoginInfo", "1", "127.0.0.1").Return(nil).Once()
+		mockAudit.On("RecordLogin", mock.Anything, mock.Anything).Return().Once()
 
-		access, refresh, err := authSvc.Login("admin", "password123", 1, "127.0.0.1")
+
+		clientInfo := ClientInfo{IP: "127.0.0.1", Browser: "Chrome", OS: "Mac", Platform: "Web"}
+		access, refresh, err := authSvc.Login("admin", "password123", 1, clientInfo)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, access)
 		assert.NotEmpty(t, refresh)
 		mockRepo.AssertExpectations(t)
+		mockAudit.AssertExpectations(t)
 	})
 
 	t.Run("Invalid Credentials", func(t *testing.T) {
@@ -100,18 +145,23 @@ func TestSsoAuthService_Login(t *testing.T) {
 			Account:  "admin",
 			Password: hashedPassword,
 			Salt:     salt,
+			State:    1,
 		}
-		mockRepo.On("GetUserByAccount", "admin").Return(user, nil).Once()
+		mockRepo.On("GetUserByAccount", "admin").Return(user, nil).Twice()
+		mockRepo.On("IncrementLoginError", "1").Return(nil).Once()
+		mockAudit.On("RecordLogin", mock.Anything, mock.Anything).Return().Once()
 
-		_, _, err := authSvc.Login("admin", "wrongpassword", 1, "127.0.0.1")
+		clientInfo := ClientInfo{IP: "127.0.0.1", Browser: "Chrome", OS: "Mac", Platform: "Web"}
+		_, _, err := authSvc.Login("admin", "wrongpassword", 1, clientInfo)
 		assert.Error(t, err)
-		assert.Equal(t, "invalid credentials", err.Error())
+		assert.Equal(t, "用户名或密码错误", err.Error())
 	})
 }
 
 func TestSsoAuthService_Refresh(t *testing.T) {
 	mockRepo := new(MockSsoUserRepository)
-	authSvc := NewSsoAuthService(mockRepo)
+	mockAudit := new(MockAuditService)
+	authSvc := NewSsoAuthService(mockRepo, mockAudit)
 
 	user := &model.SsoUser{ID: "1", Account: "admin"}
 	

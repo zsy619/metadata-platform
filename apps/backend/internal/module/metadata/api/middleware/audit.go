@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
-	"metadata-platform/internal/module/metadata/model"
-	"metadata-platform/internal/module/metadata/service"
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/service"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -43,17 +43,12 @@ func AuditMiddleware(auditSvc service.AuditService) app.HandlerFunc {
 			Latency:   latency,
 			ClientIP:  ctx.ClientIP(),
 			UserAgent: string(ctx.Request.Header.UserAgent()),
+			Source:    "metadata", // 明确标识来源为 metadata 模块
 			CreateAt:  time.Now(),
 		}
 
 		// 记录错误信息 (如果有)
-		// Hertz 的 Error 机制可能不在 ctx.Errors 中直接体现业务错误，
-		// 这里假设如果有 panic recovery 或者 utils.ErrorResponse 可能会留下痕迹
-		// 暂时只记录 HTTP 状态码非 200 的情况
 		if statusCode >= 400 {
-			// 尝试获取 body 作为 error message? 
-			// 或者是从 ctx 的 keys 中获取 error?
-			// 这里简单记录
 			log.ErrorMessage = fmtResponseBody(ctx)
 		}
 

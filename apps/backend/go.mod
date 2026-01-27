@@ -12,6 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.2
 	github.com/mojocn/base64Captcha v1.3.8
+	github.com/mssola/user_agent v0.6.0
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.11.1
 	github.com/tjfoc/gmsm v1.4.1

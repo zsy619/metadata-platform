@@ -12,7 +12,7 @@ type SsoUser struct {
 	Salt            string     `json:"salt" form:"salt" gorm:"size:64;column:salt"` // Keep 64 for security upgrade, SQL said 32
 	Name            string     `json:"name" form:"name" gorm:"size:128;column:name"`
 	Code            string     `json:"code" form:"code" gorm:"size:64;column:code"`
-	Sex             string     `json:"sex" form:"sex" gorm:"size:6;default:'男';column:sex"`
+	Sex             string     `json:"sex" form:"sex" gorm:"size:8;default:'男';column:sex"`
 	Idcard          string     `json:"idcard" form:"idcard" gorm:"size:32;column:idcard"`
 	Mobile          string     `json:"mobile" form:"mobile" gorm:"size:32;column:mobile"`
 	Email           string     `json:"email" form:"email" gorm:"size:128;column:email"`

@@ -11,7 +11,7 @@ type SsoTenant struct {
 	Contact    string    `json:"contact" form:"contact" gorm:"size:64;default:'';column:contact"`
 	Address    string    `json:"address" form:"address" gorm:"size:128;default:'';column:address"`
 	State      int       `json:"state" form:"state" gorm:"not null;default:1;column:state"`
-	Remark     string    `json:"remark" form:"remark" gorm:"size:255;default:'';column:remark"`
+	Remark     string    `json:"remark" form:"remark" gorm:"size:256;default:'';column:remark"`
 	IsDeleted  bool      `json:"is_deleted" form:"is_deleted" gorm:"type:tinyint(1);default:0;column:is_deleted"`
 	TenantID   string    `json:"tenant_id" form:"tenant_id" gorm:"type:varchar(64);not null;default:'0';column:tenant_id"`
 	CreateID   string    `json:"create_id" form:"create_id" gorm:"size:64;default:'0';column:create_id"`

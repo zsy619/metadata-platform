@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
+	"github.com/mssola/user_agent"
 
 	"metadata-platform/internal/module/user/service"
 	"metadata-platform/internal/utils"
@@ -55,7 +56,43 @@ func (h *SsoAuthHandler) Login(c context.Context, ctx *app.RequestContext) {
 	}
 
 	ip := ctx.ClientIP()
-	accessToken, refreshToken, err := h.authService.Login(req.Account, req.Password, req.TenantID, ip)
+	userAgentStr := string(ctx.UserAgent())
+	
+	// Parse User-Agent
+	ua := user_agent.New(userAgentStr)
+	browserName, browserVersion := ua.Browser()
+	engineName, engineVersion := ua.Engine()
+	
+	clientInfo := service.ClientInfo{
+		IP:             ip,
+		UserAgent:      userAgentStr,
+		Browser:        browserName,
+		BrowserVersion: browserVersion,
+		BrowserEngine:  engineName + " " + engineVersion,
+		Language:       string(ctx.Request.Header.Get("Accept-Language")),
+		OS:             ua.OSInfo().Name,
+		OSVersion:      ua.OSInfo().Version,
+		OSArch:         "", // difficult to reliably get from standard UA, keep empty or parse specific tokens if needed
+		Device:         "",
+		Platform:       ua.Platform(),
+		Timezone:       "", // Would need client to send it in header/body
+		IPLocation:     "", // Would need GeoIP lookup
+	}
+	
+	// Basic device detection
+	if ua.Mobile() {
+		clientInfo.DeviceType = "Mobile"
+		clientInfo.Device = "Mobile"
+	} else {
+		clientInfo.DeviceType = "Desktop"
+		clientInfo.Device = "PC"
+	}
+	if ua.Bot() {
+		clientInfo.DeviceType = "Bot"
+		clientInfo.Device = "Bot"
+	}
+
+	accessToken, refreshToken, err := h.authService.Login(req.Account, req.Password, req.TenantID, clientInfo)
 	if err != nil {
 		ctx.JSON(consts.StatusUnauthorized, map[string]any{
 			"code":    401,
@@ -124,12 +161,56 @@ func (h *SsoAuthHandler) Refresh(c context.Context, ctx *app.RequestContext) {
 	})
 }
 
-// Logout 登出
+// Logout 退出登录
 func (h *SsoAuthHandler) Logout(c context.Context, ctx *app.RequestContext) {
-	// 实际开发中可能需要将 token 加入黑名单
+	// Extract info for audit log
+	ip := ctx.ClientIP()
+	userAgentStr := string(ctx.UserAgent())
+	
+	// Parse User-Agent
+	ua := user_agent.New(userAgentStr)
+	browserName, browserVersion := ua.Browser()
+	engineName, engineVersion := ua.Engine()
+
+	clientInfo := service.ClientInfo{
+		IP:             ip,
+		UserAgent:      userAgentStr,
+		Browser:        browserName,
+		BrowserVersion: browserVersion,
+		BrowserEngine:  engineName + " " + engineVersion,
+		Language:       string(ctx.Request.Header.Get("Accept-Language")),
+		OS:             ua.OSInfo().Name,
+		OSVersion:      ua.OSInfo().Version,
+		OSArch:         "",
+		Device:         "",
+		Platform:       ua.Platform(),
+	}
+	
+	if ua.Mobile() {
+		clientInfo.DeviceType = "Mobile"
+		clientInfo.Device = "Mobile"
+	} else {
+		clientInfo.DeviceType = "Desktop"
+		clientInfo.Device = "PC"
+	}
+
+	// UserID should be available if route is authenticated
+	userID := ""
+	if v, exists := ctx.Get("user_id"); exists {
+		userID = v.(string)
+	}
+
+	err := h.authService.Logout(c, userID, clientInfo)
+	if err != nil {
+		ctx.JSON(consts.StatusOK, map[string]any{
+			"code":    500,
+			"message": "退出失败: " + err.Error(),
+		})
+		return
+	}
 	ctx.JSON(consts.StatusOK, map[string]any{
 		"code":    200,
-		"message": "登出成功",
+		"message": "退出成功",
 	})
 }
 

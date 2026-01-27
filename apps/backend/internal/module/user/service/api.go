@@ -1,8 +1,13 @@
 package service
 
 import (
+	"context"
+	"metadata-platform/internal/module/audit/queue"
+	auditService "metadata-platform/internal/module/audit/service"
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
+
+	"gorm.io/gorm"
 )
 
 // SsoUserService 用户服务接口
@@ -76,9 +81,30 @@ type SsoPositionService interface {
 	GetAllPositions() ([]model.SsoPosition, error)
 }
 
+// ClientInfo 客户端信息
+type ClientInfo struct {
+	IP               string
+	UserAgent        string
+	Browser          string
+	BrowserVersion   string
+	BrowserEngine    string
+	Language         string
+	OS               string
+	OSVersion        string
+	OSArch           string
+	DeviceType       string
+	DeviceModel      string
+	Device           string // Keep for backward compatibility or general device string
+	Platform         string
+	ScreenResolution string
+	Timezone         string
+	IPLocation       string
+}
+
 // SsoAuthService 认证服务接口
 type SsoAuthService interface {
-	Login(account string, password string, tenantID uint, ip string) (accessToken string, refreshToken string, err error)
+	Login(account string, password string, tenantID uint, clientInfo ClientInfo) (accessToken string, refreshToken string, err error)
+	Logout(ctx context.Context, userID string, clientInfo ClientInfo) error
 	Refresh(refreshToken string) (newAccessToken string, err error)
 	GetUserInfo(userID string) (*model.SsoUser, error)
 	ChangePassword(userID string, oldPassword string, newPassword string) error
@@ -95,10 +121,12 @@ type Services struct {
 	Position     SsoPositionService
 	Auth         SsoAuthService
 	CasbinSync   SsoCasbinSyncService
+	Audit        auditService.AuditService
 }
 
 // NewServices 创建用户模块服务集合
-func NewServices(repos *repository.Repositories) *Services {
+func NewServices(repos *repository.Repositories, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *Services {
+	auditSvc := auditService.NewAuditService(auditDB, auditQueue)
 	return &Services{
 		User:         NewSsoUserService(repos.User),
 		Tenant:       NewSsoTenantService(repos.Tenant),
@@ -107,12 +135,13 @@ func NewServices(repos *repository.Repositories) *Services {
 		Role:         NewSsoRoleService(repos.Role),
 		Organization: NewSsoOrganizationService(repos.Organization),
 		Position:     NewSsoPositionService(repos.Position),
-		Auth:         NewSsoAuthService(repos.User),
+		Auth:         NewSsoAuthService(repos.User, auditSvc),
 		CasbinSync: NewSsoCasbinSyncService(
 			repos.UserRole,
 			repos.RoleMenu,
 			repos.Role,
 			repos.Menu,
 		),
+		Audit: auditSvc,
 	}
 }

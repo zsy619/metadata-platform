@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	auditModel "metadata-platform/internal/module/audit/model"
+	auditService "metadata-platform/internal/module/audit/service"
 	"metadata-platform/internal/module/metadata/engine"
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/utils"
@@ -38,7 +40,7 @@ type crudService struct {
 	executor        *engine.SQLExecutor
 	validator       DataValidator
 	templateService QueryTemplateService
-	auditService    AuditService
+	auditService    auditService.AuditService
 }
 
 // NewCRUDService 创建通用数据操作服务实例
@@ -47,7 +49,7 @@ func NewCRUDService(
 	executor *engine.SQLExecutor,
 	validator DataValidator,
 	templateService QueryTemplateService,
-	auditService AuditService,
+	auditService auditService.AuditService,
 ) CRUDService {
 	return &crudService{
 		builder:         builder,
@@ -462,7 +464,7 @@ func (s *crudService) recordAudit(ctx context.Context, modelID, recordID, action
 		}
 	}
 
-	s.auditService.RecordDataChange(ctx, &model.SysDataChangeLog{
+	s.auditService.RecordDataChange(ctx, &auditModel.SysDataChangeLog{
 		ID:         uuid.New().String(), // Ensure uuid import
 		TraceID:    traceID,
 		ModelID:    modelID,
@@ -471,6 +473,7 @@ func (s *crudService) recordAudit(ctx context.Context, modelID, recordID, action
 		BeforeData: beforeJSON,
 		AfterData:  afterJSON,
 		CreateBy:   "system", // Improve: get user from context
+		Source:     "metadata", // 明确标识来源
 		CreateAt:   time.Now(),
 	})
 }

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"metadata-platform/internal/module/audit/queue"
+	auditService "metadata-platform/internal/module/audit/service"
 	"metadata-platform/internal/module/metadata/engine"
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/repository"
@@ -33,11 +35,11 @@ type Services struct {
 	Tree             TreeService
 	MasterDetail     MasterDetailService
 	DataIO           DataIOService
-	Audit            AuditService
+	Audit            auditService.AuditService
 }
 
 // NewServices 创建元数据模块服务集合
-func NewServices(db *gorm.DB, repos *repository.Repositories) *Services {
+func NewServices(db *gorm.DB, repos *repository.Repositories, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *Services {
 	connService := NewMdConnService(repos.Conn)
 
 	validator := NewDataValidator()
@@ -46,7 +48,7 @@ func NewServices(db *gorm.DB, repos *repository.Repositories) *Services {
 	// 初始化 SQL 引擎
 	sqlBuilder := engine.NewSQLBuilder(db, repos.Model)
 	sqlExecutor := engine.NewSQLExecutor(db, repos.Conn)
-	auditSvc := NewAuditService(db)
+	auditSvc := auditService.NewAuditService(auditDB, auditQueue)
 	crudSvc := NewCRUDService(sqlBuilder, sqlExecutor, validator, queryTemplateService, auditSvc)
 	treeSvc := NewTreeService(repos.Model, crudSvc, sqlExecutor)
 	masterDetailSvc := NewMasterDetailService(crudSvc, repos.ModelRelation, repos.Model, sqlExecutor)

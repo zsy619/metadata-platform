@@ -29,6 +29,8 @@ type Config struct {
 	MetadataDB      DBConfig `mapstructure:"METADATA_DB"`
 	// 用户管理数据库配置
 	UserDB          DBConfig `mapstructure:"USER_DB"`
+	// 审计日志数据库配置
+	AuditDB         DBConfig `mapstructure:"AUDIT_DB"`
 
 	// JWT配置
 	JWTSecret       string `mapstructure:"JWT_SECRET"`
@@ -90,6 +92,15 @@ func setDefaults() {
 	viper.SetDefault("USER_DB.NAME", "metadata_sso")
 	viper.SetDefault("USER_DB.MAX_IDLE_CONNS", 10)
 	viper.SetDefault("USER_DB.MAX_OPEN_CONNS", 100)
+
+	// 审计日志数据库配置
+	viper.SetDefault("AUDIT_DB.HOST", "localhost")
+	viper.SetDefault("AUDIT_DB.PORT", 3306)
+	viper.SetDefault("AUDIT_DB.USER", "root")
+	viper.SetDefault("AUDIT_DB.PASSWORD", "password")
+	viper.SetDefault("AUDIT_DB.NAME", "metadata_audit")
+	viper.SetDefault("AUDIT_DB.MAX_IDLE_CONNS", 10)
+	viper.SetDefault("AUDIT_DB.MAX_OPEN_CONNS", 100)
 
 	// JWT配置
 	viper.SetDefault("JWT_SECRET", "your-secret-key")

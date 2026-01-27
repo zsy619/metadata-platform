@@ -2,6 +2,7 @@ package metadata
 
 import (
 	globalMiddleware "metadata-platform/internal/middleware"
+	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/metadata/api"
 	"metadata-platform/internal/module/metadata/api/middleware"
 	"metadata-platform/internal/module/metadata/repository"
@@ -13,12 +14,12 @@ import (
 )
 
 // RegisterRoutes 注册元数据模块路由
-func RegisterRoutes(r *server.Hertz, db *gorm.DB) {
+func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) {
 	// 初始化仓库
 	repos := repository.NewRepositories(db)
 
 	// 初始化服务
-	services := service.NewServices(db, repos)
+	services := service.NewServices(db, repos, auditDB, auditQueue)
 
 	// 初始化处理器
 	apiHandler := api.NewAPIHandler(services.API)

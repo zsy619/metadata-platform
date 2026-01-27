@@ -16,7 +16,7 @@ type SsoMenu struct {
 	Icon            string    `json:"icon" form:"icon" gorm:"size:128;default:'';column:icon"`
 	URL             string    `json:"url" form:"url" gorm:"size:512;default:'#';column:url"`
 	Method          string    `json:"method" form:"method" gorm:"size:16;default:'';column:method"`
-	Target          string    `json:"target" form:"target" gorm:"size:36;default:'';column:target"`
+	Target          string    `json:"target" form:"target" gorm:"size:64;default:'';column:target"`
 	Remark          string    `json:"remark" form:"remark" gorm:"size:512;default:'';column:remark"`
 	Sort            int       `json:"sort" form:"sort" gorm:"default:0;column:sort"`
 	Tier            int       `json:"tier" form:"tier" gorm:"default:0;column:tier"`
