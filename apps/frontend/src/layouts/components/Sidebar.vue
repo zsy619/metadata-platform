@@ -129,4 +129,45 @@ const activeMenu = computed(() => {
 .sidebarLogoFade-leave-to {
     opacity: 0;
 }
+
+/* 修复折叠状态下的图标样式 - 增强版 */
+:deep(.el-menu--collapse .el-sub-menu__title),
+:deep(.el-menu--collapse .el-menu-item) {
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 4px 0 !important;
+    /* 强制移除左右边距，保留上下边距 */
+    width: 100% !important;
+}
+
+/* 专门针对图标的修复 */
+:deep(.el-menu--collapse .el-sub-menu__title .el-icon),
+:deep(.el-menu--collapse .el-menu-item .el-icon) {
+    margin: 0 !important;
+    /* 清除所有边距 */
+    padding: 0 !important;
+    font-size: 18px;
+    width: auto !important;
+    /* 防止宽度被撑开 */
+}
+
+/* 隐藏标题和箭头 */
+:deep(.el-menu--collapse .el-sub-menu__title span),
+:deep(.el-menu--collapse .el-menu-item .menu-title),
+:deep(.el-menu--collapse .el-sub-menu__icon-arrow) {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden;
+    margin: 0 !important;
+}
+
+/* 修复 tooltip 触发层的样式（如果有） */
+:deep(.el-menu--collapse .el-sub-menu__title > div),
+:deep(.el-menu--collapse .el-menu-item > div) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
 </style>
