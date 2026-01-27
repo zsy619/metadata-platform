@@ -36,7 +36,7 @@
                         <router-link to="/">
                             <el-dropdown-item>首页</el-dropdown-item>
                         </router-link>
-                        <router-link to="/profile">
+                        <router-link to="/user/profile">
                             <el-dropdown-item>个人设置</el-dropdown-item>
                         </router-link>
                         <el-dropdown-item divided command="logout">

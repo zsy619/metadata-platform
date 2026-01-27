@@ -268,17 +268,17 @@ const handleStateChange = async (row: API) => {
 
 // 新增接口
 const handleCreate = () => {
-    router.push('/apis/create')
+    router.push('/api/create')
 }
 
 // 批量生成接口
 const handleBatchGenerate = () => {
-    router.push('/apis/batch-generate')
+    router.push('/api/batch-generate')
 }
 
 // 编辑接口
 const handleEdit = (row: API) => {
-    router.push(`/apis/${row.apiID}/edit`)
+    router.push(`/api/${row.apiID}/edit`)
 }
 
 // 删除接口
@@ -308,12 +308,12 @@ const handleDelete = (row: API) => {
 
 // 测试接口
 const handleTest = (row: API) => {
-    router.push(`/apis/${row.apiID}/test`)
+    router.push(`/api/${row.apiID}/test`)
 }
 
 // 查看文档
 const handleDocument = (row: API) => {
-    router.push(`/apis/${row.apiID}/document`)
+    router.push(`/api/${row.apiID}/document`)
 }
 
 // 获取接口类型文本

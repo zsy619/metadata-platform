@@ -1,8 +1,8 @@
 /**
  * 数据源API服务
  */
+import type { DataSource, DataSourceQueryParams, DataSourceResponse } from '@/types/metadata/datasource'
 import request from '@/utils/request'
-import type { DataSource, DataSourceQueryParams, DataSourceResponse } from '@/types/data-source'
 
 /**
  * 获取数据源列表
@@ -10,11 +10,11 @@ import type { DataSource, DataSourceQueryParams, DataSourceResponse } from '@/ty
  * @returns 数据源列表
  */
 export const getDataSources = async (params?: DataSourceQueryParams): Promise<DataSourceResponse> => {
-  return request({
-    url: '/api/data-sources',
-    method: 'get',
-    params
-  })
+    return request({
+        url: '/api/data-sources',
+        method: 'get',
+        params
+    })
 }
 
 /**
@@ -23,10 +23,10 @@ export const getDataSources = async (params?: DataSourceQueryParams): Promise<Da
  * @returns 数据源详情
  */
 export const getDataSourceById = async (id: number): Promise<DataSource> => {
-  return request({
-    url: `/api/data-sources/${id}`,
-    method: 'get'
-  })
+    return request({
+        url: `/api/data-sources/${id}`,
+        method: 'get'
+    })
 }
 
 /**
@@ -35,11 +35,11 @@ export const getDataSourceById = async (id: number): Promise<DataSource> => {
  * @returns 创建结果
  */
 export const createDataSource = async (data: Partial<DataSource>): Promise<DataSource> => {
-  return request({
-    url: '/api/data-sources',
-    method: 'post',
-    data
-  })
+    return request({
+        url: '/api/data-sources',
+        method: 'post',
+        data
+    })
 }
 
 /**
@@ -49,11 +49,11 @@ export const createDataSource = async (data: Partial<DataSource>): Promise<DataS
  * @returns 更新结果
  */
 export const updateDataSource = async (id: number, data: Partial<DataSource>): Promise<DataSource> => {
-  return request({
-    url: `/api/data-sources/${id}`,
-    method: 'put',
-    data
-  })
+    return request({
+        url: `/api/data-sources/${id}`,
+        method: 'put',
+        data
+    })
 }
 
 /**
@@ -62,10 +62,10 @@ export const updateDataSource = async (id: number, data: Partial<DataSource>): P
  * @returns 删除结果
  */
 export const deleteDataSource = async (id: number): Promise<void> => {
-  return request({
-    url: `/api/data-sources/${id}`,
-    method: 'delete'
-  })
+    return request({
+        url: `/api/data-sources/${id}`,
+        method: 'delete'
+    })
 }
 
 /**
@@ -74,11 +74,11 @@ export const deleteDataSource = async (id: number): Promise<void> => {
  * @returns 测试结果
  */
 export const testDataSourceConnection = async (data: Partial<DataSource>): Promise<{ success: boolean; message: string }> => {
-  return request({
-    url: '/api/data-sources/test-connection',
-    method: 'post',
-    data
-  })
+    return request({
+        url: '/api/data-sources/test-connection',
+        method: 'post',
+        data
+    })
 }
 
 /**
@@ -87,8 +87,8 @@ export const testDataSourceConnection = async (data: Partial<DataSource>): Promi
  * @returns 同步结果
  */
 export const syncDataSourceMetadata = async (id: number): Promise<void> => {
-  return request({
-    url: `/api/data-sources/${id}/sync`,
-    method: 'post'
-  })
+    return request({
+        url: `/api/data-sources/${id}/sync`,
+        method: 'post'
+    })
 }

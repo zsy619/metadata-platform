@@ -1,80 +1,106 @@
 import Layout from '@/layouts/DefaultLayout.vue'
-import { type RouteRecordRaw } from 'vue-router'
+import { h } from 'vue'
+import { RouterView as VueRouterView, type RouteRecordRaw } from 'vue-router'
 
-// Wrapper component for nested routes
-const RouterView = { template: '<router-view />' }
+// Wrapper component for nested routes to avoid "router-view inside transition" warning
+const RouterView = {
+    name: 'RouterViewWrapper',
+    render: () => h(VueRouterView)
+}
+
 
 const routes: RouteRecordRaw[] = [
     {
         path: '/',
         component: Layout,
-        redirect: '/dashboard',
+        redirect: '/home/dashboard',
         children: [
             {
-                path: 'dashboard',
+                path: 'home/dashboard',
                 name: 'Dashboard',
                 component: () => import('@/views/home/Dashboard.vue'),
                 meta: { title: '首页', icon: 'Odometer', affix: true }
-            },
-            {
-                path: 'profile',
-                name: 'Profile',
-                component: () => import('@/views/profile/Index.vue'),
-                meta: { title: '个人设置', hidden: true }
             }
         ]
     },
     {
-        path: '/data-sources',
+        path: '/metadata',
         component: Layout,
-        meta: { title: '数据源管理', icon: 'Connection' },
-        redirect: '/data-sources/list',
+        meta: { title: '元数据管理', icon: 'FolderOpened' },
+        redirect: '/metadata/datasource/list',
         children: [
             {
-                path: 'list',
-                name: 'DataSourceList',
-                component: () => import('@/views/data-source/List.vue'),
-                meta: { title: '数据源列表', icon: 'List' }
-            },
-            {
-                path: 'create',
-                name: 'DataSourceCreate',
-                component: () => import('@/views/data-source/Create.vue'),
-                meta: { title: '添加数据源', icon: 'Plus' }
-            },
-            {
-                path: ':id/edit',
-                name: 'DataSourceEdit',
-                component: () => import('@/views/data-source/Edit.vue'),
-                meta: { title: '编辑数据源', hidden: true }
-            },
-            {
-                path: 'metadata',
-                name: 'Metadata',
-                meta: { title: '元数据管理', icon: 'FolderOpened' },
-                component: RouterView, // Nested group
+                path: 'datasource',
+                component: RouterView,
+                meta: { title: '数据源管理', icon: 'Connection' },
                 children: [
                     {
-                        path: 'tables',
-                        name: 'MetadataTableList',
-                        component: () => import('@/views/metadata/TableList.vue'),
-                        meta: { title: '表与视图', icon: 'Grid' }
+                        path: 'list',
+                        name: 'DataSourceList',
+                        component: () => import('@/views/metadata/datasource/List.vue'),
+                        meta: { title: '数据源列表', icon: 'List' }
                     },
                     {
-                        path: 'fields',
+                        path: 'create',
+                        name: 'DataSourceCreate',
+                        component: () => import('@/views/metadata/datasource/Create.vue'),
+                        meta: { title: '添加数据源', icon: 'Plus' }
+                    },
+                    {
+                        path: ':id/edit',
+                        name: 'DataSourceEdit',
+                        component: () => import('@/views/metadata/datasource/Edit.vue'),
+                        meta: { title: '编辑数据源', hidden: true }
+                    }
+                ]
+            },
+            {
+                path: 'table',
+                component: RouterView,
+                meta: { title: '表与视图', icon: 'Grid' },
+                children: [
+                    {
+                        path: 'list',
+                        name: 'MetadataTableList',
+                        component: () => import('@/views/metadata/table/List.vue'),
+                        meta: { title: '表列表', icon: 'List' }
+                    }
+                ]
+            },
+            {
+                path: 'field',
+                component: RouterView,
+                meta: { title: '字段列表', icon: 'Tickets' },
+                children: [
+                    {
+                        path: 'list',
                         name: 'MetadataFieldList',
-                        component: () => import('@/views/metadata/FieldList.vue'),
-                        meta: { title: '字段列表', icon: 'Tickets' }
+                        component: () => import('@/views/metadata/field/List.vue'),
+                        meta: { title: '字段列表', icon: 'List' }
                     }
                 ]
             }
         ]
     },
     {
-        path: '/models',
+        path: '/user',
+        component: Layout,
+        redirect: '/user/profile',
+        meta: { hidden: true },
+        children: [
+            {
+                path: 'profile',
+                name: 'Profile',
+                component: () => import('@/views/user/Profile.vue'),
+                meta: { title: '个人设置' }
+            }
+        ]
+    },
+    {
+        path: '/model',
         component: Layout,
         meta: { title: '模型管理', icon: 'Document' },
-        redirect: '/models/list',
+        redirect: '/model/list',
         children: [
             {
                 path: 'list',
@@ -103,10 +129,10 @@ const routes: RouteRecordRaw[] = [
         ]
     },
     {
-        path: '/apis',
+        path: '/api',
         component: Layout,
         meta: { title: '接口管理', icon: 'Share' },
-        redirect: '/apis/list',
+        redirect: '/api/list',
         children: [
             {
                 path: 'list',
@@ -142,30 +168,9 @@ const routes: RouteRecordRaw[] = [
             },
             {
                 path: 'audit',
-                name: 'Audit',
-                meta: { title: '审计日志', icon: 'Document' },
-                component: RouterView,
-                redirect: '/system/audit/login',
-                children: [
-                    {
-                        path: 'login',
-                        name: 'LoginLog',
-                        component: () => import('@/views/system/audit/LoginLog.vue'),
-                        meta: { title: '登录日志', icon: 'User' }
-                    },
-                    {
-                        path: 'operation',
-                        name: 'OperationLog',
-                        component: () => import('@/views/system/audit/OperationLog.vue'),
-                        meta: { title: '操作日志', icon: 'Edit' }
-                    },
-                    {
-                        path: 'data',
-                        name: 'DataLog',
-                        component: () => import('@/views/system/audit/DataLog.vue'),
-                        meta: { title: '数据日志', icon: 'DataLine' }
-                    }
-                ]
+                name: 'AuditLog',
+                component: () => import('@/views/system/AuditLog.vue'),
+                meta: { title: '审计日志', icon: 'Document' }
             }
         ]
     },
@@ -176,7 +181,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '',
                 name: 'Login',
-                component: () => import('@/views/auth/Login.vue'),
+                component: () => import('@/views/login/Index.vue'),
                 meta: { title: '登录' }
             }
         ]

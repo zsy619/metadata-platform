@@ -314,3 +314,19 @@ export const getTableStructureFromDB = async (id: string, tableName: string, sch
         params: { schema }
     })
 }
+
+/**
+ * 预览表数据
+ * @param id 数据连接ID
+ * @param tableName 表名
+ * @param schema Schema
+ * @param limit 限制条数
+ * @returns 表数据预览
+ */
+export const previewTableData = async (id: string, tableName: string, schema?: string, limit: number = 100): Promise<any> => {
+    return request({
+        url: `/api/metadata/conns/${id}/tables/${tableName}/preview`,
+        method: 'get',
+        params: { schema, limit }
+    })
+}

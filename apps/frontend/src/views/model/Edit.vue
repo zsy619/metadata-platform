@@ -207,7 +207,7 @@
 <script setup lang="ts">
 import { getConns as getConnsApi } from '@/api/metadata'
 import { duplicateQueryTemplate, previewQueryTemplate } from '@/api/model'
-import type { Model, ModelField } from '@/types/model'
+import type { Model, ModelField } from '@/types/metadata'
 import { ArrowLeft, CopyDocument, Delete, Edit, Operation, Plus, View } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
@@ -288,7 +288,7 @@ const loadData = async (id: string) => {
     }
 }
 
-const handleCancel = () => router.push('/models')
+const handleCancel = () => router.push('/model/list')
 
 const handleSubmit = async () => {
     submitting.value = true

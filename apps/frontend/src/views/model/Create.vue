@@ -122,8 +122,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import type { DataSource } from '@/types/data-source'
-import type { Model } from '@/types/model'
+import type { Model } from '@/types/metadata'
+import type { DataSource } from '@/types/metadata/datasource'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
@@ -324,7 +324,7 @@ const handleSubmit = async () => {
 
 // 完成后查看模型列表
 const handleFinish = () => {
-    router.push('/models')
+    router.push('/model/list')
 }
 
 // 创建另一个模型

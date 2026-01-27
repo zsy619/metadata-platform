@@ -2,20 +2,19 @@ package api
 
 import (
 	"fmt"
+	"metadata-platform/internal/utils"
 	"strings"
 	"sync"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
-
-	"metadata-platform/internal/utils"
 )
 
 // Route 路由定义结构
 type Route struct {
 	Method      string            `json:"method"`      // HTTP方法
 	Path        string            `json:"path"`        // 路由路径
-	Handler     any       `json:"handler"`     // 处理函数
+	Handler     any               `json:"handler"`     // 处理函数
 	Middlewares []string          `json:"middlewares"` // 中间件列表
 	Priority    int               `json:"priority"`    // 路由优先级
 	Group       string            `json:"group"`       // 路由分组
@@ -24,17 +23,17 @@ type Route struct {
 
 // Router 路由管理器
 type Router struct {
-	hz           *server.Hertz              // Hertz引擎
-	Routes       map[string][]*Route        // 已注册路由
-	routeLock    sync.RWMutex               // 路由锁
+	hz            *server.Hertz              // Hertz引擎
+	Routes        map[string][]*Route        // 已注册路由
+	routeLock     sync.RWMutex               // 路由锁
 	middlewareMap map[string]app.HandlerFunc // 中间件映射
 }
 
 // NewRouter 创建路由管理器
 func NewRouter(hz *server.Hertz) *Router {
 	return &Router{
-		hz:           hz,
-		Routes:       make(map[string][]*Route),
+		hz:            hz,
+		Routes:        make(map[string][]*Route),
 		middlewareMap: make(map[string]app.HandlerFunc),
 	}
 }

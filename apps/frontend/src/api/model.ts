@@ -1,7 +1,7 @@
 /**
  * 模型API服务
  */
-import type { Model, ModelBuildParams, ModelField, ModelQueryParams, ModelResponse } from '@/types/model'
+import type { Model, ModelBuildParams, ModelField, ModelQueryParams, ModelResponse } from '@/types/metadata'
 import request from '@/utils/request'
 
 /**

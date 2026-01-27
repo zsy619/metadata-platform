@@ -72,8 +72,8 @@
 <script setup lang="ts">
 import { getConns } from '@/api/metadata'
 import { deleteModel, getModels } from '@/api/model'
-import type { DataSource } from '@/types/data-source'
-import type { Model } from '@/types/model'
+import type { Model } from '@/types/metadata'
+import type { DataSource } from '@/types/metadata/datasource'
 import {
     Delete,
     Edit,
@@ -153,12 +153,12 @@ const handleSizeChange = (size: number) => {
     fetchModels()
 }
 
-const handleCreate = () => router.push('/models/create')
+const handleCreate = () => router.push('/model/create')
 
 const handleEdit = (row: any) => {
     // 适配 ID 类型
     const id = row.id || row.ID
-    router.push(`/models/${id}/edit`)
+    router.push(`/model/${id}/edit`)
 }
 
 const handleDelete = (row: any) => {
@@ -182,7 +182,7 @@ const handleDelete = (row: any) => {
 
 const handlePreview = (row: any) => {
     const id = row.id || row.ID
-    router.push(`/models/${id}/preview`)
+    router.push(`/model/${id}/preview`)
 }
 
 // 获取模型类型文本
@@ -204,7 +204,7 @@ const getModelKindTagType = (kind: number): string => {
         3: 'warning',
         4: 'info'
     }
-    return typeMap[kind] || ''
+    return typeMap[kind] || 'info'
 }
 </script>
 <style scoped>

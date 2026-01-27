@@ -203,7 +203,7 @@
 </template>
 <script setup lang="ts">
 import type { API, APIRequestParam, APIResponseData } from '@/types/api'
-import type { Model } from '@/types/model'
+import type { Model } from '@/types/metadata'
 import { ArrowLeft, Delete, Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
@@ -443,7 +443,7 @@ const handleModelChange = (modelID: number) => {
 
 // 返回列表
 const handleCancel = () => {
-    router.push('/apis')
+    router.push('/api/list')
 }
 
 // 表单提交

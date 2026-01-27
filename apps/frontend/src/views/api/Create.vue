@@ -94,7 +94,7 @@
 </template>
 <script setup lang="ts">
 import type { API } from '@/types/api'
-import type { Model } from '@/types/model'
+import type { Model } from '@/types/metadata'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
@@ -224,7 +224,7 @@ const handleModelChange = (modelID: number) => {
 
 // 返回列表
 const handleCancel = () => {
-    router.push('/apis')
+    router.push('/api/list')
 }
 
 // 表单提交
@@ -238,7 +238,7 @@ const handleSubmit = async () => {
         setTimeout(() => {
             ElMessage.success('创建成功')
             submitting.value = false
-            router.push('/apis')
+            router.push('/api/list')
         }, 1000)
     } catch (error) {
         console.error('表单验证失败:', error)

@@ -26,19 +26,19 @@
             <el-col :xs="24" :lg="16">
                 <el-card shadow="hover" header="快捷操作">
                     <div class="quick-actions">
-                        <el-button type="default" size="large" class="action-btn" @click="$router.push('/data-sources/create')">
+                        <el-button type="default" size="large" class="action-btn" @click="$router.push('/metadata/datasource/create')">
                             <el-icon>
                                 <Connection />
                             </el-icon>
                             <span>新建数据源</span>
                         </el-button>
-                        <el-button type="default" size="large" class="action-btn" @click="$router.push('/models/create')">
+                        <el-button type="default" size="large" class="action-btn" @click="$router.push('/model/create')">
                             <el-icon>
                                 <DocumentAdd />
                             </el-icon>
                             <span>创建模型</span>
                         </el-button>
-                        <el-button type="default" size="large" class="action-btn" @click="$router.push('/apis/create')">
+                        <el-button type="default" size="large" class="action-btn" @click="$router.push('/api/create')">
                             <el-icon>
                                 <MagicStick />
                             </el-icon>
@@ -85,14 +85,15 @@ import {
     UserFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { ref } from 'vue'
+import { markRaw, ref } from 'vue'
 
 const stats = ref([
-    { title: '数据源', value: 12, icon: DataLine, color: '#409EFF' },
-    { title: '数据模型', value: 45, icon: Files, color: '#67C23A' },
-    { title: 'API接口', value: 128, icon: Share, color: '#E6A23C' },
-    { title: '注册用户', value: 89, icon: User, color: '#F56C6C' },
+    { title: '数据源', value: 12, icon: markRaw(DataLine), color: '#409EFF' },
+    { title: '数据模型', value: 45, icon: markRaw(Files), color: '#67C23A' },
+    { title: 'API接口', value: 128, icon: markRaw(Share), color: '#E6A23C' },
+    { title: '注册用户', value: 89, icon: markRaw(User), color: '#F56C6C' },
 ])
+
 
 const handleRefresh = () => {
     ElMessage.success('数据已刷新')
