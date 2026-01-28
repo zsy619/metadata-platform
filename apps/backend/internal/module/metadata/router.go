@@ -61,6 +61,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		connGroup.GET("/parent/:parent_id", connHandler.GetConnsByParentID)
 		connGroup.POST("/test-raw", connHandler.TestRawConnection)
 		connGroup.POST("/:id/test", connHandler.TestConnection)
+		connGroup.GET("/:id/schemas", connHandler.GetSchemas)
 		connGroup.GET("/:id/tables", connHandler.GetTables)
 		connGroup.GET("/:id/views", connHandler.GetViews)
 		connGroup.GET("/:id/tables/:table/structure", connHandler.GetTableStructure)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"metadata-platform/internal/module/audit/model"
 	"metadata-platform/internal/module/audit/service"
+	"metadata-platform/internal/utils"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -33,18 +34,32 @@ func AuditMiddleware(auditSvc service.AuditService) app.HandlerFunc {
 		
 		tenantID := string(ctx.Request.Header.Get("X-Tenant-ID"))
 
+		// 解析客户端信息
+		clientInfo := utils.ParseUserAgent(
+			string(ctx.Request.Header.UserAgent()),
+			ctx.ClientIP(),
+			string(ctx.Request.Header.Get("Accept-Language")),
+		)
+
 		log := &model.SysOperationLog{
-			TraceID:   traceID,
-			UserID:    userID,
-			TenantID:  tenantID,
-			Method:    string(ctx.Request.Method()),
-			Path:      string(ctx.Request.URI().Path()),
-			Status:    statusCode,
-			Latency:   latency,
-			ClientIP:  ctx.ClientIP(),
-			UserAgent: string(ctx.Request.Header.UserAgent()),
-			Source:    "metadata", // 明确标识来源为 metadata 模块
-			CreateAt:  time.Now(),
+			TraceID:        traceID,
+			UserID:         userID,
+			TenantID:       tenantID,
+			Method:         string(ctx.Request.Method()),
+			Path:           string(ctx.Request.URI().Path()),
+			Status:         statusCode,
+			Latency:        latency,
+			ClientIP:       clientInfo.IP,
+			UserAgent:      clientInfo.UserAgent,
+			Browser:        clientInfo.Browser,
+			BrowserVersion: clientInfo.BrowserVersion,
+			OS:             clientInfo.OS,
+			OSVersion:      clientInfo.OSVersion,
+			DeviceType:     clientInfo.DeviceType,
+			Language:       clientInfo.Language,
+			Platform:       clientInfo.Platform,
+			Source:         "metadata", // 明确标识来源为 metadata 模块
+			CreateAt:       time.Now(),
 		}
 
 		// 记录错误信息 (如果有)

@@ -44,7 +44,7 @@ func applyFilters(db *gorm.DB, filters map[string]interface{}) *gorm.DB {
 				db = db.Where("create_at >= ?", v)
 			case "end_time":
 				db = db.Where("create_at <= ?", v)
-			case "source", "user_id", "trace_id", "module", "status", "action", "model_id", "record_id", "account", "method", "path", "client_ip":
+			case "source", "user_id", "trace_id", "module", "status", "action", "model_id", "record_id", "account", "method", "path", "client_ip", "login_status":
 				// Only allow known safe columns to be passed directly to Where
 				db = db.Where(k+" = ?", v)
 			}

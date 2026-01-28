@@ -119,8 +119,8 @@ func (h *MdConnHandler) GetConnByID(c context.Context, ctx *app.RequestContext) 
 		return
 	}
 
-	// 密码脱敏
-	conn.ConnPassword = "******"
+	// 密码脱敏 - 取消脱敏以便编辑时显示并避免覆盖错误
+	// conn.ConnPassword = "******"
 
 	utils.SuccessResponse(ctx, conn)
 }
@@ -385,4 +385,23 @@ func (h *MdConnHandler) PreviewTableData(c context.Context, ctx *app.RequestCont
 	}
 
 	utils.SuccessResponse(ctx, data)
+}
+
+// GetSchemas 获取数据源模式列表
+func (h *MdConnHandler) GetSchemas(c context.Context, ctx *app.RequestContext) {
+	id := ctx.Param("id")
+
+	conn, err := h.connService.GetConnByID(id)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusNotFound, "数据连接不存在")
+		return
+	}
+
+	schemas, err := h.connService.GetSchemas(conn)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, schemas)
 }

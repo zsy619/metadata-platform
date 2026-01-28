@@ -4,11 +4,12 @@ import "time"
 
 // MdModelHaving 模型-having条件模型
 type MdModelHaving struct {
-	ID                 string    `json:"id" gorm:"primary_key;type:varchar(64)"`
-	TenantID           string    `json:"tenant_id" gorm:"index;type:varchar(64);not null;default:'0'"`
-	ModelID            string    `json:"model_id" gorm:"index;type:varchar(64);not null;default:'0'"`
+	ID                 string    `json:"id" gorm:"primary_key;type:varchar(64);comment:主键ID"`
+	TenantID           string    `json:"tenant_id" gorm:"index;type:varchar(64);not null;default:'0';comment:租户ID"`
+	ModelID            string    `json:"model_id" gorm:"index;type:varchar(64);not null;default:'0';comment:模型ID"`
 	Operator1          string    `json:"operator1" gorm:"size:64;not null;default:''"`
 	Brackets1          string    `json:"brackets1" gorm:"size:64;not null;default:''"`
+	Brackets2          string    `json:"brackets2" gorm:"size:64;not null;default:''"`
 	TableSchema        string    `json:"table_schema" gorm:"size:64;default:''"`
 	TableID            string    `json:"table_id" gorm:"type:varchar(64);not null;default:'0'"`
 	TableNameStr       string    `json:"table_name" gorm:"column:table_name;size:256;not null;default:''"`
@@ -29,14 +30,14 @@ type MdModelHaving struct {
 	Value1             string    `json:"value1" gorm:"size:128;not null;default:''"`
 	Value2             string    `json:"value2" gorm:"size:128;not null;default:''"`
 	ParamKey           string    `json:"param_key" gorm:"size:128;not null;default:''"`
-	Brackets2          string    `json:"brackets2" gorm:"size:64;not null;default:''"`
-	IsDeleted          bool      `json:"is_deleted" gorm:"default:false"`
-	CreateID           string    `json:"create_id" gorm:"size:64;default:'0'"`
-	CreateBy           string    `json:"create_by" gorm:"size:64;default:''"`
-	CreateAt           time.Time `json:"create_at"`
-	UpdateID           string    `json:"update_id" gorm:"size:64;default:'0'"`
-	UpdateBy           string    `json:"update_by" gorm:"size:64;default:''"`
-	UpdateAt           time.Time `json:"update_at"`
+	Remark       string    `json:"remark" gorm:"size:1024;default:'';comment:备注"`
+	IsDeleted          bool      `json:"is_deleted" gorm:"default:false;comment:是否删除"`
+	CreateID           string    `json:"create_id" gorm:"size:64;default:'0';comment:创建人ID"`
+	CreateBy           string    `json:"create_by" gorm:"size:64;default:'';comment:创建人"`
+	CreateAt           time.Time `json:"create_at" gorm:"autoCreateTime;comment:创建时间"`
+	UpdateID           string    `json:"update_id" gorm:"size:64;default:'0';comment:更新人ID"`
+	UpdateBy           string    `json:"update_by" gorm:"size:64;default:'';comment:更新人"`
+	UpdateAt           time.Time `json:"update_at" gorm:"autoUpdateTime;comment:更新时间"`
 }
 
 // TableName 指定表名

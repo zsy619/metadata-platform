@@ -7,5 +7,6 @@ export * from './model-response';
 export * from './query-template';
 export * from './table';
 // model.ts might be redundant if we export everything here, but check if it has unique exports
+export * from './md-conn';
 export * from './model';
 

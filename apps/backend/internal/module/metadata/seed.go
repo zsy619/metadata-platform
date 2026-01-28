@@ -18,16 +18,21 @@ func SeedData(db *gorm.DB) {
 
 	// 1. 初始化默认数据连接组 (ParentID = "0")
 	defaultConnGroup := model.MdConn{
-		ID:        sf.GenerateIDString(),
-		TenantID:  "1",
-		ParentID:  "0",
-		ConnName:  "默认连接组",
-		ConnKind:  "MySQL",
-		IsDeleted: false,
-		CreateBy:  "system",
-		CreateAt:  now,
-		UpdateBy:  "system",
-		UpdateAt:  now,
+		ID:           sf.GenerateIDString(),
+		TenantID:     "1",
+		ParentID:     "0",
+		ConnName:     "默认连接组",
+		ConnKind:     "MySQL",
+		ConnHost:     "localhost",
+		ConnPort:     3306,
+		ConnUser:     "root",
+		ConnPassword: "123456",
+		ConnDatabase: "metadata_platform",
+		IsDeleted:    false,
+		CreateBy:     "system",
+		CreateAt:     now,
+		UpdateBy:     "system",
+		UpdateAt:     now,
 	}
 
 	// 检查是否已存在

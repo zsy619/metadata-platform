@@ -6,6 +6,7 @@ import (
 	auditService "metadata-platform/internal/module/audit/service"
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/utils"
 
 	"gorm.io/gorm"
 )
@@ -81,30 +82,10 @@ type SsoPositionService interface {
 	GetAllPositions() ([]model.SsoPosition, error)
 }
 
-// ClientInfo 客户端信息
-type ClientInfo struct {
-	IP               string
-	UserAgent        string
-	Browser          string
-	BrowserVersion   string
-	BrowserEngine    string
-	Language         string
-	OS               string
-	OSVersion        string
-	OSArch           string
-	DeviceType       string
-	DeviceModel      string
-	Device           string // Keep for backward compatibility or general device string
-	Platform         string
-	ScreenResolution string
-	Timezone         string
-	IPLocation       string
-}
-
 // SsoAuthService 认证服务接口
 type SsoAuthService interface {
-	Login(account string, password string, tenantID uint, clientInfo ClientInfo) (accessToken string, refreshToken string, err error)
-	Logout(ctx context.Context, userID string, clientInfo ClientInfo) error
+	Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (accessToken string, refreshToken string, err error)
+	Logout(ctx context.Context, userID string, clientInfo utils.ClientInfo) error
 	Refresh(refreshToken string) (newAccessToken string, err error)
 	GetUserInfo(userID string) (*model.SsoUser, error)
 	ChangePassword(userID string, oldPassword string, newPassword string) error

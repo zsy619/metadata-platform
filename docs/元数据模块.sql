@@ -37,6 +37,8 @@ CREATE TABLE `md_conn` (
     `conn_password` varchar(128) DEFAULT '' COMMENT '密码',
     `conn_database` varchar(128) DEFAULT '' COMMENT '数据库',
     `conn_conn` varchar(1024) DEFAULT '' COMMENT '链接地址：自动生成',
+    `state` int NOT NULL DEFAULT '0' COMMENT '连接状态: 0=未检测, 1=有效',
+    `remark` varchar(512) DEFAULT '' COMMENT '备注',
     `is_deleted` tinyint(1) DEFAULT '0' COMMENT '删除标识',
     `tenant_id` varchar(64) NOT NULL DEFAULT '0' COMMENT '租户ID',
     `create_id` varchar(64) DEFAULT '0' COMMENT '创建人id',

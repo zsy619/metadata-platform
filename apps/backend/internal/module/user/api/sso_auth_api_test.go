@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"metadata-platform/internal/module/user/model"
-	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 	"testing"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -16,12 +16,12 @@ type MockSsoAuthService struct {
 	mock.Mock
 }
 
-func (m *MockSsoAuthService) Login(account string, password string, tenantID uint, clientInfo service.ClientInfo) (string, string, error) {
+func (m *MockSsoAuthService) Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (string, string, error) {
 	args := m.Called(account, password, tenantID, clientInfo)
 	return args.String(0), args.String(1), args.Error(2)
 }
 
-func (m *MockSsoAuthService) Logout(ctx context.Context, userID string, clientInfo service.ClientInfo) error {
+func (m *MockSsoAuthService) Logout(ctx context.Context, userID string, clientInfo utils.ClientInfo) error {
 	args := m.Called(ctx, userID, clientInfo)
 	return args.Error(0)
 }

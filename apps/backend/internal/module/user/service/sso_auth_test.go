@@ -128,7 +128,7 @@ func TestSsoAuthService_Login(t *testing.T) {
 		mockAudit.On("RecordLogin", mock.Anything, mock.Anything).Return().Once()
 
 
-		clientInfo := ClientInfo{IP: "127.0.0.1", Browser: "Chrome", OS: "Mac", Platform: "Web"}
+		clientInfo := utils.ClientInfo{IP: "127.0.0.1", Browser: "Chrome", OS: "Mac", Platform: "Web"}
 		access, refresh, err := authSvc.Login("admin", "password123", 1, clientInfo)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, access)
@@ -151,7 +151,7 @@ func TestSsoAuthService_Login(t *testing.T) {
 		mockRepo.On("IncrementLoginError", "1").Return(nil).Once()
 		mockAudit.On("RecordLogin", mock.Anything, mock.Anything).Return().Once()
 
-		clientInfo := ClientInfo{IP: "127.0.0.1", Browser: "Chrome", OS: "Mac", Platform: "Web"}
+		clientInfo := utils.ClientInfo{IP: "127.0.0.1", Browser: "Chrome", OS: "Mac", Platform: "Web"}
 		_, _, err := authSvc.Login("admin", "wrongpassword", 1, clientInfo)
 		assert.Error(t, err)
 		assert.Equal(t, "用户名或密码错误", err.Error())

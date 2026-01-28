@@ -91,6 +91,9 @@ func (m *MockConnService) GetTableStructure(conn *model.MdConn, schema, table st
 func (m *MockConnService) PreviewTableData(conn *model.MdConn, schema, table string, limit int) ([]map[string]interface{}, error) {
 	return m.Called(conn, schema, table, limit).Get(0).([]map[string]interface{}), m.Called(conn, schema, table, limit).Error(1)
 }
+func (m *MockConnService) GetSchemas(conn *model.MdConn) ([]string, error) {
+	return m.Called(conn).Get(0).([]string), m.Called(conn).Error(1)
+}
 
 func TestMdModelService_BuildFromTable(t *testing.T) {
 	mockModelRepo := new(MockModelRepo)

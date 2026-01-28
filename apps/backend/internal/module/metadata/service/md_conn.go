@@ -25,6 +25,7 @@ type MdConnService interface {
 	GetViews(conn *model.MdConn, schema string) ([]adapter.ViewInfo, error)
 	GetTableStructure(conn *model.MdConn, schema, table string) ([]adapter.ColumnInfo, error)
 	PreviewTableData(conn *model.MdConn, schema, table string, limit int) ([]map[string]interface{}, error)
+	GetSchemas(conn *model.MdConn) ([]string, error)
 }
 
 // mdConnService 数据连接服务实现
@@ -131,6 +132,63 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnDatabase,
 		)
 		return adapter.NewPostgreSQLExtractor(dsn)
+	case "SQL Server":
+		dsn := fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s",
+			conn.ConnUser,
+			conn.ConnPassword,
+			conn.ConnHost,
+			conn.ConnPort,
+			conn.ConnDatabase,
+		)
+		return adapter.NewSQLServerExtractor(dsn)
+	case "Oracle":
+		dsn := fmt.Sprintf("%s/%s@%s:%d/%s",
+			conn.ConnUser,
+			conn.ConnPassword,
+			conn.ConnHost,
+			conn.ConnPort,
+			conn.ConnDatabase,
+		)
+		return adapter.NewOracleExtractor(dsn)
+	case "SQLite":
+		// SQLite 使用文件路径作为 DSN
+		dsn := conn.ConnHost // 假设 ConnHost 存储文件路径
+		return adapter.NewSQLiteExtractor(dsn)
+	case "ClickHouse":
+		dsn := fmt.Sprintf("clickhouse://%s:%s@%s:%d/%s",
+			conn.ConnUser,
+			conn.ConnPassword,
+			conn.ConnHost,
+			conn.ConnPort,
+			conn.ConnDatabase,
+		)
+		return adapter.NewClickHouseExtractor(dsn)
+	case "DM":
+		dsn := fmt.Sprintf("dm://%s:%s@%s:%d",
+			conn.ConnUser,
+			conn.ConnPassword,
+			conn.ConnHost,
+			conn.ConnPort,
+		)
+		return adapter.NewDamengExtractor(dsn)
+	case "MongoDB":
+		dsn := fmt.Sprintf("mongodb://%s:%s@%s:%d/%s",
+			conn.ConnUser,
+			conn.ConnPassword,
+			conn.ConnHost,
+			conn.ConnPort,
+			conn.ConnDatabase,
+		)
+		return adapter.NewMongoDBExtractor(dsn)
+	case "Redis":
+		dsn := fmt.Sprintf("redis://%s:%s@%s:%d/%s",
+			conn.ConnUser,
+			conn.ConnPassword,
+			conn.ConnHost,
+			conn.ConnPort,
+			conn.ConnDatabase,
+		)
+		return adapter.NewRedisExtractor(dsn)
 	default:
 		return nil, errors.New("不支持的数据源类型: " + conn.ConnKind)
 	}
@@ -140,11 +198,31 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 func (s *mdConnService) TestConnection(conn *model.MdConn) error {
 	extractor, err := s.getExtractor(conn)
 	if err != nil {
+		// 获取提取器失败，更新状态为 2 (连接失败)
+		conn.State = 2
+		s.connRepo.UpdateConn(conn)
 		return err
 	}
 	defer extractor.Close()
 
-	return extractor.TestConnection()
+	// 测试连接
+	if err := extractor.TestConnection(); err != nil {
+		// 测试失败，更新状态为 2 (连接失败)
+		conn.State = 2
+		if updateErr := s.connRepo.UpdateConn(conn); updateErr != nil {
+			fmt.Printf("Warning: Failed to update connection state to error: %v\n", updateErr)
+		}
+		return err
+	}
+
+	// 测试成功后，更新数据库中的状态为 1 (有效)
+	conn.State = 1
+	if updateErr := s.connRepo.UpdateConn(conn); updateErr != nil {
+		// 记录错误但不影响测试结果
+		fmt.Printf("Warning: Failed to update connection state: %v\n", updateErr)
+	}
+
+	return nil
 }
 
 // GetTables 获取数据库表列表
@@ -201,4 +279,14 @@ func (s *mdConnService) PreviewTableData(conn *model.MdConn, schema, table strin
 		schema = conn.ConnDatabase
 	}
 	return extractor.PreviewData(schema, table, limit)
+}
+
+// GetSchemas 获取数据库模式列表
+func (s *mdConnService) GetSchemas(conn *model.MdConn) ([]string, error) {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return nil, err
+	}
+	defer extractor.Close()
+	return extractor.GetSchemas()
 }

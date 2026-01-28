@@ -1,4 +1,4 @@
-import type { BaseEntity } from '../model/model-base';
+import type { BaseEntity } from './model-base';
 
 /**
  * 数据连接表模型

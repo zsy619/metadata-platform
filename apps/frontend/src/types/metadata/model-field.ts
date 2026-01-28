@@ -1,4 +1,4 @@
-import { BaseEntity } from './model-base';
+import type { BaseEntity } from './model-base';
 
 /**
  * 模型字段信息

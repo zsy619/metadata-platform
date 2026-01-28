@@ -26,6 +26,17 @@ func (e *MySQLExtractor) TestConnection() error {
 	return e.db.Ping()
 }
 
+func (e *MySQLExtractor) GetSchemas() ([]string, error) {
+	var currentDB string
+	// MySQL 中 Schema 等同于 Database
+	// 按照需求，只显示当前连接的数据库
+	err := e.db.QueryRow("SELECT DATABASE()").Scan(&currentDB)
+	if err != nil {
+		return nil, err
+	}
+	return []string{currentDB}, nil
+}
+
 // GetTables 获取表列表
 func (e *MySQLExtractor) GetTables(schema string) ([]TableInfo, error) {
 	query := `

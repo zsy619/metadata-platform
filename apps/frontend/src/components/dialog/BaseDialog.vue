@@ -136,7 +136,7 @@ watch(() => props.modelValue, (val) => {
 .base-dialog :deep(.el-dialog__header) {
     padding: 0;
     margin-right: 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: none;
 }
 
 .base-dialog :deep(.el-dialog__body) {
@@ -166,7 +166,9 @@ watch(() => props.modelValue, (val) => {
 .dialog-title {
     font-size: 16px;
     font-weight: 600;
-    color: #303133;
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFFFFF;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -181,12 +183,14 @@ watch(() => props.modelValue, (val) => {
 .action-icon {
     font-size: 18px;
     cursor: pointer;
-    color: #909399;
+    font-size: 18px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.8);
     transition: color 0.3s;
 }
 
 .action-icon:hover {
-    color: #409eff;
+    color: #FFFFFF;
 }
 
 .close-icon:hover {

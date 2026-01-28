@@ -1,81 +1,97 @@
 <template>
-    <div class="app-container">
-        <el-card class="filter-container" shadow="never">
-            <el-form :inline="true" :model="queryParams" class="demo-form-inline">
-                <el-form-item label="模块">
-                    <el-input v-model="queryParams.module" placeholder="请输入模块名" clearable />
-                </el-form-item>
-                <el-form-item label="操作类型">
-                    <el-input v-model="queryParams.type" placeholder="如：INSERT, QUERY" clearable />
-                </el-form-item>
-                <el-form-item label="操作时间">
-                    <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD" />
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-                    <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-                    <el-button type="warning" icon="Download" @click="handleExport">导出</el-button>
-                </el-form-item>
-            </el-form>
-        </el-card>
-        <el-card class="box-card" shadow="never" style="margin-top: 20px;">
-            <el-table v-loading="loading" :data="tableData" border style="width: 100%">
-                <el-table-column prop="trace_id" label="追踪ID" width="180" align="center" />
-                <el-table-column prop="source" label="模块" width="120" align="center" />
-                <el-table-column prop="method" label="类型" width="100" align="center">
-                    <template #default="scope">
-                        <el-tag>{{ scope.row.method }}</el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="path" label="路径" show-overflow-tooltip />
-                <el-table-column prop="user_id" label="操作人" width="120" align="center" />
-                <el-table-column prop="client_ip" label="IP" width="140" align="center" />
-                <el-table-column prop="status" label="状态" width="80" align="center">
-                    <template #default="scope">
-                        <el-tag :type="scope.row.status < 400 ? 'success' : 'danger'">
-                            {{ scope.row.status }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="latency" label="耗时(ms)" width="100" align="center" />
-                <el-table-column prop="create_at" label="操作时间" width="180" align="center">
-                    <template #default="scope">
-                        {{ formatDate(scope.row.create_at) }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="100" fixed="right" align="center">
-                    <template #default="scope">
-                        <el-button type="primary" size="small" :icon="View" @click="viewDetails(scope.row)">
-                            详情
-                        </el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-            <div class="pagination-container">
-                <el-pagination v-model:current-page="queryParams.page" v-model:page-size="queryParams.pageSize" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+    <div class="container-padding">
+        <!-- 页面标题区 -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <el-icon class="title-icon">
+                    <Document />
+                </el-icon>
+                操作日志
+            </h1>
+            <div class="header-actions">
+                <el-button type="warning" :icon="Download" @click="handleExport">导出</el-button>
+            </div>
+        </div>
+        <!-- 主内容卡片 -->
+        <el-card class="main-card">
+            <!-- 搜索区域 -->
+            <div class="search-area">
+                <el-input v-model="queryParams.trace_id" placeholder="请输入追踪ID" clearable style="width: 200px" @keyup.enter="handleQuery" />
+                <el-input v-model="queryParams.module" placeholder="请输入模块名" clearable style="width: 180px" @keyup.enter="handleQuery" />
+                <el-input v-model="queryParams.user_id" placeholder="操作人ID" clearable style="width: 120px" @keyup.enter="handleQuery" />
+                <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 300px" @change="handleQuery" />
+                <el-button type="primary" :icon="Search" @click="handleQuery">搜索</el-button>
+                <el-button :icon="RefreshLeft" @click="resetQuery">重置</el-button>
+            </div>
+            <!-- 表格区域 -->
+            <div class="table-area">
+                <el-table v-loading="loading" :data="tableData" border style="width: 100%" height="100%">
+                    <el-table-column prop="trace_id" label="追踪ID" width="180" align="center" show-overflow-tooltip />
+                    <el-table-column prop="source" label="模块" width="120" align="center" />
+                    <el-table-column prop="method" label="类型" width="100" align="center">
+                        <template #default="scope">
+                            <el-tag :type="getMethodTag(scope.row.method)">{{ scope.row.method }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="path" label="路径" show-overflow-tooltip />
+                    <el-table-column prop="user_id" label="操作人" width="120" align="center" />
+                    <el-table-column prop="client_ip" label="IP" width="140" align="center" />
+                    <el-table-column prop="status" label="状态" width="80" align="center">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.status < 400 ? 'success' : 'danger'">
+                                {{ scope.row.status }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="latency" label="耗时(ms)" width="100" align="center" />
+                    <el-table-column prop="create_at" label="操作时间" width="180" align="center">
+                        <template #default="scope">
+                            {{ formatDate(scope.row.create_at) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="100" fixed="right" align="center">
+                        <template #default="scope">
+                            <el-button type="primary" link :icon="View" @click="viewDetails(scope.row)">
+                                详情
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+            <!-- 分页区域 -->
+            <div class="pagination-area">
+                <el-pagination v-model:current-page="queryParams.page" v-model:page-size="queryParams.pageSize" :page-sizes="[10, 20, 50, 100]" background layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
         </el-card>
         <!-- 详情对话框 -->
-        <el-dialog v-model="detailsVisible" title="操作日志详情" width="800px">
+        <el-dialog v-model="detailsVisible" title="操作日志详情" width="800px" destroy-on-close append-to-body>
             <el-descriptions :column="2" border v-if="currentLog">
                 <el-descriptions-item label="追踪ID" :span="2">{{ currentLog.trace_id }}</el-descriptions-item>
-                <el-descriptions-item label="操作人">{{ currentLog.user_id }}</el-descriptions-item>
-                <el-descriptions-item label="请求方法">{{ currentLog.method }}</el-descriptions-item>
+                <el-descriptions-item label="所属租户">{{ currentLog.tenant_id || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="操作人ID">{{ currentLog.user_id }}</el-descriptions-item>
+                <el-descriptions-item label="来源模块">{{ currentLog.source }}</el-descriptions-item>
+                <el-descriptions-item label="请求方法">
+                    <el-tag :type="getMethodTag(currentLog.method)">{{ currentLog.method }}</el-tag>
+                </el-descriptions-item>
                 <el-descriptions-item label="请求路径" :span="2">{{ currentLog.path }}</el-descriptions-item>
                 <el-descriptions-item label="状态码">
                     <el-tag :type="currentLog.status < 400 ? 'success' : 'danger'">
                         {{ currentLog.status }}
                     </el-tag>
                 </el-descriptions-item>
-                <el-descriptions-item label="耗时">{{ currentLog.latency }} ms</el-descriptions-item>
+                <el-descriptions-item label="响应耗时">{{ currentLog.latency }} ms</el-descriptions-item>
                 <el-descriptions-item label="客户端IP">{{ currentLog.client_ip }}</el-descriptions-item>
-                <el-descriptions-item label="客户端OS">{{ currentLog.os }} {{ currentLog.os_version }}</el-descriptions-item>
+                <el-descriptions-item label="操作系统">{{ currentLog.os }} {{ currentLog.os_version }}</el-descriptions-item>
+                <el-descriptions-item label="架构">{{ currentLog.os_arch || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="浏览器">{{ currentLog.browser }} {{ currentLog.browser_version }}</el-descriptions-item>
                 <el-descriptions-item label="设备类型">{{ currentLog.device_type }}</el-descriptions-item>
+                <el-descriptions-item label="设备型号">{{ currentLog.device_model || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="语言环境">{{ currentLog.language || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="访问平台">{{ currentLog.platform || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="操作时间">{{ formatDate(currentLog.create_at) }}</el-descriptions-item>
-                <el-descriptions-item label="请求UA" :span="2">{{ currentLog.user_agent }}</el-descriptions-item>
-                <el-descriptions-item label="错误信息" :span="2" v-if="currentLog.error_message">
-                    <pre class="error-msg">{{ currentLog.error_message }}</pre>
+                <el-descriptions-item label="User-Agent" :span="2">{{ currentLog.user_agent }}</el-descriptions-item>
+                <el-descriptions-item label="错误/详情" :span="2" v-if="currentLog.error_message || currentLog.status >= 400">
+                    <pre class="error-msg">{{ currentLog.error_message || '无详细错误信息' }}</pre>
                 </el-descriptions-item>
             </el-descriptions>
         </el-dialog>
@@ -83,14 +99,17 @@
 </template>
 <script setup lang="ts">
 import { exportOperationLogs, getOperationLogs } from '@/api/audit'
-import { View } from '@element-plus/icons-vue'
+import { Document, Download, RefreshLeft, Search, View } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 interface SysOperationLog {
     trace_id: string
     user_id: string
+    tenant_id?: string
     source: string
     method: string
     path: string
@@ -102,7 +121,11 @@ interface SysOperationLog {
     browser_version: string
     os: string
     os_version: string
+    os_arch?: string
     device_type: string
+    device_model?: string
+    language?: string
+    platform?: string
     error_message: string
     create_at: string
 }
@@ -117,14 +140,25 @@ const currentLog = ref<SysOperationLog | null>(null)
 const queryParams = reactive({
     page: 1,
     pageSize: 20,
+    trace_id: '',
     module: '',
-    type: '',
+    user_id: '',
     start_time: '',
     end_time: ''
 })
 
 const formatDate = (date: string) => {
     return date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '-'
+}
+
+const getMethodTag = (method: string) => {
+    switch (method?.toUpperCase()) {
+        case 'GET': return 'info'
+        case 'POST': return 'success'
+        case 'PUT': return 'warning'
+        case 'DELETE': return 'danger'
+        default: return ''
+    }
 }
 
 const getList = async () => {
@@ -137,12 +171,14 @@ const getList = async () => {
             queryParams.start_time = ''
             queryParams.end_time = ''
         }
-        const res = await getOperationLogs(queryParams)
-        const data = res as any
-        tableData.value = data.list
-        total.value = data.total
+        const res: any = await getOperationLogs(queryParams)
+        // 关键修复：正确处理带分页的数据
+        const paginatedData = res?.data || {}
+        tableData.value = paginatedData.list || []
+        total.value = paginatedData.total || 0
     } catch (error) {
-        console.error(error)
+        console.error('获取操作日志失败:', error)
+        ElMessage.error('获取操作日志失败')
     } finally {
         loading.value = false
     }
@@ -154,14 +190,16 @@ const handleQuery = () => {
 }
 
 const resetQuery = () => {
+    queryParams.trace_id = ''
     queryParams.module = ''
-    queryParams.type = ''
+    queryParams.user_id = ''
     dateRange.value = []
     handleQuery()
 }
 
 const handleSizeChange = (val: number) => {
     queryParams.pageSize = val
+    queryParams.page = 1
     getList()
 }
 
@@ -178,10 +216,10 @@ const viewDetails = (log: SysOperationLog) => {
 const handleExport = async () => {
     try {
         const res = await exportOperationLogs(queryParams)
-        const blob = new Blob([res as any], { type: 'application/json' })
+        const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' })
         const link = document.createElement('a')
         link.href = URL.createObjectURL(blob)
-        link.download = `operation_logs_${new Date().getTime()}.json`
+        link.download = `operation_logs_${dayjs().format('YYYYMMDDHHmmss')}.json`
         link.click()
         URL.revokeObjectURL(link.href)
     } catch (error) {
@@ -190,16 +228,86 @@ const handleExport = async () => {
 }
 
 onMounted(() => {
+    if (route.query.trace_id) {
+        queryParams.trace_id = route.query.trace_id as string
+    }
     getList()
 })
 </script>
 <style scoped>
-.filter-container {
-    margin-bottom: 20px;
+/* ==================== 标准布局样式 ==================== */
+.container-padding {
+    padding: 20px;
+    padding-bottom: 0;
+    height: calc(100vh - 84px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
-.pagination-container {
-    margin-top: 20px;
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 600;
+    color: #303133;
+    margin: 0;
+}
+
+.title-icon {
+    font-size: 24px;
+    color: #409eff;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.main-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+:deep(.el-card__body) {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.search-area {
+    flex-shrink: 0;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.table-area {
+    flex: 1;
+    overflow: hidden;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.pagination-area {
+    flex-shrink: 0;
     display: flex;
     justify-content: flex-end;
 }
@@ -212,5 +320,12 @@ onMounted(() => {
     border-radius: 4px;
     color: #f56c6c;
     font-size: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+:deep(.el-descriptions__label) {
+    width: 120px;
+    font-weight: bold;
 }
 </style>

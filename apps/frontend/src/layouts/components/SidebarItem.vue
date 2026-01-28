@@ -109,12 +109,13 @@ const resolvePath = (routePath: string) => {
 }
 
 :deep(.el-menu-item:hover) {
-    background-color: rgba(64, 158, 255, 0.1) !important;
+    background-color: var(--el-color-primary-light-9) !important;
 }
 
 :deep(.el-menu-item.is-active) {
-    background-color: rgba(64, 158, 255, 0.15) !important;
-    color: #409EFF;
+    background-color: var(--el-color-primary-light-9) !important;
+    color: var(--el-color-primary);
+    border-right: 3px solid var(--el-color-primary);
     font-weight: 600;
 }
 
@@ -127,16 +128,11 @@ const resolvePath = (routePath: string) => {
 }
 
 :deep(.el-sub-menu__title:hover) {
-    background-color: rgba(64, 158, 255, 0.1) !important;
+    background-color: var(--el-color-primary-light-9) !important;
 }
 
 :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
-    color: #409EFF;
+    color: var(--el-color-primary);
     font-weight: 600;
-}
-
-.nest-menu :deep(.el-menu-item) {
-    min-width: 180px;
-    padding-left: 50px !important;
 }
 </style>

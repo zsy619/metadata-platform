@@ -24,6 +24,24 @@ func (e *postgreSQLExtractor) TestConnection() error {
 	return e.db.Ping()
 }
 
+func (e *postgreSQLExtractor) GetSchemas() ([]string, error) {
+	rows, err := e.db.Query("SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var schemas []string
+	for rows.Next() {
+		var schema string
+		if err := rows.Scan(&schema); err != nil {
+			return nil, err
+		}
+		schemas = append(schemas, schema)
+	}
+	return schemas, nil
+}
+
 func (e *postgreSQLExtractor) GetTables(schema string) ([]TableInfo, error) {
 	query := `
 		SELECT tablename, '' as comment

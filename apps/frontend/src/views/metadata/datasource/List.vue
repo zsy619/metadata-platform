@@ -1,7 +1,12 @@
 <template>
     <div class="data-source-list container-padding">
         <div class="page-header">
-            <h1 class="text-primary">数据源管理</h1>
+            <h1 class="text-primary page-title">
+                <el-icon class="title-icon">
+                    <DataLine />
+                </el-icon>
+                数据源管理
+            </h1>
             <div class="header-actions">
                 <el-button type="danger" :icon="Delete" @click="handleBatchDelete" :disabled="selectedRows.length === 0">
                     批量删除
@@ -11,8 +16,8 @@
                 </el-button>
             </div>
         </div>
-        <el-card>
-            <div class="flex-center m-b-lg">
+        <el-card class="main-card">
+            <div class="search-area">
                 <el-input v-model="searchQuery" placeholder="请输入数据源名称搜索" clearable :prefix-icon="Search" style="width: 300px" @input="handleSearch" />
                 <el-select v-model="filterType" placeholder="筛选数据源类型" style="width: 180px; margin-left: 10px" clearable @change="handleSearch">
                     <el-option label="全部" value="" />
@@ -40,49 +45,53 @@
                         <el-option label="Redis" value="Redis" />
                     </el-option-group>
                 </el-select>
-                <el-button type="primary" @click="fetchDataSources" :icon="Refresh" style="margin-left: 10px">
-                    刷新
+                <el-button type="primary" @click="handleSearch" :icon="Search" style="margin-left: 10px">
+                    搜索
+                </el-button>
+                <el-button @click="handleReset" :icon="RefreshLeft">
+                    重置
                 </el-button>
             </div>
-            <el-table v-loading="loading" :data="filteredDataSources" border stripe style="width: 100%" @selection-change="handleSelectionChange">
-                <el-table-column type="selection" width="55" />
-                <el-table-column prop="conn_name" label="数据源名称" width="200" show-overflow-tooltip />
-                <el-table-column prop="conn_kind" label="类型" width="120" />
-                <el-table-column prop="conn_host" label="主机" width="180" show-overflow-tooltip />
-                <el-table-column prop="conn_port" label="端口" width="80" />
-                <el-table-column prop="conn_database" label="数据库" width="150" show-overflow-tooltip />
-                <el-table-column prop="state" label="状态" width="100">
-                    <template #default="scope">
-                        <el-tag :type="scope.row.state === 1 ? 'success' : 'danger'">
-                            {{ scope.row.state === 1 ? '有效' : '未检测' }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="update_at" label="更新时间" width="170">
-                    <template #default="scope">
-                        {{ formatDateTime(scope.row.update_at || scope.row.create_at) }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="320" fixed="right">
-                    <template #default="scope">
-                        <el-button type="success" size="small" :icon="Connection" @click="handleTestConnection(scope.row)" :disabled="scope.row.state === 1" plain>
-                            测试
-                        </el-button>
-                        <el-button type="warning" size="small" :icon="Folder" @click="handleBrowse(scope.row)" plain>
-                            浏览
-                        </el-button>
-                        <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>
-                            编辑
-                        </el-button>
-                        <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>
-                            删除
-                        </el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-            <div class="flex-between m-t-lg">
-                <span class="text-secondary">共 {{ filteredDataSources.length }} 条记录</span>
-                <!-- Pagination could be added here if backend supports it -->
+            <div class="table-area">
+                <el-table v-loading="loading" :data="pagedDataSources" border stripe style="width: 100%; height: 100%;" @selection-change="handleSelectionChange">
+                    <el-table-column type="selection" width="55" />
+                    <el-table-column prop="conn_name" label="数据源名称" width="200" show-overflow-tooltip />
+                    <el-table-column prop="conn_kind" label="类型" width="120" />
+                    <el-table-column prop="conn_host" label="主机" width="180" show-overflow-tooltip />
+                    <el-table-column prop="conn_port" label="端口" width="80" />
+                    <el-table-column prop="conn_database" label="数据库" width="150" show-overflow-tooltip />
+                    <el-table-column prop="state" label="状态" width="100">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.state === 1" type="success">有效</el-tag>
+                            <el-tag v-else-if="scope.row.state === 2" type="danger">连接错误</el-tag>
+                            <el-tag v-else type="info">未检测</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="update_at" label="更新时间" width="170">
+                        <template #default="scope">
+                            {{ formatDateTime(scope.row.update_at || scope.row.create_at) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="320" fixed="right">
+                        <template #default="scope">
+                            <el-button type="success" size="small" :icon="Connection" @click="handleTestConnection(scope.row)" :disabled="scope.row.state === 1" plain>
+                                测试
+                            </el-button>
+                            <el-button type="warning" size="small" :icon="Folder" @click="handleBrowse(scope.row)" plain>
+                                浏览
+                            </el-button>
+                            <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>
+                                编辑
+                            </el-button>
+                            <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>
+                                删除
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+            <div class="pagination-area">
+                <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]" background layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
         </el-card>
         <!-- Object Browser Dialog -->
@@ -92,7 +101,7 @@
                     <ObjectBrowser v-if="currentConn" :data-source-id="currentConn.id" @select-table="handleSelectTable" @select-view="handleSelectView" />
                 </div>
                 <div class="browser-main">
-                    <DataPreview v-if="selectedTable" :conn-id="currentConn?.id" :table-name="selectedTable" />
+                    <DataPreview v-if="selectedTable && currentConn" :conn-id="currentConn.id" :table-name="selectedTable" />
                     <el-empty v-else description="请从左侧选择表或视图查看数据" />
                 </div>
             </div>
@@ -106,10 +115,12 @@ import ObjectBrowser from '@/components/ObjectBrowser.vue'
 import type { MdConn } from '@/types/metadata'
 import {
     Connection,
-    Delete, Edit,
+    DataLine,
+    Delete,
+    Edit,
     Folder,
     Plus,
-    Refresh,
+    RefreshLeft,
     Search
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -128,6 +139,11 @@ const browserVisible = ref(false)
 const currentConn = ref<MdConn>()
 const selectedTable = ref('')
 
+// Pagination
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = computed(() => filteredDataSources.value.length)
+
 const filteredDataSources = computed(() => {
     return dataSources.value.filter(item => {
         const matchName = item.conn_name.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -135,6 +151,21 @@ const filteredDataSources = computed(() => {
         return matchName && matchType
     })
 })
+
+const pagedDataSources = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return filteredDataSources.value.slice(start, end)
+})
+
+const handleSizeChange = (val: number) => {
+    pageSize.value = val
+    currentPage.value = 1
+}
+
+const handleCurrentChange = (val: number) => {
+    currentPage.value = val
+}
 
 const formatDateTime = (dateStr: string | undefined) => {
     if (!dateStr) return '-'
@@ -157,6 +188,13 @@ const fetchDataSources = async () => {
 
 const handleSearch = () => {
     // Computed property handles filtering
+    currentPage.value = 1
+}
+
+const handleReset = () => {
+    searchQuery.value = ''
+    filterType.value = ''
+    currentPage.value = 1
 }
 
 const handleSelectionChange = (val: MdConn[]) => {
@@ -198,17 +236,18 @@ const handleTestConnection = async (row: MdConn) => {
     loading.value = true
     try {
         const res = await testConn(row.id)
-        if (res && res.success) { // adjust check based on actual API response
+        // 后端返回格式: { code: 200, message: "success", data: "连接成功" }
+        if (res && (res as any).code === 200) {
             ElMessage.success('连接成功')
-            row.state = 1
         } else {
-            ElMessage.error(res?.message || '连接失败')
-            row.state = 0
+            ElMessage.error((res as any)?.message || '连接失败')
         }
     } catch (error: any) {
         ElMessage.error(error.message || '连接测试失败')
     } finally {
         loading.value = false
+        // 无论成功还是失败，都刷新列表以更新状态
+        await fetchDataSources()
     }
 }
 
@@ -231,7 +270,53 @@ onMounted(() => {
 </script>
 <style scoped>
 .container-padding {
+    padding-top: 20px;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    height: calc(100vh - 70px);
+    /* 100vh - 50px(Header) - 20px(AppMain Bottom Padding) */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.main-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Ensure card body also uses flex */
+}
+
+/* Deep selector for card body to allow flex content */
+:deep(.el-card__body) {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     padding: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.search-area {
+    flex-shrink: 0;
+    margin-bottom: 20px;
+}
+
+.table-area {
+    flex: 1;
+    overflow: hidden;
+    margin-bottom: 20px;
+    /* Ensure table takes full internal height */
+}
+
+.pagination-area {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+    /* Push to bottom if space allows, though flex direction with table flex 1 handles it */
 }
 
 .page-header {
@@ -239,6 +324,18 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* Space between icon and text */
+}
+
+.title-icon {
+    font-size: 24px;
+    /* Slightly larger icon */
 }
 
 .browser-container {

@@ -16,12 +16,17 @@ func NewAuditHandler(s service.AuditService) *AuditHandler {
 
 func getFilters(c *app.RequestContext) map[string]interface{} {
 	filters := make(map[string]interface{})
-	// Generic filter extraction
 	if v := c.Query("user_id"); v != "" {
 		filters["user_id"] = v
 	}
 	if v := c.Query("account"); v != "" {
 		filters["account"] = v
+	}
+	if v := c.Query("trace_id"); v != "" {
+		filters["trace_id"] = v
+	}
+	if v := c.Query("client_ip"); v != "" {
+		filters["client_ip"] = v
 	}
 	if v := c.Query("module"); v != "" {
 		// Frontend uses module, backend model uses source
@@ -29,6 +34,9 @@ func getFilters(c *app.RequestContext) map[string]interface{} {
 	}
 	if v := c.Query("status"); v != "" {
 		filters["status"] = v
+	}
+	if v := c.Query("login_status"); v != "" {
+		filters["login_status"] = v
 	}
 	if v := c.Query("start_time"); v != "" {
 		filters["start_time"] = v
@@ -44,7 +52,10 @@ func getFilters(c *app.RequestContext) map[string]interface{} {
 		filters["action"] = v
 	}
 	// Operation specific
-	if v := c.Query("type"); v != "" {
+	if v := c.Query("method"); v != "" {
+		filters["method"] = v
+	}
+	if v := c.Query("type"); v != "" { // Alias for backward compatibility or different frontend usage
 		filters["method"] = v
 	}
 	return filters

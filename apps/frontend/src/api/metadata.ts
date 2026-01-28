@@ -276,6 +276,18 @@ export const testRawConn = async (data: Partial<MdConn>): Promise<{ success: boo
 }
 
 /**
+ * 获取数据库所有模式(Schema)
+ * @param id 数据连接ID
+ * @returns Schema列表
+ */
+export const getSchemas = async (id: string): Promise<string[]> => {
+    return request({
+        url: `/api/metadata/conns/${id}/schemas`,
+        method: 'get'
+    })
+}
+
+/**
  * 获取数据库所有表名称
  * @param id 数据连接ID
  * @returns 表名列表

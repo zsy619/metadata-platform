@@ -44,6 +44,10 @@ type IndexInfo struct {
 type MetadataExtractor interface {
 	// TestConnection 测试连接
 	TestConnection() error
+
+	// GetSchemas 获取特定的命名空间/模式列表
+	GetSchemas() ([]string, error)
+
 	
 	// GetTables 获取表列表
 	GetTables(schema string) ([]TableInfo, error)

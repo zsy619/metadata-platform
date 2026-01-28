@@ -28,7 +28,7 @@ func NewSsoAuthService(userRepo repository.SsoUserRepository, auditService audit
 }
 
 // Login 验证账号密码并返回 token
-func (s *ssoAuthService) Login(account string, password string, tenantID uint, clientInfo ClientInfo) (string, string, error) {
+func (s *ssoAuthService) Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (string, string, error) {
 	loginTime := time.Now()
 	var loginStatus int = 1 // default success
 	var errMsg string
@@ -121,7 +121,7 @@ func (s *ssoAuthService) Login(account string, password string, tenantID uint, c
 }
 
 // Logout 退出登录
-func (s *ssoAuthService) Logout(ctx context.Context, userID string, clientInfo ClientInfo) error {
+func (s *ssoAuthService) Logout(ctx context.Context, userID string, clientInfo utils.ClientInfo) error {
 	// Record logout log
 	account := ""
 	if userID != "" {

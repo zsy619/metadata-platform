@@ -1,67 +1,86 @@
 <template>
-    <div class="table-list">
+    <div class="container-padding">
+        <!-- 页面标题区 -->
         <div class="page-header">
-            <h1 class="text-primary">表与视图</h1>
+            <h1 class="page-title">
+                <el-icon class="title-icon">
+                    <Grid />
+                </el-icon>
+                表与视图
+            </h1>
         </div>
-        <el-card>
-            <div class="filter-bar m-b-lg">
-                <div class="filter-left">
-                    <el-select v-model="selectedConn" placeholder="选择数据源" style="width: 240px" @change="handleConnChange">
-                        <el-option v-for="conn in connections" :key="conn.id" :label="conn.conn_name" :value="conn.id" />
-                    </el-select>
-                    <el-input v-model="searchQuery" placeholder="搜索表或视图名称" clearable :prefix-icon="Search" style="width: 300px; margin-left: 10px" @clear="fetchTables" @keyup.enter="fetchTables" />
-                </div>
-                <div class="filter-right">
-                    <el-dropdown trigger="click" @command="openSelectDialog" style="margin-right: 12px">
-                        <el-button type="primary" plain>
-                            元数据导入<el-icon class="el-icon--right"><arrow-down /></el-icon>
-                        </el-button>
-                        <template #dropdown>
-                            <el-dropdown-menu>
-                                <el-dropdown-item command="TABLE">选择表</el-dropdown-item>
-                                <el-dropdown-item command="VIEW">选择视图</el-dropdown-item>
-                            </el-dropdown-menu>
-                        </template>
-                    </el-dropdown>
-                    <el-button type="primary" :icon="Refresh" @click="fetchTables">刷新</el-button>
-                </div>
+        <!-- 主内容卡片 -->
+        <el-card class="main-card">
+            <!-- 搜索区域 -->
+            <div class="search-area">
+                <el-select v-model="selectedConn" placeholder="选择数据源" style="width: 240px" @change="handleConnChange">
+                    <el-option v-for="conn in connections" :key="conn.id" :label="conn.conn_name" :value="conn.id" />
+                </el-select>
+                <el-input v-model="searchQuery" placeholder="搜索表或视图名称" clearable :prefix-icon="Search" style="width: 300px; margin-left: 10px" />
+                <el-button type="primary" :icon="Search" style="margin-left: 10px" @click="handleSearch">搜索</el-button>
+                <el-button :icon="RefreshLeft" @click="handleReset">重置</el-button>
+                <el-dropdown trigger="click" @command="openSelectDialog" style="margin-left: 10px">
+                    <el-button type="primary" plain>
+                        元数据导入<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                            <el-dropdown-item command="TABLE">选择表</el-dropdown-item>
+                            <el-dropdown-item command="VIEW">选择视图</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
             </div>
-            <el-table v-loading="loading" :data="filteredTables" border stripe style="width: 100%">
-                <el-table-column prop="table_name" label="名称" min-width="150" sortable />
-                <el-table-column prop="table_title" label="标题" min-width="150" />
-                <el-table-column prop="table_comment" label="备注" min-width="200" />
-                <el-table-column prop="table_type" label="类型" width="100">
-                    <template #default="scope">
-                        <el-tag :type="scope.row.table_type === 'VIEW' ? 'warning' : 'success'">
-                            {{ scope.row.table_type }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="create_at" label="导入时间" width="160">
-                    <template #default="scope">
-                        {{ formatDateTime(scope.row.create_at) }}
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="320" fixed="right" class-name="action-column">
-                    <template #default="scope">
-                        <el-button type="info" size="small" :icon="View" @click="handleViewDetail(scope.row)">
-                            详情
-                        </el-button>
-                        <el-button type="primary" size="small" :icon="Refresh" @click="handleRefreshTable(scope.row)">
-                            刷新
-                        </el-button>
-                        <el-button type="success" size="small" :icon="Edit" @click="handleEdit(scope.row)">
-                            修改
-                        </el-button>
-                        <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">
-                            删除
-                        </el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
+            <!-- 表格区域 -->
+            <div class="table-area">
+                <el-table v-loading="loading" :data="pagedTables" border stripe style="width: 100%; height: 100%">
+                    <el-table-column prop="table_name" label="名称" min-width="150" sortable />
+                    <el-table-column prop="table_title" label="标题" min-width="150" />
+                    <el-table-column prop="table_comment" label="备注" min-width="200" />
+                    <el-table-column prop="table_type" label="类型" width="100">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.table_type === 'VIEW' ? 'warning' : 'success'">
+                                {{ scope.row.table_type }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="table_schema" label="模式" width="120" show-overflow-tooltip />
+                    <el-table-column prop="create_at" label="导入时间" width="160">
+                        <template #default="scope">
+                            {{ formatDateTime(scope.row.create_at) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="320" fixed="right" class-name="action-column">
+                        <template #default="scope">
+                            <el-button type="info" size="small" :icon="View" @click="handleViewDetail(scope.row)">
+                                详情
+                            </el-button>
+                            <el-button type="primary" size="small" :icon="Refresh" @click="handleRefreshTable(scope.row)">
+                                刷新
+                            </el-button>
+                            <el-button type="success" size="small" :icon="Edit" @click="handleEdit(scope.row)">
+                                修改
+                            </el-button>
+                            <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">
+                                删除
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+            <!-- 分页区域 -->
+            <div class="pagination-area">
+                <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]" background layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+            </div>
         </el-card>
         <!-- 选择弹窗 -->
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="1000px" destroy-on-close class="custom-dialog transfer-dialog" :close-on-click-modal="false">
+            <div style="margin-bottom: 15px;" v-if="schemas.length > 0">
+                <span class="m-r-xs">模式(Schema): </span>
+                <el-select v-model="selectedSchema" placeholder="选择模式" style="width: 200px" @change="handleSchemaChange">
+                    <el-option v-for="schema in schemas" :key="schema" :label="schema" :value="schema" />
+                </el-select>
+            </div>
             <el-transfer v-model="selectedValues" v-loading="dialogLoading" :data="transferData" :titles="['未入库', '已选择']" filterable :props="{
                 key: 'name',
                 label: 'name'
@@ -139,18 +158,22 @@
     </div>
 </template>
 <script setup lang="ts">
-import { createField, createTable, deleteFieldsByTableId, deleteTable, getConns, getDBTables, getDBViews, getFieldsByTableId, getTablesByConnId, getTableStructureFromDB, updateTable } from '@/api/metadata'
-import type { MdConn, MdTable, MdTableField } from '@/types/metadata'
-import { ArrowDown, Delete, Edit, Refresh, Search, View } from '@element-plus/icons-vue'
+import { createField, createTable, deleteFieldsByTableId, deleteTable, getConns, getDBTables, getDBViews, getFieldsByTableId, getSchemas, getTablesByConnId, getTableStructureFromDB, updateTable } from '@/api/metadata'
+import type { MdTable, MdTableField } from '@/types/metadata'
 import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
 
 // 响应式数据
 const loading = ref(false)
 const selectedConn = ref('')
-const connections = ref<MdConn[]>([])
+const connections = ref<any[]>([])
 const allTables = ref<MdTable[]>([])
 const searchQuery = ref('')
+
+// 分页状态
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = computed(() => filteredTables.value.length)
 
 // 弹窗相关
 const dialogVisible = ref(false)
@@ -175,6 +198,9 @@ const transferData = computed(() => {
 
 // ... existing fetch functions ...
 
+const schemas = ref<string[]>([])
+const selectedSchema = ref('')
+
 const openSelectDialog = async (type: 'TABLE' | 'VIEW') => {
     if (!selectedConn.value) {
         ElMessage.warning('请先选择数据源')
@@ -183,15 +209,35 @@ const openSelectDialog = async (type: 'TABLE' | 'VIEW') => {
     dialogType.value = type
     dialogVisible.value = true
     selectedValues.value = []
+    schemas.value = []
+    selectedSchema.value = ''
+
+    // 先获取Schema列表
+    try {
+        const res: any = await getSchemas(selectedConn.value)
+        const schemaList = res?.data || res || []
+        schemas.value = Array.isArray(schemaList) ? schemaList : []
+        // 如果有Schema，默认选中第一个
+        if (schemas.value.length > 0) {
+            selectedSchema.value = schemas.value[0]
+        }
+    } catch (error) {
+        console.warn('获取Schema列表失败:', error)
+    }
+
     await fetchDBObjects()
+}
+
+const handleSchemaChange = () => {
+    fetchDBObjects()
 }
 
 const fetchDBObjects = async () => {
     dialogLoading.value = true
     try {
         const res = dialogType.value === 'TABLE'
-            ? await getDBTables(selectedConn.value)
-            : await getDBViews(selectedConn.value)
+            ? await getDBTables(selectedConn.value, selectedSchema.value)
+            : await getDBViews(selectedConn.value, selectedSchema.value)
         dbObjects.value = res?.data || res || []
     } catch (error) {
         console.error('获取数据库对象失败:', error)
@@ -221,7 +267,7 @@ const handleConfirmSelect = async () => {
         for (const obj of selectedDetail) {
             try {
                 // 1. 从数据库获取表结构信息
-                const structureRes = await getTableStructureFromDB(selectedConn.value, obj.name)
+                const structureRes = await getTableStructureFromDB(selectedConn.value, obj.name, selectedSchema.value)
                 const tableStructure = structureRes?.data || structureRes
 
                 if (!tableStructure) {
@@ -237,7 +283,7 @@ const handleConfirmSelect = async () => {
                     table_title: obj.name,
                     table_comment: tableStructure.comment || obj.comment || '',
                     table_type: dialogType.value,
-                    table_schema: tableStructure.schema || '',
+                    table_schema: tableStructure.schema || selectedSchema.value || '',
                     state: 1
                 }
 
@@ -251,7 +297,13 @@ const handleConfirmSelect = async () => {
                 }
 
                 // 3. 获取并保存字段信息
-                const columns = tableStructure.columns || tableStructure.fields || []
+                let columns = []
+                if (Array.isArray(tableStructure)) {
+                    columns = tableStructure
+                } else {
+                    columns = tableStructure.columns || tableStructure.fields || []
+                }
+
                 if (columns.length > 0) {
                     // 批量创建字段记录
                     const fieldPromises = columns.map((col: any, index: number) => {
@@ -307,7 +359,7 @@ const handleConfirmSelect = async () => {
     }
 }
 
-// 计算属性
+// 计算属性 - 筛选
 const filteredTables = computed(() => {
     if (!searchQuery.value) return allTables.value
     const query = searchQuery.value.toLowerCase()
@@ -316,6 +368,35 @@ const filteredTables = computed(() => {
         (t.table_comment && t.table_comment.toLowerCase().includes(query))
     )
 })
+
+// 计算属性 - 分页数据
+const pagedTables = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return filteredTables.value.slice(start, end)
+})
+
+// 分页事件处理
+const handleSizeChange = (val: number) => {
+    pageSize.value = val
+    currentPage.value = 1
+}
+
+const handleCurrentChange = (val: number) => {
+    currentPage.value = val
+}
+
+// 搜索/重置处理
+const handleSearch = () => {
+    currentPage.value = 1
+}
+
+const handleReset = () => {
+    searchQuery.value = ''
+    selectedConn.value = connections.value.length > 0 ? connections.value[0].id as string : ''
+    currentPage.value = 1
+    fetchTables()
+}
 
 // 生命周期
 onMounted(async () => {
@@ -387,6 +468,7 @@ const handleViewDetail = async (row: MdTable) => {
     try {
         const res: any = await getFieldsByTableId(row.id as string)
         console.log('获取字段列表成功:', res)
+        // 兼容后端统一响应格式 {code: 200, data: [...], message: "success"}
         currentTableFields.value = Array.isArray(res) ? res : (res?.data || [])
     } catch (error: any) {
         console.error('获取字段列表失败, ID:', row.id, '错误详情:', error)
@@ -436,12 +518,17 @@ const doRefreshTable = async (table: any) => {
     const structureRes = await getTableStructureFromDB(table.conn_id, table.table_name)
     const tableStructure = structureRes?.data || structureRes?.result || structureRes
 
-    if (!tableStructure || (!tableStructure.columns && !tableStructure.fields)) {
-        throw new Error('获取表结构失败 (数据库返回为空)')
+    // 兼容后端直接返回字段数组的情况
+    let columns = []
+    if (Array.isArray(tableStructure)) {
+        columns = tableStructure
+    } else if (tableStructure && (tableStructure.columns || tableStructure.fields)) {
+        columns = tableStructure.columns || tableStructure.fields
+    } else {
+        throw new Error('获取表结构失败 (数据库返回格式无法识别)')
     }
 
     // 3. 批量创建字段记录
-    const columns = tableStructure.columns || tableStructure.fields || []
     if (columns.length > 0) {
         const fieldPromises = columns.map((col: any, index: number) => {
             const fieldData: Partial<MdTableField> = {
@@ -588,10 +675,78 @@ const handleDelete = async (row: MdTable) => {
 
 </script>
 <style scoped>
-.table-list {
-    padding: 10px;
+/* ==================== 标准布局样式 ==================== */
+.container-padding {
+    padding-top: 20px;
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 600;
+    color: #303133;
+    margin: 0;
+}
+
+.title-icon {
+    font-size: 24px;
+    color: #409eff;
+}
+
+.main-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+:deep(.el-card__body) {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.search-area {
+    flex-shrink: 0;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.table-area {
+    flex: 1;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.pagination-area {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ==================== 详情弹窗样式 ==================== */
 .m-t-lg {
     margin-top: 24px;
 }
@@ -617,20 +772,6 @@ const handleDelete = async (row: MdTable) => {
     font-weight: 600;
 }
 
-.page-header {
-    margin-bottom: 20px;
-}
-
-.filter-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.filter-left {
-    display: flex;
-    align-items: center;
-}
 
 /* ==================== 穿梭框弹窗特有处理 ==================== */
 :deep(.transfer-dialog .el-dialog__body) {
@@ -644,7 +785,6 @@ const handleDelete = async (row: MdTable) => {
 }
 
 /* ==================== 穿梭框完美布局 ==================== */
-
 /* 穿梭框占满整个对话框宽度 */
 .full-width-transfer {
     width: 100%;
@@ -657,7 +797,7 @@ const handleDelete = async (row: MdTable) => {
 :deep(.full-width-transfer .el-transfer-panel) {
     width: calc(50% - 40px);
     height: 500px;
-    border: 1px solid #dcdfe6;
+    border: none;
     border-radius: 8px;
     overflow: hidden;
     display: flex;
@@ -723,7 +863,6 @@ const handleDelete = async (row: MdTable) => {
 }
 
 /* 列表项样式 - 精确对齐选择框与文字 */
-
 /* Checkbox作为flex容器 - 确保垂直居中 */
 :deep(.full-width-transfer .el-transfer-panel__item.el-checkbox) {
     display: flex !important;
@@ -827,7 +966,6 @@ const handleDelete = async (row: MdTable) => {
 }
 
 /* ==================== 中间按钮区域 - 垂直居中排列 ==================== */
-
 :deep(.full-width-transfer .el-transfer__buttons) {
     display: flex;
     flex-direction: column;

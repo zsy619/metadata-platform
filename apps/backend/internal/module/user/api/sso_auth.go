@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
-	"github.com/mssola/user_agent"
 
 	"metadata-platform/internal/module/user/service"
 	"metadata-platform/internal/utils"
@@ -55,42 +54,12 @@ func (h *SsoAuthHandler) Login(c context.Context, ctx *app.RequestContext) {
 		return
 	}
 
-	ip := ctx.ClientIP()
-	userAgentStr := string(ctx.UserAgent())
-	
-	// Parse User-Agent
-	ua := user_agent.New(userAgentStr)
-	browserName, browserVersion := ua.Browser()
-	engineName, engineVersion := ua.Engine()
-	
-	clientInfo := service.ClientInfo{
-		IP:             ip,
-		UserAgent:      userAgentStr,
-		Browser:        browserName,
-		BrowserVersion: browserVersion,
-		BrowserEngine:  engineName + " " + engineVersion,
-		Language:       string(ctx.Request.Header.Get("Accept-Language")),
-		OS:             ua.OSInfo().Name,
-		OSVersion:      ua.OSInfo().Version,
-		OSArch:         "", // difficult to reliably get from standard UA, keep empty or parse specific tokens if needed
-		Device:         "",
-		Platform:       ua.Platform(),
-		Timezone:       "", // Would need client to send it in header/body
-		IPLocation:     "", // Would need GeoIP lookup
-	}
-	
-	// Basic device detection
-	if ua.Mobile() {
-		clientInfo.DeviceType = "Mobile"
-		clientInfo.Device = "Mobile"
-	} else {
-		clientInfo.DeviceType = "Desktop"
-		clientInfo.Device = "PC"
-	}
-	if ua.Bot() {
-		clientInfo.DeviceType = "Bot"
-		clientInfo.Device = "Bot"
-	}
+	// 解析客户端信息
+	clientInfo := utils.ParseUserAgent(
+		string(ctx.UserAgent()),
+		ctx.ClientIP(),
+		string(ctx.Request.Header.Get("Accept-Language")),
+	)
 
 	accessToken, refreshToken, err := h.authService.Login(req.Account, req.Password, req.TenantID, clientInfo)
 	if err != nil {
@@ -163,36 +132,12 @@ func (h *SsoAuthHandler) Refresh(c context.Context, ctx *app.RequestContext) {
 
 // Logout 退出登录
 func (h *SsoAuthHandler) Logout(c context.Context, ctx *app.RequestContext) {
-	// Extract info for audit log
-	ip := ctx.ClientIP()
-	userAgentStr := string(ctx.UserAgent())
-	
-	// Parse User-Agent
-	ua := user_agent.New(userAgentStr)
-	browserName, browserVersion := ua.Browser()
-	engineName, engineVersion := ua.Engine()
-
-	clientInfo := service.ClientInfo{
-		IP:             ip,
-		UserAgent:      userAgentStr,
-		Browser:        browserName,
-		BrowserVersion: browserVersion,
-		BrowserEngine:  engineName + " " + engineVersion,
-		Language:       string(ctx.Request.Header.Get("Accept-Language")),
-		OS:             ua.OSInfo().Name,
-		OSVersion:      ua.OSInfo().Version,
-		OSArch:         "",
-		Device:         "",
-		Platform:       ua.Platform(),
-	}
-	
-	if ua.Mobile() {
-		clientInfo.DeviceType = "Mobile"
-		clientInfo.Device = "Mobile"
-	} else {
-		clientInfo.DeviceType = "Desktop"
-		clientInfo.Device = "PC"
-	}
+	// 解析客户端信息
+	clientInfo := utils.ParseUserAgent(
+		string(ctx.UserAgent()),
+		ctx.ClientIP(),
+		string(ctx.Request.Header.Get("Accept-Language")),
+	)
 
 	// UserID should be available if route is authenticated
 	userID := ""

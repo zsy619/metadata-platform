@@ -79,9 +79,9 @@ onBeforeUnmount(() => {
 }
 
 .sidebar-container {
-    transition: width 0.28s;
+    transition: width 0.3s;
     width: 210px !important;
-    background-color: #001529;
+    background-color: #FFFFFF;
     height: 100%;
     position: fixed;
     font-size: 0;
@@ -94,7 +94,7 @@ onBeforeUnmount(() => {
 
 .main-container {
     min-height: 100%;
-    transition: margin-left .28s;
+    transition: margin-left 0.3s;
     margin-left: 210px;
     width: 100%;
     position: relative;
@@ -106,15 +106,15 @@ onBeforeUnmount(() => {
     top: 0;
     z-index: 9;
     width: 100%;
-    transition: width 0.28s;
+    transition: width 0.3s;
 }
 
 .hideSidebar .sidebar-container {
-    width: 54px !important;
+    width: 64px !important;
 }
 
 .hideSidebar .main-container {
-    margin-left: 54px;
+    margin-left: 64px;
 }
 
 /* mobile responsive */
@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
 }
 
 .mobile .sidebar-container {
-    transition: transform .28s;
+    transition: transform 0.3s;
     width: 210px !important;
 }
 
@@ -149,11 +149,11 @@ onBeforeUnmount(() => {
     right: 0;
     z-index: 9;
     width: calc(100% - 210px);
-    transition: width 0.28s;
+    transition: width 0.3s;
 }
 
 .hideSidebar .fixed-header {
-    width: calc(100% - 54px)
+    width: calc(100% - 64px)
 }
 
 .mobile .fixed-header {

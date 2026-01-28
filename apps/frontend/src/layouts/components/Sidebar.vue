@@ -1,15 +1,19 @@
 <template>
     <el-scrollbar wrap-class="scrollbar-wrapper">
-        <el-menu :default-active="activeMenu" :collapse="!sidebar.opened" :unique-opened="false" :collapse-transition="false" background-color="#001529" text-color="#bfcbd9" active-text-color="#409eff" mode="vertical" class="sidebar-menu">
+        <el-menu :default-active="activeMenu" :collapse="!sidebar.opened" :unique-opened="false" :collapse-transition="true" background-color="#FFFFFF" text-color="#303133" active-text-color="#4051B5" mode="vertical" class="sidebar-menu">
             <div class="sidebar-logo-container" :class="{ 'collapse': !sidebar.opened }">
                 <!-- Logo Logic kept same -->
                 <transition name="sidebarLogoFade">
                     <router-link v-if="!sidebar.opened" key="collapse" class="sidebar-logo-link" to="/">
-                        <img src="@/assets/logo.png" class="sidebar-logo" v-if="showLogo" />
+                        <div v-if="showLogo" class="sidebar-logo-container-inner">
+                            <AnimatedLogo class="sidebar-logo" />
+                        </div>
                         <h1 class="sidebar-title" v-else>元数据平台</h1>
                     </router-link>
                     <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-                        <img src="@/assets/logo.png" class="sidebar-logo" v-if="showLogo" />
+                        <div v-if="showLogo" class="sidebar-logo-container-inner">
+                            <AnimatedLogo class="sidebar-logo" />
+                        </div>
                         <h1 class="sidebar-title">元数据管理平台</h1>
                     </router-link>
                 </transition>
@@ -19,6 +23,7 @@
     </el-scrollbar>
 </template>
 <script setup lang="ts">
+import AnimatedLogo from '@/components/AnimatedLogo.vue'
 import { useAppStore } from '@/stores/app'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -69,7 +74,7 @@ const activeMenu = computed(() => {
 }
 
 .sidebar-menu:not(.el-menu--collapse) {
-    width: 220px;
+    width: 210px;
 }
 
 .sidebar-logo-container {
@@ -77,7 +82,7 @@ const activeMenu = computed(() => {
     width: 100%;
     height: 60px;
     line-height: 60px;
-    background: linear-gradient(135deg, #001529 0%, #002140 100%);
+    background: #4051B5;
     text-align: center;
     overflow: hidden;
     margin-bottom: 12px;

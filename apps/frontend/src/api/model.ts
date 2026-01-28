@@ -10,10 +10,14 @@ import request from '@/utils/request'
  * @returns 模型列表
  */
 export const getModels = async (params?: ModelQueryParams): Promise<ModelResponse> => {
+    const { pageSize, ...rest } = params || {}
     return request({
         url: '/api/metadata/models',
         method: 'get',
-        params
+        params: {
+            ...rest,
+            page_size: pageSize
+        }
     })
 }
 
@@ -155,10 +159,17 @@ export const deleteModelField = async (modelId: number, fieldId: number): Promis
  * @returns 预览数据
  */
 export const previewModelData = async (modelId: number, params?: any): Promise<any> => {
+    // 兼容 limit (旧参数) 和 pageSize (新参数)
+    const { pageSize, limit, ...rest } = params || {}
+    const size = pageSize || limit
+
     return request({
         url: `/api/metadata/models/${modelId}/preview`,
         method: 'post',
-        data: params
+        data: {
+            ...rest,
+            page_size: size
+        }
     })
 }
 
