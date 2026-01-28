@@ -87,11 +87,10 @@ export const getConnsByParentId = async (parentID: string): Promise<MdConn[]> =>
  * @param tenantID 租户ID
  * @returns 表列表
  */
-export const getTables = async (tenantID: string): Promise<MdTable[]> => {
+export const getTables = async (): Promise<MdTable[]> => {
     return request({
         url: '/api/metadata/tables',
-        method: 'get',
-        params: { tenant_id: tenantID }
+        method: 'get'
     })
 }
 
@@ -165,11 +164,14 @@ export const deleteTable = async (id: string): Promise<void> => {
  * @param tenantID 租户ID
  * @returns 字段列表
  */
-export const getFields = async (tenantID: string): Promise<MdTableField[]> => {
+export const getFields = async (connID?: string, tableID?: string): Promise<MdTableField[]> => {
     return request({
         url: '/api/metadata/fields',
         method: 'get',
-        params: { tenant_id: tenantID }
+        params: {
+            conn_id: connID,
+            table_id: tableID
+        }
     })
 }
 

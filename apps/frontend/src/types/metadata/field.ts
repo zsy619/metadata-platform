@@ -8,6 +8,8 @@ export interface MdTableField extends BaseEntity {
     conn_id: string;
     /** 表ID */
     table_id: string;
+    /** 表名称 */
+    table_name: string;
     /** 表标题 */
     table_title: string;
     /** 字段名称 */

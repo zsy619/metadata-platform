@@ -16,7 +16,7 @@ type MdTableFieldService interface {
 	UpdateField(field *model.MdTableField) error
 	DeleteField(id string) error
 	DeleteFieldsByTableID(tableID string) error
-	GetAllFields(tenantID string) ([]model.MdTableField, error)
+	GetAllFields(connID string, tableID string) ([]model.MdTableField, error)
 }
 
 // mdTableFieldService 数据连接表字段服务实现
@@ -96,6 +96,6 @@ func (s *mdTableFieldService) DeleteFieldsByTableID(tableID string) error {
 }
 
 // GetAllFields 获取所有数据连接表字段
-func (s *mdTableFieldService) GetAllFields(tenantID string) ([]model.MdTableField, error) {
-	return s.fieldRepo.GetAllFields(tenantID)
+func (s *mdTableFieldService) GetAllFields(connID string, tableID string) ([]model.MdTableField, error) {
+	return s.fieldRepo.GetAllFields(connID, tableID)
 }

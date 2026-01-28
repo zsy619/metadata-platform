@@ -66,7 +66,7 @@ func (r *mdConnRepository) DeleteConn(id string) error {
 // GetAllConns 获取所有数据连接
 func (r *mdConnRepository) GetAllConns(tenantID string) ([]model.MdConn, error) {
 	var conns []model.MdConn
-	result := r.db.Where("tenant_id = ?", tenantID).Find(&conns)
+	result := r.db.Find(&conns)
 	if result.Error != nil {
 		return nil, result.Error
 	}

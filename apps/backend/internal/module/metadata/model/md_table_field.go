@@ -8,6 +8,7 @@ type MdTableField struct {
 	TenantID        string    `json:"tenant_id" gorm:"index;type:varchar(64);not null;default:'0';comment:租户ID"`
 	ConnID          string    `json:"conn_id" gorm:"type:varchar(64);not null;default:'0';comment:连接ID"`
 	TableID         string    `json:"table_id" gorm:"type:varchar(64);not null;default:'0';comment:表ID"`
+	TableNameStr    string    `json:"table_name" gorm:"column:table_name;size:256;default:'';comment:物理表名"`
 	TableTitle      string    `json:"table_title" gorm:"size:256;default:'';comment:表标题"`
 	ColumnName      string    `json:"column_name" gorm:"size:256;default:'';comment:列名"`
 	ColumnTitle     string    `json:"column_title" gorm:"size:256;default:'';comment:列标题"`

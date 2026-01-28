@@ -75,7 +75,7 @@ func (r *mdTableRepository) GetTablesByConnID(connID string) ([]model.MdTable, e
 // GetAllTables 获取所有数据连接表
 func (r *mdTableRepository) GetAllTables(tenantID string) ([]model.MdTable, error) {
 	var tables []model.MdTable
-	result := r.db.Where("tenant_id = ?", tenantID).Find(&tables)
+	result := r.db.Find(&tables)
 	if result.Error != nil {
 		return nil, result.Error
 	}

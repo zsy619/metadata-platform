@@ -14,7 +14,7 @@ type MdTableFieldRepository interface {
 	UpdateField(field *model.MdTableField) error
 	DeleteField(id string) error
 	DeleteFieldsByTableID(tableID string) error
-	GetAllFields(tenantID string) ([]model.MdTableField, error)
+	GetAllFields(connID string, tableID string) ([]model.MdTableField, error)
 }
 
 // mdTableFieldRepository 数据连接表字段仓库实现
@@ -45,7 +45,12 @@ func (r *mdTableFieldRepository) GetFieldByID(id string) (*model.MdTableField, e
 // GetFieldsByTableID 根据表ID获取所有字段
 func (r *mdTableFieldRepository) GetFieldsByTableID(tableID string) ([]model.MdTableField, error) {
 	var fields []model.MdTableField
-	result := r.db.Where("table_id = ?", tableID).Order("sort asc").Find(&fields)
+	result := r.db.Table("md_table_field").
+		Select("md_table_field.*, md_table.table_name").
+		Joins("LEFT JOIN md_table ON md_table_field.table_id = md_table.id").
+		Where("md_table_field.table_id = ?", tableID).
+		Order("md_table_field.sort ASC").
+		Find(&fields)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -67,10 +72,20 @@ func (r *mdTableFieldRepository) DeleteFieldsByTableID(tableID string) error {
 	return r.db.Where("table_id = ?", tableID).Delete(&model.MdTableField{}).Error
 }
 
-// GetAllFields 获取所有数据连接表字段
-func (r *mdTableFieldRepository) GetAllFields(tenantID string) ([]model.MdTableField, error) {
+// GetAllFields 获取所有数据连接表字段，支持按连接ID和表ID过滤
+func (r *mdTableFieldRepository) GetAllFields(connID string, tableID string) ([]model.MdTableField, error) {
 	var fields []model.MdTableField
-	result := r.db.Where("tenant_id = ?", tenantID).Find(&fields)
+	query := r.db.Table("md_table_field").
+		Select("md_table_field.*, md_table.table_name").
+		Joins("LEFT JOIN md_table ON md_table_field.table_id = md_table.id")
+
+	if connID != "" {
+		query = query.Where("md_table_field.conn_id = ?", connID)
+	}
+	if tableID != "" {
+		query = query.Where("md_table_field.table_id = ?", tableID)
+	}
+	result := query.Order("md_table.table_name ASC, md_table_field.sort ASC").Find(&fields)
 	if result.Error != nil {
 		return nil, result.Error
 	}

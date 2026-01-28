@@ -160,6 +160,7 @@
 <script setup lang="ts">
 import { createField, createTable, deleteFieldsByTableId, deleteTable, getConns, getDBTables, getDBViews, getFieldsByTableId, getSchemas, getTablesByConnId, getTableStructureFromDB, updateTable } from '@/api/metadata'
 import type { MdTable, MdTableField } from '@/types/metadata'
+import { ArrowDown, Delete, Edit, Grid, Refresh, RefreshLeft, Search, View } from '@element-plus/icons-vue'
 import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
 
@@ -307,22 +308,23 @@ const handleConfirmSelect = async () => {
                 if (columns.length > 0) {
                     // 批量创建字段记录
                     const fieldPromises = columns.map((col: any, index: number) => {
-                        const fieldData: Partial<MdTableField> = {
+                        const fieldData: any = {
                             conn_id: selectedConn.value,
                             table_id: createdTable.id,
+                            table_name: obj.name,
                             table_title: obj.name,
                             column_name: col.name || col.column_name,
                             column_title: col.name || col.column_name,
                             column_type: col.type || col.data_type || '',
                             column_length: col.length || col.character_maximum_length || 0,
                             column_comment: col.comment || col.column_comment || '',
-                            is_nullable: col.nullable === true || col.is_nullable === 'YES',
-                            is_primary_key: col.primary_key === true || col.column_key === 'PRI',
-                            is_auto_increment: col.auto_increment === true || (col.extra || '').includes('auto_increment'),
+                            is_nullable: col.is_nullable === true || col.nullable === true,
+                            is_primary_key: col.is_primary_key === true,
+                            is_auto_increment: col.is_auto_increment === true,
                             default_value: col.default_value || col.column_default || '',
                             extra_info: col.extra || '',
                             state: 1,
-                            sort: index
+                            sort: index + 1
                         }
                         return createField(fieldData)
                     })
@@ -531,22 +533,23 @@ const doRefreshTable = async (table: any) => {
     // 3. 批量创建字段记录
     if (columns.length > 0) {
         const fieldPromises = columns.map((col: any, index: number) => {
-            const fieldData: Partial<MdTableField> = {
+            const fieldData: any = {
                 conn_id: table.conn_id,
                 table_id: table.id,
+                table_name: table.table_name,
                 table_title: table.table_title || table.table_name,
                 column_name: col.name || col.column_name,
                 column_title: col.name || col.column_name,
                 column_type: col.type || col.data_type || '',
                 column_length: col.length || col.character_maximum_length || 0,
                 column_comment: col.comment || col.column_comment || '',
-                is_nullable: col.nullable === true || col.is_nullable === 'YES',
-                is_primary_key: col.primary_key === true || col.column_key === 'PRI',
-                is_auto_increment: col.auto_increment === true || (col.extra || '').includes('auto_increment'),
+                is_nullable: col.is_nullable === true || col.nullable === true,
+                is_primary_key: col.is_primary_key === true,
+                is_auto_increment: col.is_auto_increment === true,
                 default_value: col.default_value || col.column_default || '',
                 extra_info: col.extra || '',
                 state: 1,
-                sort: index
+                sort: index + 1
             }
             return createField(fieldData)
         })

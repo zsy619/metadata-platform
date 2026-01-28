@@ -26,6 +26,7 @@ type CreateFieldRequest struct {
 	TenantID        string `json:"tenant_id" binding:"required"`
 	ConnID          string `json:"conn_id" binding:"required"`
 	TableID         string `json:"table_id" binding:"required"`
+	TableName       string `json:"table_name"`
 	TableTitle      string `json:"table_title"`
 	ColumnName      string `json:"column_name" binding:"required"`
 	ColumnTitle     string `json:"column_title"`
@@ -43,6 +44,7 @@ type CreateFieldRequest struct {
 type UpdateFieldRequest struct {
 	ConnID          string `json:"conn_id"`
 	TableID         string `json:"table_id"`
+	TableName       string `json:"table_name"`
 	TableTitle      string `json:"table_title"`
 	ColumnName      string `json:"column_name"`
 	ColumnTitle     string `json:"column_title"`
@@ -69,6 +71,7 @@ func (h *MdTableFieldHandler) CreateField(c context.Context, ctx *app.RequestCon
 		TenantID:        req.TenantID,
 		ConnID:          req.ConnID,
 		TableID:         req.TableID,
+		TableNameStr:    req.TableName,
 		TableTitle:      req.TableTitle,
 		ColumnName:      req.ColumnName,
 		ColumnTitle:     req.ColumnTitle,
@@ -142,6 +145,9 @@ func (h *MdTableFieldHandler) UpdateField(c context.Context, ctx *app.RequestCon
 	if req.TableID != "" {
 		field.TableID = req.TableID
 	}
+	if req.TableName != "" {
+		field.TableNameStr = req.TableName
+	}
 	if req.TableTitle != "" {
 		field.TableTitle = req.TableTitle
 	}
@@ -207,10 +213,11 @@ func (h *MdTableFieldHandler) DeleteFieldsByTableID(c context.Context, ctx *app.
 
 // GetAllFields 获取所有数据连接表字段
 func (h *MdTableFieldHandler) GetAllFields(c context.Context, ctx *app.RequestContext) {
-	tenantID := ctx.Query("tenant_id")
+	connID := ctx.Query("conn_id")
+	tableID := ctx.Query("table_id")
 
 	// 调用服务层获取所有数据连接表字段
-	fields, err := h.fieldService.GetAllFields(tenantID)
+	fields, err := h.fieldService.GetAllFields(connID, tableID)
 	if err != nil {
 		utils.ErrorResponse(ctx, consts.StatusInternalServerError, "获取字段列表失败")
 		return
