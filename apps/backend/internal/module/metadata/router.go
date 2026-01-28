@@ -36,6 +36,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 	// 元数据模块路由组
 	metadataGroup := r.Group("/api/metadata")
 	metadataGroup.Use(globalMiddleware.TenantMiddleware())
+	metadataGroup.Use(globalMiddleware.AuthMiddleware())
 	metadataGroup.Use(middleware.AuditMiddleware(services.Audit))
 
 	// API路由
@@ -96,6 +97,8 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 	{
 		modelGroup.POST("/build-from-table", modelHandler.BuildFromTable)
 		modelGroup.POST("/build-from-view", modelHandler.BuildFromView)
+		modelGroup.POST("/build-from-sql", modelHandler.BuildFromSQL)
+		modelGroup.POST("/test-sql", modelHandler.TestSQL)
 		modelGroup.POST("", modelHandler.CreateModel)
 		modelGroup.GET("/:id", modelHandler.GetModelByID)
 		modelGroup.PUT("/:id", modelHandler.UpdateModel)

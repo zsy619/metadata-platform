@@ -152,8 +152,12 @@ func (e *postgreSQLExtractor) PreviewData(schema, table string, limit int) ([]ma
 		result = append(result, m)
 	}
 	return result, nil
+}// GetQueryColumns 获取查询结果的列信息
+func (e *postgreSQLExtractor) GetQueryColumns(query string, params []interface{}) ([]ColumnInfo, error) {
+	return nil, fmt.Errorf("method GetQueryColumns not implemented for this adapter")
 }
 
+// Close 关闭连接
 func (e *postgreSQLExtractor) Close() error {
 	return e.db.Close()
 }

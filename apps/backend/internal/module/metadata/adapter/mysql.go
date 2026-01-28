@@ -187,6 +187,46 @@ func (e *MySQLExtractor) PreviewData(schema, table string, limit int) ([]map[str
 	return result, nil
 }
 
+
+// GetQueryColumns 获取查询结果的列信息
+func (e *MySQLExtractor) GetQueryColumns(query string, params []interface{}) ([]ColumnInfo, error) {
+	// 针对 SELECT 语句，拼接 LIMIT 0 防止查询大量数据
+	// 注意：这是一个简单处理，可能不适用于所有复杂 SQL (如已有 LIMIT)
+	// 但 Go sql.DB 提供的 ColumnTypes 可以即使为空结果集也能返回列信息
+	// 最好还是包裹一层: SELECT * FROM (UserQuery) AS tmp LIMIT 0
+	wrappedQuery := fmt.Sprintf("SELECT * FROM (%s) AS tmp_metadata_extractor LIMIT 0", query)
+
+	rows, err := e.db.Query(wrappedQuery, params...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	columnTypes, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+
+	var columns []ColumnInfo
+	for _, ct := range columnTypes {
+		c := ColumnInfo{
+			Name:       ct.Name(),
+			Type:       ct.DatabaseTypeName(),
+			IsNullable: true, // 难以准确获取，默认为 true
+		}
+		
+		if length, ok := ct.Length(); ok {
+			c.Length = int(length)
+		}
+		if nullable, ok := ct.Nullable(); ok {
+			c.IsNullable = nullable
+		}
+		
+		columns = append(columns, c)
+	}
+	return columns, nil
+}
+
 // Close 关闭连接
 func (e *MySQLExtractor) Close() error {
 	return e.db.Close()

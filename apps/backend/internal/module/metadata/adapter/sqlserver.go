@@ -295,6 +295,10 @@ func (e *SQLServerExtractor) PreviewData(schema, table string, limit int) ([]map
 	
 	return result, nil
 }
+// GetQueryColumns 获取查询结果的列信息
+func (e *SQLServerExtractor) GetQueryColumns(query string, params []interface{}) ([]ColumnInfo, error) {
+	return nil, fmt.Errorf("method GetQueryColumns not implemented for this adapter")
+}
 
 // Close 关闭连接
 func (e *SQLServerExtractor) Close() error {

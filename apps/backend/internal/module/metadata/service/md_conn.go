@@ -26,6 +26,7 @@ type MdConnService interface {
 	GetTableStructure(conn *model.MdConn, schema, table string) ([]adapter.ColumnInfo, error)
 	PreviewTableData(conn *model.MdConn, schema, table string, limit int) ([]map[string]interface{}, error)
 	GetSchemas(conn *model.MdConn) ([]string, error)
+	ExecuteSQLForColumns(conn *model.MdConn, query string, params map[string]interface{}) ([]adapter.ColumnInfo, error)
 }
 
 // mdConnService 数据连接服务实现
@@ -289,4 +290,22 @@ func (s *mdConnService) GetSchemas(conn *model.MdConn) ([]string, error) {
 	}
 	defer extractor.Close()
 	return extractor.GetSchemas()
+}
+
+// ExecuteSQLForColumns 执行SQL并获取返回列信息
+func (s *mdConnService) ExecuteSQLForColumns(conn *model.MdConn, query string, params map[string]interface{}) ([]adapter.ColumnInfo, error) {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return nil, err
+	}
+	defer extractor.Close()
+
+	// 简单的参数处理：将 map 转换为 list (如果有顺序要求，这里需要更复杂的解析，目前假设无参数或顺序参数)
+	// 实际应用中，如果 SQL 使用 ? 或 $1 占位符，params 需要按顺序提供
+	// 如果是命名参数 @name，需要 SQL 驱动支持或手动替换
+	// 这里暂且只支持无参或简单按序 (需前端保证)
+	var args []interface{}
+	// TODO: 实现命名参数解析
+	
+	return extractor.GetQueryColumns(query, args)
 }

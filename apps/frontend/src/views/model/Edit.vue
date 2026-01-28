@@ -288,7 +288,7 @@ const loadData = async (id: string) => {
     }
 }
 
-const handleCancel = () => router.push('/model/list')
+const handleCancel = () => router.push('/metadata/model/list')
 
 const handleSubmit = async () => {
     submitting.value = true

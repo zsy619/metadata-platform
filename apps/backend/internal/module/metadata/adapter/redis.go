@@ -3,6 +3,7 @@ package adapter
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -164,6 +165,10 @@ func (e *RedisExtractor) PreviewData(schema, table string, limit int) ([]map[str
 	}
 
 	return result, nil
+}
+// GetQueryColumns 获取查询结果的列信息
+func (e *RedisExtractor) GetQueryColumns(query string, params []interface{}) ([]ColumnInfo, error) {
+	return nil, fmt.Errorf("method GetQueryColumns not implemented for this adapter")
 }
 
 // Close 关闭连接

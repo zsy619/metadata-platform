@@ -40,6 +40,23 @@ type BuildFromViewRequest struct {
 	ModelCode string `json:"model_code" binding:"required"`
 }
 
+// BuildFromSQLRequest 从 SQL 构建模型请求
+type BuildFromSQLRequest struct {
+	ConnID        string                 `json:"conn_id" binding:"required"`
+	ModelName     string                 `json:"model_name" binding:"required"`
+	ModelCode     string                 `json:"model_code" binding:"required"`
+	SQLContent    string                 `json:"sql_content" binding:"required"`
+	Parameters    []service.SQLParameter `json:"parameters"`
+	FieldMappings []service.FieldMapping `json:"field_mappings"`
+}
+
+// TestSQLRequest 测试 SQL 请求
+type TestSQLRequest struct {
+	ConnID     string                 `json:"conn_id" binding:"required"`
+	SQLContent string                 `json:"sql_content" binding:"required"`
+	Parameters []service.SQLParameter `json:"parameters"`
+}
+
 // CreateModelRequest 创建模型请求
 type CreateModelRequest struct {
 	ConnID       string `json:"conn_id" binding:"required"`
@@ -108,7 +125,7 @@ func (h *MdModelHandler) BuildFromTable(c context.Context, ctx *app.RequestConte
 		ModelName: req.ModelName,
 		ModelCode: req.ModelCode,
 		TenantID:  strconv.FormatUint(uint64(tenantID.(uint)), 10),
-		UserID:    strconv.FormatInt(userID.(int64), 10),
+		UserID:    userID.(string),
 		Username:  username.(string),
 	}
 
@@ -143,7 +160,7 @@ func (h *MdModelHandler) BuildFromView(c context.Context, ctx *app.RequestContex
 		ModelName: req.ModelName,
 		ModelCode: req.ModelCode,
 		TenantID:  strconv.FormatUint(uint64(tenantID.(uint)), 10),
-		UserID:    strconv.FormatInt(userID.(int64), 10),
+		UserID:    userID.(string),
 		Username:  username.(string),
 	}
 
@@ -153,6 +170,70 @@ func (h *MdModelHandler) BuildFromView(c context.Context, ctx *app.RequestContex
 	}
 
 	utils.SuccessResponse(ctx, "模型构建成功")
+}
+
+// BuildFromSQL 从 SQL 构建模型
+func (h *MdModelHandler) BuildFromSQL(c context.Context, ctx *app.RequestContext) {
+	var req BuildFromSQLRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(consts.StatusBadRequest, map[string]interface{}{
+			"code":    400,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	tenantID, _ := ctx.Get("tenant_id")
+	userID, _ := ctx.Get("user_id")
+	username, _ := ctx.Get("username")
+
+	serviceReq := &service.BuildFromSQLRequest{
+		ConnID:        req.ConnID,
+		ModelName:     req.ModelName,
+		ModelCode:     req.ModelCode,
+		SQLContent:    req.SQLContent,
+		Parameters:    req.Parameters,
+		FieldMappings: req.FieldMappings,
+		TenantID:      strconv.FormatUint(uint64(tenantID.(uint)), 10),
+		UserID:        userID.(string),
+		Username:      username.(string),
+	}
+
+	if err := h.modelService.BuildFromSQL(serviceReq); err != nil {
+		utils.ErrorResponse(ctx, consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, "模型构建成功")
+}
+
+// TestSQL 测试/预览 SQL
+func (h *MdModelHandler) TestSQL(c context.Context, ctx *app.RequestContext) {
+	var req TestSQLRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(consts.StatusBadRequest, map[string]interface{}{
+			"code":    400,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	serviceReq := &service.TestSQLRequest{
+		ConnID:     req.ConnID,
+		SQLContent: req.SQLContent,
+		Parameters: req.Parameters,
+	}
+
+	fields, err := h.modelService.TestSQL(serviceReq)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, map[string]interface{}{
+		"message": "SQL 解析成功",
+		"fields":  fields,
+	})
 }
 
 // CreateModel 创建模型
@@ -182,9 +263,9 @@ func (h *MdModelHandler) CreateModel(c context.Context, ctx *app.RequestContext)
 		IsPublic:     req.IsPublic,
 		IsLocked:     req.IsLocked,
 		TenantID:     strconv.FormatUint(uint64(tenantID.(uint)), 10),
-		CreateID:     strconv.FormatInt(userID.(int64), 10),
+		CreateID:     userID.(string),
 		CreateBy:     username.(string),
-		UpdateID:     strconv.FormatInt(userID.(int64), 10),
+		UpdateID:     userID.(string),
 		UpdateBy:     username.(string),
 	}
 
@@ -229,15 +310,21 @@ func (h *MdModelHandler) UpdateModel(c context.Context, ctx *app.RequestContext)
 		return
 	}
 
-	if req.ModelName != "" { model.ModelName = req.ModelName }
-	if req.ModelVersion != "" { model.ModelVersion = req.ModelVersion }
-	if req.ModelLogo != "" { model.ModelLogo = req.ModelLogo }
+	if req.ModelName != "" {
+		model.ModelName = req.ModelName
+	}
+	if req.ModelVersion != "" {
+		model.ModelVersion = req.ModelVersion
+	}
+	if req.ModelLogo != "" {
+		model.ModelLogo = req.ModelLogo
+	}
 	model.IsPublic = req.IsPublic
 	model.IsLocked = req.IsLocked
 
 	userID, _ := ctx.Get("user_id")
 	username, _ := ctx.Get("username")
-	model.UpdateID = strconv.FormatInt(userID.(int64), 10)
+	model.UpdateID = userID.(string)
 	model.UpdateBy = username.(string)
 
 	if err := h.modelService.UpdateModel(model); err != nil {
@@ -311,20 +398,20 @@ func (h *MdModelHandler) CreateModelField(c context.Context, ctx *app.RequestCon
 	username, _ := ctx.Get("username")
 
 	field := &model.MdModelField{
-		ModelID:     req.ModelID,
-		TableSchema: req.TableSchema,
+		ModelID:      req.ModelID,
+		TableSchema:  req.TableSchema,
 		TableNameStr: req.TableName,
-		ColumnName:  req.ColumnName,
-		ColumnTitle: req.ColumnTitle,
-		Func:        req.Func,
-		AggFunc:     req.AggFunc,
-		ShowTitle:   req.ShowTitle,
-		ShowWidth:   req.ShowWidth,
-		TenantID:    strconv.FormatUint(uint64(tenantID.(uint)), 10),
-		CreateID:    strconv.FormatInt(userID.(int64), 10),
-		CreateBy:    username.(string),
-		UpdateID:    strconv.FormatInt(userID.(int64), 10),
-		UpdateBy:    username.(string),
+		ColumnName:   req.ColumnName,
+		ColumnTitle:  req.ColumnTitle,
+		Func:         req.Func,
+		AggFunc:      req.AggFunc,
+		ShowTitle:    req.ShowTitle,
+		ShowWidth:    req.ShowWidth,
+		TenantID:     strconv.FormatUint(uint64(tenantID.(uint)), 10),
+		CreateID:     userID.(string),
+		CreateBy:     username.(string),
+		UpdateID:     userID.(string),
+		UpdateBy:     username.(string),
 	}
 
 	if err := h.modelService.CreateField(field); err != nil {
@@ -359,7 +446,7 @@ func (h *MdModelHandler) UpdateModelField(c context.Context, ctx *app.RequestCon
 		AggFunc:     req.AggFunc,
 		ShowTitle:   req.ShowTitle,
 		ShowWidth:   req.ShowWidth,
-		UpdateID:    strconv.FormatInt(userID.(int64), 10),
+		UpdateID:    userID.(string),
 		UpdateBy:    username.(string),
 	}
 

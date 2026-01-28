@@ -9,7 +9,23 @@
                 模型管理
             </h1>
             <div class="header-actions">
-                <el-button type="primary" :icon="Plus" @click="handleCreate">新建模型</el-button>
+                <el-dropdown @command="handleCreateCommand" trigger="click">
+                    <el-button type="primary">
+                        <el-icon>
+                            <Plus />
+                        </el-icon>
+                        新建模型
+                        <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                            <el-dropdown-item :command="1">SQL 语句</el-dropdown-item>
+                            <el-dropdown-item :command="2">视图 / 表</el-dropdown-item>
+                            <el-dropdown-item :command="3">存储过程</el-dropdown-item>
+                            <el-dropdown-item :command="4">关联</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
             </div>
         </div>
         <!-- 主内容卡片 -->
@@ -45,7 +61,7 @@
 <script setup lang="ts">
 import { deleteModel, getModels } from '@/api/model'
 import type { Model } from '@/types/metadata'
-import { Box, Delete, Plus, RefreshLeft, Search, View } from '@element-plus/icons-vue'
+import { ArrowDown, Box, Delete, Plus, RefreshLeft, Search, View } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -58,7 +74,7 @@ const models = ref<Model[]>([])
 const searchQuery = ref('')
 const total = ref(0)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
 
 // 生命周期钩子
 onMounted(() => {
@@ -120,13 +136,20 @@ const handleSizeChange = (val: number) => {
 }
 
 // 新建模型
-const handleCreate = () => {
-    router.push('/model/create')
+const handleCreateCommand = (kind: number) => {
+    if (kind === 1) {
+        router.push('/metadata/model/create-sql')
+    } else {
+        router.push({
+            path: '/metadata/model/create',
+            query: { kind }
+        })
+    }
 }
 
 // 编辑模型
 const handleEdit = (row: Model) => {
-    router.push(`/model/${row.id}/edit`)
+    router.push(`/metadata/model/${row.id}/edit`)
 }
 
 // 删除模型

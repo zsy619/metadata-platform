@@ -35,6 +35,19 @@ func (m *MockModelRepo) GetAllModels(tenantID string) ([]model.MdModel, error) {
 	return m.Called(tenantID).Get(0).([]model.MdModel), m.Called(tenantID).Error(1)
 }
 
+// MockModelSqlRepo
+type MockModelSqlRepo struct {
+	mock.Mock
+}
+func (m *MockModelSqlRepo) Create(sql *model.MdModelSql) error { return m.Called(sql).Error(0) }
+func (m *MockModelSqlRepo) GetByModelID(modelID string) (*model.MdModelSql, error) {
+	args := m.Called(modelID)
+	if args.Get(0) == nil { return nil, args.Error(1) }
+	return args.Get(0).(*model.MdModelSql), args.Error(1)
+}
+func (m *MockModelSqlRepo) Update(sql *model.MdModelSql) error { return m.Called(sql).Error(0) }
+func (m *MockModelSqlRepo) DeleteByModelID(modelID string) error { return m.Called(modelID).Error(0) }
+
 // MockFieldRepo
 type MockFieldRepo struct {
 	mock.Mock
@@ -94,12 +107,16 @@ func (m *MockConnService) PreviewTableData(conn *model.MdConn, schema, table str
 func (m *MockConnService) GetSchemas(conn *model.MdConn) ([]string, error) {
 	return m.Called(conn).Get(0).([]string), m.Called(conn).Error(1)
 }
+func (m *MockConnService) ExecuteSQLForColumns(conn *model.MdConn, query string, params map[string]interface{}) ([]adapter.ColumnInfo, error) {
+	return m.Called(conn, query, params).Get(0).([]adapter.ColumnInfo), m.Called(conn, query, params).Error(1)
+}
 
 func TestMdModelService_BuildFromTable(t *testing.T) {
 	mockModelRepo := new(MockModelRepo)
 	mockFieldRepo := new(MockFieldRepo)
+	mockModelSqlRepo := new(MockModelSqlRepo)
 	mockConnSvc := new(MockConnService)
-	svc := NewMdModelService(mockModelRepo, mockFieldRepo, mockConnSvc)
+	svc := NewMdModelService(mockModelRepo, mockFieldRepo, mockModelSqlRepo, mockConnSvc)
 
 	t.Run("Success", func(t *testing.T) {
 		req := &BuildFromTableRequest{

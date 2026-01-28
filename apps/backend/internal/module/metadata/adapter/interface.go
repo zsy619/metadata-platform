@@ -64,6 +64,9 @@ type MetadataExtractor interface {
 	// PreviewData 预览数据
 	PreviewData(schema, table string, limit int) ([]map[string]interface{}, error)
 	
+	// GetQueryColumns 获取查询结果的列信息（不返回数据）
+	GetQueryColumns(query string, params []interface{}) ([]ColumnInfo, error)
+
 	// Close 关闭连接
 	Close() error
 }

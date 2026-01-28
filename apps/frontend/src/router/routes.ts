@@ -79,6 +79,44 @@ const routes: RouteRecordRaw[] = [
                         meta: { title: '字段列表', icon: 'List' }
                     }
                 ]
+            },
+            {
+                path: 'model',
+                component: RouterView,
+                meta: { title: '模型管理', icon: 'Document' },
+                redirect: '/metadata/model/list',
+                children: [
+                    {
+                        path: 'list',
+                        name: 'ModelList',
+                        component: () => import('@/views/model/List.vue'),
+                        meta: { title: '模型列表', icon: 'List' }
+                    },
+                    {
+                        path: 'create',
+                        name: 'ModelCreate',
+                        component: () => import('@/views/model/Create.vue'),
+                        meta: { title: '创建模型', hidden: true }
+                    },
+                    {
+                        path: 'create-sql',
+                        name: 'ModelCreateSql',
+                        component: () => import('@/views/model/CreateSql.vue'),
+                        meta: { title: '创建SQL模型', hidden: true }
+                    },
+                    {
+                        path: ':id/edit',
+                        name: 'ModelEdit',
+                        component: () => import('@/views/model/Edit.vue'),
+                        meta: { title: '编辑模型', hidden: true }
+                    },
+                    {
+                        path: ':id/preview',
+                        name: 'ModelPreview',
+                        component: () => import('@/views/model/Preview.vue'),
+                        meta: { title: '数据预览', hidden: true }
+                    }
+                ]
             }
         ]
     },
@@ -93,38 +131,6 @@ const routes: RouteRecordRaw[] = [
                 name: 'Profile',
                 component: () => import('@/views/user/Profile.vue'),
                 meta: { title: '个人设置' }
-            }
-        ]
-    },
-    {
-        path: '/model',
-        component: Layout,
-        meta: { title: '模型管理', icon: 'Document' },
-        redirect: '/model/list',
-        children: [
-            {
-                path: 'list',
-                name: 'ModelList',
-                component: () => import('@/views/model/List.vue'),
-                meta: { title: '模型列表', icon: 'List' }
-            },
-            {
-                path: 'create',
-                name: 'ModelCreate',
-                component: () => import('@/views/model/Create.vue'),
-                meta: { title: '创建模型', hidden: true }
-            },
-            {
-                path: ':id/edit',
-                name: 'ModelEdit',
-                component: () => import('@/views/model/Edit.vue'),
-                meta: { title: '编辑模型', hidden: true }
-            },
-            {
-                path: ':id/preview',
-                name: 'ModelPreview',
-                component: () => import('@/views/model/Preview.vue'),
-                meta: { title: '数据预览', hidden: true }
             }
         ]
     },

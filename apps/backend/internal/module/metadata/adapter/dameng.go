@@ -390,6 +390,10 @@ func (e *DamengExtractor) PreviewData(schema, table string, limit int) ([]map[st
 	
 	return result, nil
 }
+// GetQueryColumns 获取查询结果的列信息
+func (e *DamengExtractor) GetQueryColumns(query string, params []interface{}) ([]ColumnInfo, error) {
+	return nil, fmt.Errorf("method GetQueryColumns not implemented for this adapter")
+}
 
 // Close 关闭连接
 func (e *DamengExtractor) Close() error {

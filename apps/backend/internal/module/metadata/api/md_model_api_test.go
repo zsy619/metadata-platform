@@ -38,12 +38,16 @@ func (m *MockMdModelService) GetAllModels(tenantID string) ([]model.MdModel, err
 }
 func (m *MockMdModelService) BuildFromTable(req *service.BuildFromTableRequest) error { return m.Called(req).Error(0) }
 func (m *MockMdModelService) BuildFromView(req *service.BuildFromViewRequest) error { return m.Called(req).Error(0) }
+func (m *MockMdModelService) BuildFromSQL(req *service.BuildFromSQLRequest) error { return m.Called(req).Error(0) }
 func (m *MockMdModelService) GetFieldsByModelID(modelID string) ([]model.MdModelField, error) {
 	return m.Called(modelID).Get(0).([]model.MdModelField), m.Called(modelID).Error(1)
 }
 func (m *MockMdModelService) CreateField(field *model.MdModelField) error { return m.Called(field).Error(0) }
 func (m *MockMdModelService) UpdateField(field *model.MdModelField) error { return m.Called(field).Error(0) }
 func (m *MockMdModelService) DeleteField(id string) error { return m.Called(id).Error(0) }
+func (m *MockMdModelService) TestSQL(req *service.TestSQLRequest) ([]service.FieldMapping, error) {
+	return m.Called(req).Get(0).([]service.FieldMapping), m.Called(req).Error(1)
+}
 
 func BenchmarkBuildFromTable(b *testing.B) {
 	mockSvc := new(MockMdModelService)

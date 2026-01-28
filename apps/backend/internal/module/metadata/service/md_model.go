@@ -20,6 +20,8 @@ type MdModelService interface {
 	GetAllModels(tenantID string) ([]model.MdModel, error)
 	BuildFromTable(req *BuildFromTableRequest) error
 	BuildFromView(req *BuildFromViewRequest) error
+	BuildFromSQL(req *BuildFromSQLRequest) error
+	TestSQL(req *TestSQLRequest) ([]FieldMapping, error)
 	// ModelField operations
 	GetFieldsByModelID(modelID string) ([]model.MdModelField, error)
 	CreateField(field *model.MdModelField) error
@@ -38,6 +40,38 @@ type BuildFromViewRequest struct {
 	Username    string
 }
 
+type BuildFromSQLRequest struct {
+	ConnID       string
+	ModelName    string
+	ModelCode    string
+	SQLContent   string
+	Parameters   []SQLParameter
+	FieldMappings []FieldMapping
+	TenantID     string
+	UserID       string
+	Username     string
+}
+
+type TestSQLRequest struct {
+	ConnID     string
+	SQLContent string
+	Parameters []SQLParameter
+}
+
+type SQLParameter struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
+	Default  string `json:"default"`
+}
+
+type FieldMapping struct {
+	ColumnName string `json:"column_name"`
+	ShowTitle  string `json:"show_title"`
+	ShowWidth  int    `json:"show_width"`
+	Format     string `json:"format"`
+}
+
 type BuildFromTableRequest struct {
 	ConnID      string
 	Schema      string
@@ -51,21 +85,23 @@ type BuildFromTableRequest struct {
 
 // mdModelService 模型定义服务实现
 type mdModelService struct {
-	modelRepo  repository.MdModelRepository
-	fieldRepo  repository.MdModelFieldRepository
+	modelRepo   repository.MdModelRepository
+	fieldRepo   repository.MdModelFieldRepository
+	modelSqlRepo repository.MdModelSqlRepository
 	connService MdConnService
-	snowflake  *utils.Snowflake
+	snowflake   *utils.Snowflake
 }
 
 // NewMdModelService 创建模型定义服务实例
-func NewMdModelService(modelRepo repository.MdModelRepository, fieldRepo repository.MdModelFieldRepository, connService MdConnService) MdModelService {
+func NewMdModelService(modelRepo repository.MdModelRepository, fieldRepo repository.MdModelFieldRepository, modelSqlRepo repository.MdModelSqlRepository, connService MdConnService) MdModelService {
 	// 创建雪花算法生成器实例，使用默认数据中心ID和机器ID
 	snowflake := utils.NewSnowflake(1, 1)
 	return &mdModelService{
-		modelRepo:   modelRepo,
-		fieldRepo:   fieldRepo,
-		connService: connService,
-		snowflake:   snowflake,
+		modelRepo:    modelRepo,
+		fieldRepo:    fieldRepo,
+		modelSqlRepo: modelSqlRepo,
+		connService:  connService,
+		snowflake:    snowflake,
 	}
 }
 
@@ -271,6 +307,122 @@ func (s *mdModelService) BuildFromTable(req *BuildFromTableRequest) error {
 	}
 
 	return nil
+}
+
+// BuildFromSQL 从 SQL 构建模型
+func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
+	// 1. 获取数据连接信息
+	conn, err := s.connService.GetConnByID(req.ConnID)
+	if err != nil {
+		return err
+	}
+
+	// 2. 创建模型头信息
+	modelID := s.snowflake.GenerateIDString()
+	mdModel := &model.MdModel{
+		ID:           modelID,
+		TenantID:     req.TenantID,
+		ParentID:     "0",
+		ConnID:       req.ConnID,
+		ConnName:     conn.ConnName,
+		ModelName:    req.ModelName,
+		ModelCode:    req.ModelCode,
+		ModelVersion: "1.0.0",
+		ModelKind:    1, // 1: SQL 语句
+		IsPublic:     false,
+		IsLocked:     false,
+		IsDeleted:    false,
+		CreateID:     req.UserID,
+		CreateBy:     req.Username,
+		UpdateID:     req.UserID,
+		UpdateBy:     req.Username,
+	}
+
+	// 检查模型编码是否已存在
+	existingModel, err := s.modelRepo.GetModelByCode(req.ModelCode)
+	if err == nil && existingModel != nil {
+		return errors.New("模型编码已存在")
+	}
+
+	if err := s.modelRepo.CreateModel(mdModel); err != nil {
+		return err
+	}
+
+	// 3. 保存 SQL 内容
+	modelSql := &model.MdModelSql{
+		ID:        s.snowflake.GenerateIDString(),
+		TenantID:  req.TenantID,
+		ModelID:   modelID,
+		Content:   req.SQLContent,
+		Remark:    "",
+		CreateID:  req.UserID,
+		CreateBy:  req.Username,
+		UpdateID:  req.UserID,
+		UpdateBy:  req.Username,
+	}
+	if err := s.modelSqlRepo.Create(modelSql); err != nil {
+		return err
+	}
+
+	// 4. 创建模型字段信息 (基于映射配置)
+	for _, mapping := range req.FieldMappings {
+		field := &model.MdModelField{
+			ID:           s.snowflake.GenerateIDString(),
+			TenantID:     req.TenantID,
+			ModelID:      modelID,
+			ColumnName:   mapping.ColumnName,
+			ColumnTitle:  mapping.ShowTitle,
+			ShowTitle:    mapping.ShowTitle,
+			ShowWidth:    mapping.ShowWidth,
+			FieldType:    "string", // 默认 string，后续可通过预览解析更精确
+			IsDeleted:    false,
+			CreateID:     req.UserID,
+			CreateBy:     req.Username,
+			UpdateID:     req.UserID,
+			UpdateBy:     req.Username,
+		}
+		if err := s.fieldRepo.CreateField(field); err != nil {
+			return err
+		}
+	}
+
+	return nil
+	return nil
+}
+
+// TestSQL 测试/预览 SQL，返回字段映射
+func (s *mdModelService) TestSQL(req *TestSQLRequest) ([]FieldMapping, error) {
+	// 1. 获取数据连接
+	conn, err := s.connService.GetConnByID(req.ConnID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. 执行 SQL 获取列信息 (仅获取结构，不获取数据)
+	// 构建参数 map
+	params := make(map[string]interface{})
+	for _, p := range req.Parameters {
+		params[p.Name] = p.Default
+	}
+
+	// 3. 执行查询获取列信息
+	columns, err := s.connService.ExecuteSQLForColumns(conn, req.SQLContent, params)
+	if err != nil {
+		return nil, err
+	}
+
+	// 4. 转换为 FieldMapping
+	mappings := make([]FieldMapping, 0, len(columns))
+	for _, col := range columns {
+		mappings = append(mappings, FieldMapping{
+			ColumnName: col.Name,
+			ShowTitle:  col.Name, // 默认显示标题为列名
+			ShowWidth:  150,
+			Format:     "",
+		})
+	}
+
+	return mappings, nil
 }
 
 // mapDataType 映射数据库类型到标准类型

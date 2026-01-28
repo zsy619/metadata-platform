@@ -28,6 +28,7 @@ type Repositories struct {
 	QueryTemplate    MdQueryTemplateRepository
 	QueryCondition   MdQueryConditionRepository
 	ModelRelation    MdModelRelationRepository
+	ModelSql         MdModelSqlRepository
 }
 
 // NewRepositories 创建元数据模块仓库集合
@@ -43,6 +44,7 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		QueryTemplate:    NewMdQueryTemplateRepository(db),
 		QueryCondition:   NewMdQueryConditionRepository(db),
 		ModelRelation:    NewMdModelRelationRepository(db),
+		ModelSql:         NewMdModelSqlRepository(db),
 	}
 }
 

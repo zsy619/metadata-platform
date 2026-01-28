@@ -13,47 +13,86 @@
                 <el-step title="配置模型信息" />
                 <el-step title="完成" />
             </el-steps>
-            <!-- 第一步：选择数据源 -->
+            <!-- 第一步：基础配置 -->
             <div v-if="activeStep === 0" class="step-content">
-                <h3>选择数据源</h3>
-                <el-form-item label="数据源">
-                    <el-select v-model="modelForm.connID" placeholder="请选择数据源" style="width: 100%" @change="handleDataSourceChange">
-                        <el-option v-for="conn in dataSources" :key="conn.id" :label="conn.connName" :value="conn.id">
-                            <div class="option-content">
-                                <span>{{ conn.connName }}</span>
-                                <span class="option-subtitle">{{ conn.connKind }} - {{ conn.connHost }}:{{ conn.connPort }}</span>
-                            </div>
-                        </el-option>
-                    </el-select>
-                </el-form-item>
+                <h3>选择数据源与模型类型</h3>
+                <el-form :model="modelForm" label-width="120px">
+                    <el-form-item label="数据源" prop="connID">
+                        <el-select v-model="modelForm.connID" placeholder="请选择数据源" style="width: 100%" @change="handleDataSourceChange">
+                            <el-option v-for="conn in dataSources" :key="conn.id" :label="conn.connName" :value="conn.id">
+                                <div class="option-content">
+                                    <span>{{ conn.connName }}</span>
+                                    <span class="option-subtitle">{{ conn.connKind }} - {{ conn.connHost }}:{{ conn.connPort }}</span>
+                                </div>
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="模型类型" prop="modelKind">
+                        <el-select v-model="modelForm.modelKind" placeholder="请选择模型类型" style="width: 100%" @change="handleKindChange">
+                            <el-option label="SQL语句" :value="1" />
+                            <el-option label="视图/表" :value="2" />
+                            <el-option label="存储过程" :value="3" />
+                            <el-option label="关联" :value="4" />
+                        </el-select>
+                    </el-form-item>
+                </el-form>
                 <div class="step-actions">
-                    <el-button type="primary" @click="nextStep" :disabled="!modelForm.connID">
+                    <el-button type="primary" @click="nextStep" :disabled="!modelForm.connID || !modelForm.modelKind">
                         下一步
                     </el-button>
                 </div>
             </div>
-            <!-- 第二步：选择表/视图 -->
+            <!-- 第二步：类型特定配置 -->
             <div v-if="activeStep === 1" class="step-content">
-                <h3>选择表/视图</h3>
-                <el-form-item label="对象类型">
-                    <el-radio-group v-model="objectType" @change="handleObjectTypeChange">
-                        <el-radio-button label="table">表</el-radio-button>
-                        <el-radio-button label="view">视图</el-radio-button>
-                    </el-radio-group>
-                </el-form-item>
-                <el-form-item label="选择{{ objectType === 'table' ? '表' : '视图' }}">
-                    <el-tree v-loading="loadingTables" :data="tables" :props="tableTreeProps" node-key="id" ref="tableTree" @node-click="handleTableClick" style="max-height: 400px; overflow-y: auto">
-                        <template #default="{ node, data }">
-                            <span class="custom-tree-node">
-                                <span>{{ data.label }}</span>
-                                <span class="node-subtitle">{{ data.comment || '无描述' }}</span>
-                            </span>
-                        </template>
-                    </el-tree>
-                </el-form-item>
+                <!-- 视图/表 (Kind 2) -->
+                <template v-if="modelForm.modelKind === 2">
+                    <h3>选择表/视图</h3>
+                    <el-form-item label="对象类型">
+                        <el-radio-group v-model="objectType" @change="handleObjectTypeChange">
+                            <el-radio-button label="table">表</el-radio-button>
+                            <el-radio-button label="view">视图</el-radio-button>
+                        </el-radio-group>
+                    </el-form-item>
+                    <el-form-item :label="`选择${objectType === 'table' ? '表' : '视图'}`">
+                        <el-tree v-loading="loadingTables" :data="tables" :props="tableTreeProps" node-key="id" ref="tableTree" @node-click="handleTableClick" style="max-height: 400px; overflow-y: auto">
+                            <template #default="{ node, data }">
+                                <span class="custom-tree-node">
+                                    <span>{{ data.label }}</span>
+                                    <span class="node-subtitle">{{ data.comment || '无描述' }}</span>
+                                </span>
+                            </template>
+                        </el-tree>
+                    </el-form-item>
+                </template>
+                <!-- SQL语句 (Kind 1) -->
+                <template v-else-if="modelForm.modelKind === 1">
+                    <h3>输入 SQL 语句</h3>
+                    <el-form-item label="SQL 脚本">
+                        <el-input v-model="modelForm.sqlContent" type="textarea" :rows="10" placeholder="请输入 SELECT SQL 语句" />
+                    </el-form-item>
+                </template>
+                <!-- 存储过程 (Kind 3) -->
+                <template v-else-if="modelForm.modelKind === 3">
+                    <h3>选择存储过程</h3>
+                    <el-form-item label="存储过程">
+                        <el-select v-model="modelForm.spName" placeholder="请选择存储过程" style="width: 100%">
+                            <el-option v-for="sp in storedProcedures" :key="sp.name" :label="sp.name" :value="sp.name" />
+                        </el-select>
+                    </el-form-item>
+                </template>
+                <!-- 关联 (Kind 4) -->
+                <template v-else-if="modelForm.modelKind === 4">
+                    <h3>配置关联关系 (选择主表)</h3>
+                    <el-form-item label="主表">
+                        <el-select v-model="modelForm.mainTable" placeholder="请选择主表" style="width: 100%">
+                            <el-option v-for="t in tables" :key="t.id" :label="t.label" :value="t.label" />
+                        </el-select>
+                    </el-form-item>
+                    <el-alert title="关联详细配置将在下一步或之后版本完善" type="info" show-icon :closable="false" style="margin-bottom: 20px" />
+                </template>
                 <div class="step-actions">
                     <el-button @click="prevStep">上一步</el-button>
-                    <el-button type="primary" @click="nextStep" :disabled="!selectedTable">
+                    <el-button type="primary" @click="nextStep" :disabled="!canProceedToInfo">
                         下一步
                     </el-button>
                 </div>
@@ -126,8 +165,8 @@ import type { Model } from '@/types/metadata'
 import type { DataSource } from '@/types/metadata/datasource'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const router = useRouter()
 const modelFormRef = ref()
@@ -138,7 +177,13 @@ const activeStep = ref(0)
 const loading = ref(false)
 const loadingTables = ref(false)
 const objectType = ref('table')
-const modelForm = reactive<Partial<Model & { connName?: string }>>({
+const storedProcedures = ref<any[]>([])
+const modelForm = reactive<Partial<Model & {
+    connName?: string,
+    sqlContent?: string,
+    spName?: string,
+    mainTable?: string
+}>>({
     connID: undefined,
     connName: '',
     modelName: '',
@@ -146,7 +191,10 @@ const modelForm = reactive<Partial<Model & { connName?: string }>>({
     modelVersion: '1.0.0',
     modelKind: 2,
     isPublic: false,
-    remark: ''
+    remark: '',
+    sqlContent: '',
+    spName: '',
+    mainTable: ''
 })
 
 const dataSources = ref<DataSource[]>([])
@@ -182,9 +230,27 @@ const formRules = reactive({
     ]
 })
 
+// 计算属性：是否可以进行下一步进入信息配置
+const canProceedToInfo = computed(() => {
+    if (modelForm.modelKind === 1) return !!modelForm.sqlContent
+    if (modelForm.modelKind === 2) return !!selectedTable.value
+    if (modelForm.modelKind === 3) return !!modelForm.spName
+    if (modelForm.modelKind === 4) return !!modelForm.mainTable
+    return false
+})
+
 // 生命周期钩子
+const route = useRoute()
+
 onMounted(() => {
     fetchDataSources()
+
+    // 处理 URL 参数中的 kind
+    const queryKind = route.query.kind
+    if (queryKind) {
+        modelForm.modelKind = Number(queryKind)
+        handleKindChange(modelForm.modelKind)
+    }
 })
 
 // 获取数据源列表
@@ -196,8 +262,8 @@ const fetchDataSources = async () => {
 
         // 模拟数据
         dataSources.value = [
-            { id: 1, connName: '测试MySQL数据源', connKind: 'MySQL', connVersion: '8.0', connHost: 'localhost', connPort: 3306, connUser: 'root', connPassword: 'password', connDatabase: 'test_db', connConn: '', isDeleted: false, state: 1, remark: '', sort: 0, createdAt: '', updatedAt: '' }
-        ]
+            { id: '1', parentID: '0', connName: '测试MySQL数据源', connKind: 'MySQL', connVersion: '8.0', connHost: 'localhost', connPort: 3306, connUser: 'root', connPassword: 'password', connDatabase: 'test_db', connConn: '', isDeleted: false, state: 1, remark: '', sort: 0, createdAt: '', updatedAt: '', tenantID: '0' }
+        ] as any
     } catch (error) {
         console.error('获取数据源列表失败:', error)
         ElMessage.error('获取数据源列表失败')
@@ -252,8 +318,42 @@ const handleDataSourceChange = (connID: number) => {
     // 重置表选择
     selectedTable.value = null
     tables.value = []
-    // 获取表列表
-    fetchTables()
+    // 如果是表/视图或关联，获取表列表
+    if (modelForm.modelKind === 2 || modelForm.modelKind === 4) {
+        fetchTables()
+    } else if (modelForm.modelKind === 3) {
+        fetchStoredProcedures()
+    }
+}
+
+// 类型变化
+const handleKindChange = (kind: number) => {
+    // 重置之前的选择
+    selectedTable.value = null
+    modelForm.sqlContent = ''
+    modelForm.spName = ''
+    modelForm.mainTable = ''
+
+    if (kind === 2 || kind === 4) {
+        fetchTables()
+    } else if (kind === 3) {
+        fetchStoredProcedures()
+    }
+}
+
+// 获取存储过程
+const fetchStoredProcedures = async () => {
+    if (!modelForm.connID) return
+    loadingTables.value = true
+    try {
+        // 模拟数据
+        storedProcedures.value = [
+            { name: 'sp_get_user_stats' },
+            { name: 'sp_sync_orders' }
+        ]
+    } finally {
+        loadingTables.value = false
+    }
 }
 
 // 对象类型变化
@@ -288,28 +388,10 @@ const handleSubmit = async () => {
 
         // 模拟创建模型
         // let result
-        // if (objectType.value === 'table') {
-        //   result = await buildModelFromTable({
-        //     connID: modelForm.connID as number,
-        //     tableID: selectedTable.value.id,
-        //     modelName: modelForm.modelName as string,
-        //     modelCode: modelForm.modelCode as string,
-        //     modelVersion: modelForm.modelVersion as string,
-        //     modelKind: modelForm.modelKind as number,
-        //     isPublic: modelForm.isPublic as boolean,
-        //     remark: modelForm.remark as string
-        //   })
-        // } else {
-        //   result = await buildModelFromView({
-        //     connID: modelForm.connID as number,
-        //     tableID: selectedTable.value.id,
-        //     modelName: modelForm.modelName as string,
-        //     modelCode: modelForm.modelCode as string,
-        //     modelVersion: modelForm.modelVersion as string,
-        //     modelKind: modelForm.modelKind as number,
-        //     isPublic: modelForm.isPublic as boolean,
-        //     remark: modelForm.remark as string
-        //   })
+        // if (modelForm.modelKind === 1) {
+        //   result = await buildModelFromSQL({ ... })
+        // } else if (modelForm.modelKind === 2) {
+        //   ... buildModelFromTable/View ...
         // }
 
         // 跳转到完成步骤
@@ -322,9 +404,13 @@ const handleSubmit = async () => {
     }
 }
 
+const handleCancel = () => {
+    router.push('/metadata/model/list')
+}
+
 // 完成后查看模型列表
 const handleFinish = () => {
-    router.push('/model/list')
+    router.push('/metadata/model/list')
 }
 
 // 创建另一个模型

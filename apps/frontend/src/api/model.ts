@@ -1,7 +1,7 @@
 /**
  * 模型API服务
  */
-import type { Model, ModelBuildParams, ModelField, ModelQueryParams, ModelResponse } from '@/types/metadata'
+import type { Model, ModelBuildParams, ModelField, ModelQueryParams, ModelResponse, SQLModelBuildParams } from '@/types/metadata'
 import request from '@/utils/request'
 
 /**
@@ -26,7 +26,7 @@ export const getModels = async (params?: ModelQueryParams): Promise<ModelRespons
  * @param id 模型ID
  * @returns 模型详情
  */
-export const getModelById = async (id: number): Promise<Model> => {
+export const getModelById = async (id: string): Promise<Model> => {
     return request({
         url: `/api/metadata/models/${id}`,
         method: 'get'
@@ -52,7 +52,7 @@ export const createModel = async (data: Partial<Model>): Promise<Model> => {
  * @param data 模型数据
  * @returns 更新结果
  */
-export const updateModel = async (id: number, data: Partial<Model>): Promise<Model> => {
+export const updateModel = async (id: string, data: Partial<Model>): Promise<Model> => {
     return request({
         url: `/api/metadata/models/${id}`,
         method: 'put',
@@ -65,7 +65,7 @@ export const updateModel = async (id: number, data: Partial<Model>): Promise<Mod
  * @param id 模型ID
  * @returns 删除结果
  */
-export const deleteModel = async (id: number): Promise<void> => {
+export const deleteModel = async (id: string): Promise<void> => {
     return request({
         url: `/api/metadata/models/${id}`,
         method: 'delete'
@@ -99,11 +99,37 @@ export const buildModelFromView = async (params: ModelBuildParams): Promise<Mode
 }
 
 /**
+ * 创建SQL模型
+ * @param params 构建参数
+ * @returns 构建结果
+ */
+export const createModelSql = async (params: SQLModelBuildParams): Promise<Model> => {
+    return request({
+        url: '/api/metadata/models/build-from-sql',
+        method: 'post',
+        data: params
+    })
+}
+
+/**
+ * 测试SQL
+ * @param params 测试参数
+ * @returns 测试结果
+ */
+export const testSQL = async (params: any): Promise<any> => {
+    return request({
+        url: '/api/metadata/models/test-sql',
+        method: 'post',
+        data: params
+    })
+}
+
+/**
  * 获取模型字段列表
  * @param modelId 模型ID
  * @returns 字段列表
  */
-export const getModelFields = async (modelId: number): Promise<ModelField[]> => {
+export const getModelFields = async (modelId: string): Promise<ModelField[]> => {
     return request({
         url: `/api/metadata/models/${modelId}/fields`,
         method: 'get'
@@ -116,7 +142,7 @@ export const getModelFields = async (modelId: number): Promise<ModelField[]> => 
  * @param data 字段数据
  * @returns 添加结果
  */
-export const addModelField = async (modelId: number, data: Partial<ModelField>): Promise<ModelField> => {
+export const addModelField = async (modelId: string, data: Partial<ModelField>): Promise<ModelField> => {
     return request({
         url: `/api/metadata/models/${modelId}/fields`,
         method: 'post',
@@ -131,7 +157,7 @@ export const addModelField = async (modelId: number, data: Partial<ModelField>):
  * @param data 字段数据
  * @returns 更新结果
  */
-export const updateModelField = async (modelId: number, fieldId: number, data: Partial<ModelField>): Promise<ModelField> => {
+export const updateModelField = async (modelId: string, fieldId: string, data: Partial<ModelField>): Promise<ModelField> => {
     return request({
         url: `/api/metadata/models/${modelId}/fields/${fieldId}`,
         method: 'put',
@@ -145,7 +171,7 @@ export const updateModelField = async (modelId: number, fieldId: number, data: P
  * @param fieldId 字段ID
  * @returns 删除结果
  */
-export const deleteModelField = async (modelId: number, fieldId: number): Promise<void> => {
+export const deleteModelField = async (modelId: string, fieldId: string): Promise<void> => {
     return request({
         url: `/api/metadata/models/${modelId}/fields/${fieldId}`,
         method: 'delete'
@@ -158,7 +184,7 @@ export const deleteModelField = async (modelId: number, fieldId: number): Promis
  * @param params 查询参数
  * @returns 预览数据
  */
-export const previewModelData = async (modelId: number, params?: any): Promise<any> => {
+export const previewModelData = async (modelId: string, params?: any): Promise<any> => {
     // 兼容 limit (旧参数) 和 pageSize (新参数)
     const { pageSize, limit, ...rest } = params || {}
     const size = pageSize || limit
@@ -178,7 +204,7 @@ export const previewModelData = async (modelId: number, params?: any): Promise<a
  * @param modelId 模型ID
  * @returns 验证结果
  */
-export const validateModel = async (modelId: number): Promise<{ success: boolean; message: string }> => {
+export const validateModel = async (modelId: string): Promise<{ success: boolean; message: string }> => {
     return request({
         url: `/api/metadata/models/${modelId}/validate`,
         method: 'post'

@@ -32,7 +32,7 @@
                             </el-icon>
                             <span>新建数据源</span>
                         </el-button>
-                        <el-button type="default" size="large" class="action-btn" @click="$router.push('/model/create')">
+                        <el-button type="default" size="large" class="action-btn" @click="$router.push('/metadata/model/create')">
                             <el-icon>
                                 <DocumentAdd />
                             </el-icon>

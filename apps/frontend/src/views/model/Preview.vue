@@ -92,7 +92,7 @@ const fetchData = async () => {
     }
 }
 
-const handleBack = () => router.push('/model/list')
+const handleBack = () => router.push('/metadata/model/list')
 
 const handleExport = async () => {
     try {

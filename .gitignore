@@ -47,3 +47,4 @@ docs/参考界面
 .qoder
 .gemini
 .claude
+apps/backend/internal/module/metadata/adapter/dummy_impl.go.txt
