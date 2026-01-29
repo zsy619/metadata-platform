@@ -241,13 +241,16 @@ const handleSchemaChange = () => {
 const fetchDBObjects = async () => {
     dialogLoading.value = true
     try {
-        const res = dialogType.value === 'TABLE'
+        const res: any = dialogType.value === 'TABLE'
             ? await getDBTables(selectedConn.value, selectedSchema.value)
             : await getDBViews(selectedConn.value, selectedSchema.value)
-        dbObjects.value = res?.data || res || []
+
+        const list = res?.data || res
+        dbObjects.value = Array.isArray(list) ? list : []
     } catch (error) {
         console.error('获取数据库对象失败:', error)
         ElMessage.error('获取列表失败')
+        dbObjects.value = []
     } finally {
         dialogLoading.value = false
     }
