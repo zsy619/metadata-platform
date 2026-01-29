@@ -2,118 +2,124 @@
     <div class="sql-test-container">
         <div class="page-header">
             <div class="header-left">
-                <el-button @click="goBack" :icon="ArrowLeft" circle />
+                <el-icon :size="24" class="page-icon">
+                    <Monitor />
+                </el-icon>
                 <h1 class="title">SQL 模型测试</h1>
             </div>
             <el-tag type="info" effect="plain">验证动态查询接口与参数配置</el-tag>
         </div>
-        <el-row :gutter="20">
-            <!-- 左侧：配置区域 -->
-            <el-col :span="8">
-                <el-card class="config-card" shadow="hover">
-                    <template #header>
-                        <div class="card-header">
-                            <span>查询配置</span>
-                            <el-button type="primary" link :icon="Refresh" @click="initModels">刷新列表</el-button>
-                        </div>
-                    </template>
-                    <el-form :model="testForm" label-position="top">
-                        <el-form-item label="选择模型">
-                            <el-select v-model="selectedModelId" placeholder="请选择要测试的模型" filterable class="w-full" @change="handleModelChange">
-                                <el-option v-for="item in models" :key="item.id" :label="`${item.model_name || item.modelName} (${item.model_code || item.modelCode})`" :value="item.id" />
-                            </el-select>
-                        </el-form-item>
-                        <el-form-item label="查询模式">
-                            <el-radio-group v-model="queryMode">
-                                <el-radio-button label="id">按模型 ID</el-radio-button>
-                                <el-radio-button label="code">按模型代码</el-radio-button>
-                            </el-radio-group>
-                        </el-form-item>
-                        <div v-if="selectedModel" class="parameters-section">
-                            <div class="section-title">
-                                <h3>查询参数</h3>
-                                <el-tag v-if="!queryParams.length" type="info" size="small">无</el-tag>
-                            </div>
-                            <el-table v-if="queryParams.length" :data="queryParams" border stripe size="small" style="width: 100%; margin-top: 10px">
-                                <el-table-column prop="name" label="参数名称" width="120" />
-                                <el-table-column prop="type" label="类型" width="100" />
-                                <el-table-column label="值">
-                                    <template #default="{ row }">
-                                        <el-input v-model="testForm.params[row.name]" :placeholder="`输入${row.name}`" size="small" />
-                                    </template>
-                                </el-table-column>
-                            </el-table>
-                            <div v-else class="no-params-hint">该模型未定义动态参数</div>
-                        </div>
-                        <div class="action-bar">
-                            <el-button type="primary" :loading="loading" :disabled="!selectedModelId" class="w-full" size="large" @click="performQuery">
-                                {{ loading ? '查询中...' : '执行查询' }}
-                            </el-button>
-                            <div v-if="loading" class="progress-info">
-                                <el-progress :percentage="queryProgress" :status="queryProgress === 100 ? 'success' : ''" :indeterminate="queryProgress === 0" />
-                                <div class="progress-text">正在从数据源获取结果...</div>
-                            </div>
-                        </div>
-                    </el-form>
-                </el-card>
-                <el-card class="path-card" shadow="never" v-if="selectedModel">
-                    <template #header>
-                        <div class="card-header">
-                            <span>请求路径预览</span>
-                            <el-tag size="small" type="success">POST</el-tag>
-                        </div>
-                    </template>
-                    <div class="path-url">{{ urlPreview }}</div>
-                    <div class="path-hint">您可以使用该路径在外部系统或工具中直接调用此模型数据。</div>
-                </el-card>
-            </el-col>
-            <!-- 右侧：结果展示区域 -->
-            <el-col :span="16">
-                <el-card class="result-card" shadow="hover">
-                    <template #header>
-                        <div class="card-header">
-                            <div class="tab-triggers">
-                                <span class="tab-trigger" :class="{ active: resultTab === 'table' }" @click="resultTab = 'table'">
-                                    表格视图
-                                </span>
-                                <span class="tab-trigger" :class="{ active: resultTab === 'json' }" @click="resultTab = 'json'">
-                                    JSON 视图
-                                </span>
-                            </div>
-                            <div class="result-meta" v-if="queryTime">
-                                耗时: <span class="highlight">{{ queryTime }}ms</span>
-                                &nbsp;&nbsp;
-                                共计: <span class="highlight">{{ total }}</span> 条
-                            </div>
-                        </div>
-                    </template>
-                    <div class="result-content" v-loading="loading">
-                        <template v-if="results.length">
-                            <!-- 表格视图 -->
-                            <el-table v-if="resultTab === 'table'" :data="results" border stripe height="650" style="width: 100%">
-                                <el-table-column v-for="col in resultColumns" :key="col" :prop="col" :label="col" min-width="150" show-overflow-tooltip />
-                            </el-table>
-                            <!-- JSON 视图 -->
-                            <div v-else class="json-preview">
-                                <pre><code>{{ JSON.stringify(results, null, 2) }}</code></pre>
+        <div class="content-wrapper">
+            <el-row :gutter="20" class="content-row">
+                <!-- 左侧：配置区域 -->
+                <el-col :span="8">
+                    <el-card class="config-card" shadow="hover">
+                        <template #header>
+                            <div class="card-header">
+                                <span>查询配置</span>
+                                <el-button type="primary" link :icon="Refresh" @click="initModels">刷新列表</el-button>
                             </div>
                         </template>
-                        <el-empty v-else description="暂无查询结果，请点击执行查询" />
-                    </div>
-                </el-card>
-            </el-col>
-        </el-row>
+                        <el-form :model="testForm" label-position="top">
+                            <el-form-item label="选择模型">
+                                <el-select v-model="selectedModelId" placeholder="请选择要测试的模型" filterable class="w-full" @change="handleModelChange">
+                                    <el-option v-for="item in models" :key="item.id" :label="`${item.model_name || item.modelName} (${item.model_code || item.modelCode})`" :value="item.id" />
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="查询模式">
+                                <el-radio-group v-model="queryMode">
+                                    <el-radio-button label="id">按模型 ID</el-radio-button>
+                                    <el-radio-button label="code">按模型代码</el-radio-button>
+                                </el-radio-group>
+                            </el-form-item>
+                            <div v-if="selectedModel" class="parameters-section">
+                                <div class="section-title">
+                                    <h3>查询参数</h3>
+                                    <el-tag v-if="!queryParams.length" type="info" size="small">无</el-tag>
+                                </div>
+                                <el-table v-if="queryParams.length" :data="queryParams" border stripe size="small" style="width: 100%; margin-top: 10px">
+                                    <el-table-column prop="name" label="参数名称" width="120" />
+                                    <el-table-column prop="type" label="类型" width="100" />
+                                    <el-table-column label="值">
+                                        <template #default="{ row }">
+                                            <el-input v-model="testForm.params[row.name]" :placeholder="`输入${row.name}`" size="small" />
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                                <div v-else class="no-params-hint">该模型未定义动态参数</div>
+                            </div>
+                            <div v-if="selectedModel" class="path-preview-section">
+                                <div class="section-title">
+                                    <h3>请求路径预览</h3>
+                                    <el-tag size="small" type="success">POST</el-tag>
+                                </div>
+                                <div class="path-url">{{ urlPreview }}</div>
+                                <div class="path-hint">您可以使用该路径在外部系统或工具中直接调用此模型数据。</div>
+                            </div>
+                            <div class="action-bar">
+                                <el-button type="primary" :loading="loading" :disabled="!selectedModelId" class="w-full" size="large" @click="performQuery">
+                                    {{ loading ? '查询中...' : '执行查询' }}
+                                </el-button>
+                                <div v-if="loading" class="progress-info">
+                                    <el-progress :percentage="queryProgress" :status="queryProgress === 100 ? 'success' : ''" :indeterminate="queryProgress === 0" />
+                                    <div class="progress-text">正在从数据源获取结果...</div>
+                                </div>
+                            </div>
+                        </el-form>
+                    </el-card>
+                </el-col>
+                <!-- 右侧：结果展示区域 -->
+                <el-col :span="16">
+                    <el-card class="result-card" shadow="hover">
+                        <template #header>
+                            <div class="card-header">
+                                <div class="tab-triggers">
+                                    <span class="tab-trigger" :class="{ active: resultTab === 'table' }" @click="resultTab = 'table'">
+                                        表格视图
+                                    </span>
+                                    <span class="tab-trigger" :class="{ active: resultTab === 'json' }" @click="resultTab = 'json'">
+                                        JSON 视图
+                                    </span>
+                                </div>
+                                <div class="header-right">
+                                    <div class="result-meta" v-if="queryTime">
+                                        耗时: <span class="highlight">{{ queryTime }}ms</span>
+                                        &nbsp;&nbsp;
+                                        共计: <span class="highlight">{{ total }}</span> 条
+                                    </div>
+                                    <el-divider direction="vertical" v-if="queryTime" />
+                                    <el-button type="primary" link :icon="Download" @click="exportToExcel" :disabled="!results.length">
+                                        导出 Excel
+                                    </el-button>
+                                </div>
+                            </div>
+                        </template>
+                        <div class="result-content" v-loading="loading">
+                            <template v-if="results.length">
+                                <!-- 表格视图 -->
+                                <el-table v-if="resultTab === 'table'" :data="results" border stripe height="100%" style="width: 100%">
+                                    <el-table-column v-for="col in resultColumns" :key="col" :prop="col" :label="getColumnLabel(col)" :width="getColumnWidth(col)" show-overflow-tooltip />
+                                </el-table>
+                                <!-- JSON 视图 -->
+                                <div v-else class="json-preview">
+                                    <pre><code>{{ JSON.stringify(results, null, 2) }}</code></pre>
+                                </div>
+                            </template>
+                            <el-empty v-else description="暂无查询结果，请点击执行查询" />
+                        </div>
+                    </el-card>
+                </el-col>
+            </el-row>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
-import { getAllModels, getModelParams, queryDataByCode, queryDataById } from '@/api/model'
+import { getAllModels, getModelFields, getModelParams, queryDataByCode, queryDataById } from '@/api/model'
 import type { Model } from '@/types/metadata'
-import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
+import { Download, Monitor, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
-const router = useRouter()
 const models = ref<Model[]>([])
 const selectedModelId = ref('')
 const selectedModel = ref<Model | null>(null)
@@ -130,6 +136,108 @@ const testForm = reactive({
 })
 
 const queryParams = ref<any[]>([])
+const modelFields = ref<any[]>([])
+
+const getColumnLabel = (columnName: string) => {
+    const field = modelFields.value.find(f => f.column_name === columnName || f.columnName === columnName)
+    return field?.show_title || field?.showTitle || field?.column_title || field?.columnTitle || columnName
+}
+
+const getColumnWidth = (columnName: string) => {
+    const field = modelFields.value.find(f => f.column_name === columnName || f.columnName === columnName)
+    return field?.show_width || field?.showWidth || 150
+}
+
+const exportToExcel = () => {
+    if (!results.value.length) {
+        ElMessage.warning('暂无数据可导出')
+        return
+    }
+
+    // 1. 准备数据
+    const columns = resultColumns.value
+
+    // 2. 构建 XML Spreadsheet 头部
+    let xml = '<?xml version="1.0"?>\n' +
+        '<?mso-application progid="Excel.Sheet"?>\n' +
+        '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n' +
+        ' xmlns:o="urn:schemas-microsoft-com:office:office"\n' +
+        ' xmlns:x="urn:schemas-microsoft-com:office:excel"\n' +
+        ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"\n' +
+        ' xmlns:html="http://www.w3.org/TR/REC-html40">\n' +
+        ' <Styles>\n' +
+        '  <Style ss:ID="Default" ss:Name="Normal">\n' +
+        '   <Alignment ss:Vertical="Center"/>\n' +
+        '  </Style>\n' +
+        '  <Style ss:ID="Header">\n' +
+        '   <Font ss:Bold="1"/>\n' +
+        '   <Interior ss:Color="#EFEFEF" ss:Pattern="Solid"/>\n' +
+        '  </Style>\n' +
+        ' </Styles>\n' +
+        ' <Worksheet ss:Name="查询结果">\n' +
+        '  <Table>\n'
+
+    // 3. 设置列宽
+    columns.forEach(col => {
+        const width = getColumnWidth(col)
+        xml += `   <Column ss:Width="${width || 100}"/>\n`
+    })
+
+    // 4. 添加表头
+    xml += '   <Row ss:StyleID="Header">\n'
+    columns.forEach(col => {
+        const label = getColumnLabel(col)
+        xml += `    <Cell><Data ss:Type="String">${escapeXml(label)}</Data></Cell>\n`
+    })
+    xml += '   </Row>\n'
+
+    // 5. 添加数据行
+    results.value.forEach(row => {
+        xml += '   <Row>\n'
+        columns.forEach(col => {
+            let val = row[col]
+            let type = 'String'
+            if (val === null || val === undefined) {
+                val = ''
+            } else if (typeof val === 'number') {
+                type = 'Number'
+            } else {
+                val = String(val)
+            }
+            xml += `    <Cell><Data ss:Type="${type}">${escapeXml(String(val))}</Data></Cell>\n`
+        })
+        xml += '   </Row>\n'
+    })
+
+    // 6. 结束 XML
+    xml += '  </Table>\n' +
+        ' </Worksheet>\n' +
+        '</Workbook>'
+
+    // 7. 触发下载 (.xls)
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `查询结果_${new Date().toISOString().slice(0, 19).replace(/T|:/g, '-')}.xls`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+}
+
+const escapeXml = (unsafe: string) => {
+    return unsafe.replace(/[<>&'"]/g, c => {
+        switch (c) {
+            case '<': return '&lt;'
+            case '>': return '&gt;'
+            case '&': return '&amp;'
+            case '\'': return '&apos;'
+            case '"': return '&quot;'
+            default: return c
+        }
+    })
+}
 
 const urlPreview = computed(() => {
     if (!selectedModel.value) return ''
@@ -178,6 +286,15 @@ const handleModelChange = async (id: string) => {
             console.error('获取模型参数失败:', err)
             queryParams.value = []
         }
+
+        // 获取字段列表以显示字段标题
+        try {
+            const fields: any = await getModelFields(id)
+            modelFields.value = Array.isArray(fields) ? fields : (fields?.data || [])
+        } catch (err) {
+            console.error('获取模型字段失败:', err)
+            modelFields.value = []
+        }
     }
 }
 
@@ -224,14 +341,14 @@ const performQuery = async () => {
         loading.value = false
     }
 }
-
-const goBack = () => {
-    router.push('/metadata/model/list')
-}
 </script>
 <style scoped>
 .sql-test-container {
     padding: 20px;
+    height: calc(100vh - 84px);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
 }
 
 .page-header {
@@ -239,9 +356,11 @@ const goBack = () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
-.header-left {
+.header-left,
+.header-right {
     display: flex;
     align-items: center;
     gap: 15px;
@@ -254,8 +373,60 @@ const goBack = () => {
     color: #1f2937;
 }
 
+.page-icon {
+    color: #6366f1;
+}
+
 .config-card,
 .result-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-card :deep(.el-card__body) {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.result-card :deep(.el-card__body) {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.result-content {
+    flex: 1;
+    height: 0;
+    /* 关键：强制让子元素适应 flex 容器 */
+    display: flex;
+    flex-direction: column;
+}
+
+.json-preview {
+    flex: 1;
+    overflow: auto;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.json-preview pre {
+    margin: 0;
+}
+
+.content-wrapper {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.content-row {
+    height: 100%;
+}
+
+.content-row>.el-col {
     height: 100%;
 }
 
@@ -269,7 +440,14 @@ const goBack = () => {
     padding-top: 15px;
 }
 
-.parameters-section h3 {
+.path-preview-section {
+    margin-top: 20px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 15px;
+}
+
+.parameters-section h3,
+.path-preview-section h3 {
     font-size: 16px;
     margin-bottom: 15px;
     color: #4b5563;

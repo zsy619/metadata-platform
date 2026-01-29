@@ -351,8 +351,8 @@ func (s *crudService) List(modelID string, queryParams map[string]any) ([]map[st
 	// 应用过滤逻辑
 	s.applyListFilters(modelData, queryParams)
 
-	// 现在根据合并后的 metadata 生成 SQL
-	sqlStr, args, err := s.builder.BuildFromMetadata(modelData, queryParams)
+	// 使用 BuildSQL 而不是 BuildFromMetadata，让 SQLBuilder 根据 model_kind 自动选择构建方式
+	sqlStr, args, err := s.builder.BuildSQL(modelID, queryParams)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -381,7 +381,7 @@ func (s *crudService) Statistics(modelID string, queryParams map[string]any) (ma
 
 	s.applyListFilters(modelData, queryParams)
 
-	sqlStr, args, err := s.builder.BuildFromMetadata(modelData, queryParams)
+	sqlStr, args, err := s.builder.BuildSQL(modelID, queryParams)
 	if err != nil {
 		return nil, err
 	}
