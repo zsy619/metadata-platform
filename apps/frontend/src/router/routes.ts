@@ -83,7 +83,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: 'model',
                 component: RouterView,
-                meta: { title: '模型管理', icon: 'Document' },
+                meta: { title: '模型维护', icon: 'Document' },
                 redirect: '/metadata/model/list',
                 children: [
                     {
@@ -91,6 +91,12 @@ const routes: RouteRecordRaw[] = [
                         name: 'ModelList',
                         component: () => import('@/views/model/List.vue'),
                         meta: { title: '模型列表', icon: 'List' }
+                    },
+                    {
+                        path: 'sql-test',
+                        name: 'ModelSqlTest',
+                        component: () => import('@/views/model/SqlTest.vue'),
+                        meta: { title: 'SQL模型测试', icon: 'Monitor' }
                     },
                     {
                         path: 'create',

@@ -20,7 +20,8 @@ type MdModel struct {
 	TreeParentField string     `json:"tree_parent_field" gorm:"size:64;default:'';comment:父节点字段名"`    // 父节点字段名
 	TreePathField   string     `json:"tree_path_field" gorm:"size:64;default:'';comment:路径字段名"`      // 路径字段名
 	TreeLevelField  string     `json:"tree_level_field" gorm:"size:64;default:'';comment:层级字段名"`     // 层级字段名
-	Remark       string    `json:"remark" gorm:"size:1024;default:'';comment:备注"`
+	Parameters      string     `json:"parameters" gorm:"type:text;comment:模型参数(JSON)"`
+	Remark          string     `json:"remark" gorm:"size:1024;default:'';comment:备注"`
 	IsDeleted   bool       `json:"is_deleted" gorm:"default:false;comment:是否删除"`
 	CreateID    string     `json:"create_id" gorm:"size:64;default:'0';comment:创建人ID"`
 	CreateBy    string     `json:"create_by" gorm:"size:64;default:'';uniqueIndex:uix_md_model_title_creator;comment:创建人"`

@@ -51,6 +51,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 	tableHandler := api.NewMdTableHandler(services.Table)
 	fieldHandler := api.NewMdTableFieldHandler(services.TableField)
 	modelHandler := api.NewMdModelHandler(services.Model)
+	queryHandler := api.NewDataQueryHandler(services.CRUD, services.Model)
 	templateHandler := api.NewQueryTemplateHandler(services.QueryTemplate)
 	enhancementHandler := api.NewFieldEnhancementHandler(services.FieldEnhancement)
 	treeHandler := api.NewTreeHandler(services.Tree)
@@ -140,7 +141,12 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		modelGroup.DELETE("/:id/fields/:fieldId", modelHandler.DeleteModelField)
 
 		modelGroup.GET("", modelHandler.ListModels)
+		modelGroup.GET("/all", modelHandler.GetAllModels)
 		modelGroup.GET("/conn/:conn_id", modelHandler.GetModelsByConnID)
+
+		// 统一查询测试路由 (用于 SQL 模型测试)
+		modelGroup.POST("/query/by-id/:id", queryHandler.HandleUnifiedQueryByID)
+		modelGroup.POST("/query/by-code/:code", queryHandler.HandleUnifiedQueryByCode)
 
 		// 查询模板路由
 		templateGroup := modelGroup.Group("/:id/query-templates")

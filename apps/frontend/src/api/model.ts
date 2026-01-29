@@ -22,6 +22,17 @@ export const getModels = async (params?: ModelQueryParams): Promise<ModelRespons
 }
 
 /**
+ * 获取所有模型列表 (不分页)
+ * @returns 模型列表
+ */
+export const getAllModels = async (): Promise<Model[]> => {
+    return request({
+        url: '/api/metadata/models/all',
+        method: 'get'
+    })
+}
+
+/**
  * 自动生成模型编码
  * @returns 生成的编码
  */
@@ -299,5 +310,30 @@ export const batchGenerateAPIs = async (modelId: string): Promise<any> => {
         url: '/api/metadata/apis/batch-generate',
         method: 'post',
         data: { model_id: modelId }
+    })
+}
+/**
+ * 统一数据查询 (按ID)
+ * @param id 模型ID
+ * @param data 查询条件
+ */
+export const queryDataById = async (id: string, data: any): Promise<any> => {
+    return request({
+        url: `/api/metadata/models/query/by-id/${id}`,
+        method: 'post',
+        data
+    })
+}
+
+/**
+ * 统一数据查询 (按代码)
+ * @param code 模型代码
+ * @param data 查询条件
+ */
+export const queryDataByCode = async (code: string, data: any): Promise<any> => {
+    return request({
+        url: `/api/metadata/models/query/by-code/${code}`,
+        method: 'post',
+        data
     })
 }

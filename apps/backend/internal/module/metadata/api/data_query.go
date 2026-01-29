@@ -67,6 +67,23 @@ func (h *DataQueryHandler) HandleUnifiedQueryWithModelID(ctx *app.RequestContext
 	})
 }
 
+// HandleUnifiedQueryByID 处理通过 ID 的统一查询
+func (h *DataQueryHandler) HandleUnifiedQueryByID(c context.Context, ctx *app.RequestContext) {
+	modelID := ctx.Param("id")
+	h.HandleUnifiedQueryWithModelID(ctx, modelID)
+}
+
+// HandleUnifiedQueryByCode 处理通过代码的统一查询
+func (h *DataQueryHandler) HandleUnifiedQueryByCode(c context.Context, ctx *app.RequestContext) {
+	code := ctx.Param("code")
+	model, err := h.modelService.GetModelByCode(code)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusNotFound, "Model not found: "+code)
+		return
+	}
+	h.HandleUnifiedQueryWithModelID(ctx, model.ID)
+}
+
 // HandleBatchCreateWithModelID 批量创建
 func (h *DataQueryHandler) HandleBatchCreateWithModelID(ctx *app.RequestContext, modelID string) {
 	var dataList []map[string]any

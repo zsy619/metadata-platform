@@ -57,4 +57,6 @@ export interface Model extends BaseEntity {
     treePathField: string;
     /** 树形层级字段名 */
     treeLevelField: string;
+    /** 模型参数(JSON字符串) */
+    parameters: string;
 }

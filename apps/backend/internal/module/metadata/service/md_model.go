@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"metadata-platform/internal/module/metadata/model"
@@ -346,6 +347,8 @@ func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
 		req.ModelCode = s.Generate32Code()
 	}
 
+	paramsJson, _ := json.Marshal(req.Parameters)
+
 	mdModel := &model.MdModel{
 		ID:           modelID,
 		TenantID:     req.TenantID,
@@ -356,6 +359,7 @@ func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
 		ModelCode:    req.ModelCode,
 		ModelVersion: "1.0.0",
 		ModelKind:    1,
+		Parameters:   string(paramsJson),
 		IsPublic:     false,
 		IsLocked:     false,
 		IsDeleted:    false,
