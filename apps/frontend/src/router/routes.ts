@@ -127,6 +127,26 @@ const routes: RouteRecordRaw[] = [
         ]
     },
     {
+        path: '/monitor',
+        component: Layout,
+        meta: { title: '系统监控', icon: 'Monitor' },
+        redirect: '/monitor/dashboard',
+        children: [
+            {
+                path: 'dashboard',
+                name: 'MonitorDashboard',
+                component: () => import('@/views/monitor/Dashboard.vue'),
+                meta: { title: '监控仪表盘', icon: 'Odometer' }
+            },
+            {
+                path: 'performance',
+                name: 'MonitorPerformance',
+                component: () => import('@/views/monitor/Performance.vue'),
+                meta: { title: '性能分析', icon: 'TrendCharts' }
+            }
+        ]
+    },
+    {
         path: '/user',
         component: Layout,
         redirect: '/user/profile',

@@ -1,3 +1,4 @@
+import i18n from '@/locales'
 import { setupErrorHandle } from '@/utils/error-log'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import ElementPlus from 'element-plus'
@@ -19,6 +20,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
+app.use(i18n)
 
 // 注册全局错误处理
 setupErrorHandle(app)

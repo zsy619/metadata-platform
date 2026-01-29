@@ -9,14 +9,30 @@
         <breadcrumb class="breadcrumb-container" />
         <div class="right-menu">
             <div class="right-menu-item">
-                <el-tooltip content="全屏" effect="dark" placement="bottom">
+                <el-dropdown trigger="click" @command="handleLangCommand">
+                    <span class="el-dropdown-link">
+                        <el-icon class="right-icon">
+                            <i class="fas fa-language"></i> <!-- Or just Text -->
+                            <span style="font-size: 14px; margin-left: 4px">{{ currentLang === 'zh-CN' ? '中文' : 'En' }}</span>
+                        </el-icon>
+                    </span>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                            <el-dropdown-item command="zh-CN" :disabled="currentLang === 'zh-CN'">中文</el-dropdown-item>
+                            <el-dropdown-item command="en-US" :disabled="currentLang === 'en-US'">English</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
+            </div>
+            <div class="right-menu-item">
+                <el-tooltip :content="$t('header.fullScreen')" effect="dark" placement="bottom">
                     <el-icon class="right-icon" @click="toggleFullScreen">
                         <FullScreen />
                     </el-icon>
                 </el-tooltip>
             </div>
             <div class="right-menu-item">
-                <el-tooltip content="主题切换" effect="dark" placement="bottom">
+                <el-tooltip :content="$t('theme.switch')" effect="dark" placement="bottom">
                     <el-icon class="right-icon" @click="toggleTheme">
                         <Moon v-if="isDark" />
                         <Sunny v-else />
@@ -37,10 +53,10 @@
                             <el-dropdown-item>首页</el-dropdown-item>
                         </router-link>
                         <router-link to="/user/profile">
-                            <el-dropdown-item>个人设置</el-dropdown-item>
+                            <el-dropdown-item>{{ $t('header.profile') }}</el-dropdown-item>
                         </router-link>
                         <el-dropdown-item divided command="logout">
-                            <span style="display:block;">退出登录</span>
+                            <span style="display:block;">{{ $t('header.logout') }}</span>
                         </el-dropdown-item>
                     </el-dropdown-menu>
                 </template>
@@ -65,6 +81,7 @@ const sidebar = computed(() => appStore.sidebar)
 const avatar = computed(() => userStore.avatar)
 const userName = computed(() => userStore.userName)
 const isDark = computed(() => appStore.theme === 'dark')
+const currentLang = computed(() => appStore.language)
 
 const toggleSideBar = () => {
     appStore.toggleSidebar()
@@ -83,6 +100,11 @@ const toggleFullScreen = () => {
 const toggleTheme = () => {
     const newTheme = isDark.value ? 'light' : 'dark'
     appStore.setTheme(newTheme)
+}
+
+const handleLangCommand = (lang: string) => {
+    appStore.setLanguage(lang)
+    ElMessage.success(lang === 'zh-CN' ? '已切换为中文' : 'Switched to English')
 }
 
 const handleCommand = (command: string) => {

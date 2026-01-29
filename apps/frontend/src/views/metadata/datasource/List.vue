@@ -18,7 +18,7 @@
         </div>
         <el-card class="main-card">
             <div class="search-area">
-                <el-input v-model="searchQuery" placeholder="请输入数据源名称搜索" clearable :prefix-icon="Search" style="width: 300px" @input="handleSearch" />
+                <el-input v-model="searchQuery" placeholder="请输入数据源名称搜索" clearable :prefix-icon="Search" style="width: 300px" @input="handleDebouncedSearch" />
                 <el-select v-model="filterType" placeholder="筛选数据源类型" style="width: 180px; margin-left: 10px" clearable @change="handleSearch">
                     <el-option label="全部" value="" />
                     <el-option-group label="关系型">
@@ -119,6 +119,7 @@ import DataPreview from '@/components/DataPreview.vue'
 import ObjectBrowser from '@/components/ObjectBrowser.vue'
 import type { MdConn } from '@/types/metadata'
 import { showDeleteConfirm } from '@/utils/confirm'
+import { debounce } from '@/utils/debounce'
 import {
     Connection,
     DataLine,
@@ -198,6 +199,8 @@ const handleSearch = () => {
     // Computed property handles filtering
     currentPage.value = 1
 }
+
+const handleDebouncedSearch = debounce(handleSearch, 300)
 
 const handleReset = () => {
     searchQuery.value = ''

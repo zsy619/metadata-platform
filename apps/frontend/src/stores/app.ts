@@ -11,6 +11,7 @@ export const useAppStore = defineStore('app', () => {
 
     const device = ref('desktop')
     const theme = ref(storage.get('theme') || 'light')
+    const language = ref(storage.get('language') || 'zh-CN')
 
     // Actions
     const toggleSidebar = () => {
@@ -36,17 +37,27 @@ export const useAppStore = defineStore('app', () => {
     const setTheme = (t: string) => {
         theme.value = t
         storage.set('theme', t)
-        // 这里可以添加切换CSS变量或类的逻辑
-        document.documentElement.className = t
+        if (t === 'dark') {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    }
+
+    const setLanguage = (lang: string) => {
+        language.value = lang
+        storage.set('language', lang)
     }
 
     return {
         sidebar,
         device,
         theme,
+        language,
         toggleSidebar,
         closeSidebar,
         toggleDevice,
-        setTheme
+        setTheme,
+        setLanguage
     }
 })

@@ -32,7 +32,7 @@
         <el-card class="main-card">
             <!-- 搜索区域 -->
             <div class="search-area">
-                <el-input v-model="searchQuery" placeholder="搜索模型名称或编码" clearable style="width: 260px" @keyup.enter="handleSearch" />
+                <el-input v-model="searchQuery" placeholder="搜索模型名称或编码" clearable style="width: 260px" @input="handleDebouncedSearch" @keyup.enter="handleSearch" />
                 <el-select v-model="filterKind" placeholder="筛选模型类型" style="width: 160px" clearable @change="handleSearch">
                     <el-option label="全部类型" :value="0" />
                     <el-option label="SQL 语句" :value="1" />
@@ -85,6 +85,7 @@
 import { deleteModel, getModels } from '@/api/model'
 import type { Model } from '@/types/metadata'
 import { showDeleteConfirm } from '@/utils/confirm'
+import { debounce } from '@/utils/debounce'
 import { ArrowDown, Box, Delete, Plus, RefreshLeft, Search, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { onMounted, ref } from 'vue'
@@ -176,6 +177,8 @@ const handleSizeChange = (val: number) => {
     currentPage.value = 1
     fetchModels()
 }
+
+const handleDebouncedSearch = debounce(handleSearch, 500)
 
 // 新建模型
 const handleCreateCommand = (kind: number) => {
