@@ -62,6 +62,24 @@ func (m *MockModelSqlRepo) GetByModelID(modelID string) (*model.MdModelSql, erro
 func (m *MockModelSqlRepo) Update(sql *model.MdModelSql) error   { return m.Called(sql).Error(0) }
 func (m *MockModelSqlRepo) DeleteByModelID(modelID string) error { return m.Called(modelID).Error(0) }
 
+// MockModelParamRepo
+type MockModelParamRepo struct {
+	mock.Mock
+}
+
+func (m *MockModelParamRepo) Create(param *model.MdModelParam) error { return m.Called(param).Error(0) }
+func (m *MockModelParamRepo) BatchCreate(params []model.MdModelParam) error {
+	return m.Called(params).Error(0)
+}
+func (m *MockModelParamRepo) GetByModelID(modelID string) ([]model.MdModelParam, error) {
+	args := m.Called(modelID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.MdModelParam), args.Error(1)
+}
+func (m *MockModelParamRepo) DeleteByModelID(modelID string) error { return m.Called(modelID).Error(0) }
+
 // MockFieldRepo
 type MockFieldRepo struct {
 	mock.Mock
@@ -148,8 +166,9 @@ func TestMdModelService_BuildFromTable(t *testing.T) {
 	mockModelRepo := new(MockModelRepo)
 	mockFieldRepo := new(MockFieldRepo)
 	mockModelSqlRepo := new(MockModelSqlRepo)
+	mockModelParamRepo := new(MockModelParamRepo)
 	mockConnSvc := new(MockConnService)
-	svc := NewMdModelService(mockModelRepo, mockFieldRepo, mockModelSqlRepo, mockConnSvc)
+	svc := NewMdModelService(mockModelRepo, mockFieldRepo, mockModelSqlRepo, mockModelParamRepo, mockConnSvc)
 
 	t.Run("Success", func(t *testing.T) {
 		req := &BuildFromTableRequest{

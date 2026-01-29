@@ -433,6 +433,18 @@ func (h *MdModelHandler) GetFieldsByModelID(c context.Context, ctx *app.RequestC
 	utils.SuccessResponse(ctx, fields)
 }
 
+// GetModelParams 获取模型参数列表
+func (h *MdModelHandler) GetModelParams(c context.Context, ctx *app.RequestContext) {
+	modelID := ctx.Param("id")
+	params, err := h.modelService.GetModelParams(modelID)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, params)
+}
+
 // CreateModelField 添加模型字段
 func (h *MdModelHandler) CreateModelField(c context.Context, ctx *app.RequestContext) {
 	var req CreateModelFieldRequest

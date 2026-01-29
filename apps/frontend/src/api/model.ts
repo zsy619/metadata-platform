@@ -159,6 +159,18 @@ export const getModelFields = async (modelId: string): Promise<ModelField[]> => 
 }
 
 /**
+ * 获取模型参数列表
+ * @param modelId 模型ID
+ * @returns 参数列表
+ */
+export const getModelParams = async (modelId: string): Promise<any[]> => {
+    return request({
+        url: `/api/metadata/models/${modelId}/params`,
+        method: 'get'
+    })
+}
+
+/**
  * 添加模型字段
  * @param modelId 模型ID
  * @param data 字段数据

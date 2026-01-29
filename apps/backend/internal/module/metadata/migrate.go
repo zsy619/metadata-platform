@@ -65,5 +65,8 @@ func Migrate(db *gorm.DB) error {
 	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='查询条件'").AutoMigrate(&model.MdQueryCondition{}); err != nil {
 		return err
 	}
+	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='模型参数'").AutoMigrate(&model.MdModelParam{}); err != nil {
+		return err
+	}
 	return nil
 }

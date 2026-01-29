@@ -106,7 +106,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { getAllModels, queryDataByCode, queryDataById } from '@/api/model'
+import { getAllModels, getModelParams, queryDataByCode, queryDataById } from '@/api/model'
 import type { Model } from '@/types/metadata'
 import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -129,17 +129,7 @@ const testForm = reactive({
     params: {} as Record<string, any>
 })
 
-const queryParams = computed(() => {
-    if (!selectedModel.value || !selectedModel.value.parameters) return []
-    try {
-        const params = typeof selectedModel.value.parameters === 'string'
-            ? JSON.parse(selectedModel.value.parameters)
-            : selectedModel.value.parameters
-        return Array.isArray(params) ? params : []
-    } catch (e) {
-        return []
-    }
-})
+const queryParams = ref<any[]>([])
 
 const urlPreview = computed(() => {
     if (!selectedModel.value) return ''
@@ -169,15 +159,25 @@ onMounted(() => {
     initModels()
 })
 
-const handleModelChange = (id: string) => {
+const handleModelChange = async (id: string) => {
     const model = models.value.find(m => m.id === id)
     if (model) {
         selectedModel.value = model
         testForm.params = {}
-        // 初始化默认值
-        queryParams.value.forEach(p => {
-            testForm.params[p.name] = p.default || ''
-        })
+
+        // 从 API 获取参数列表
+        try {
+            const params: any = await getModelParams(id)
+            queryParams.value = Array.isArray(params) ? params : (params?.data || [])
+
+            // 初始化默认值
+            queryParams.value.forEach(p => {
+                testForm.params[p.name] = p.default || ''
+            })
+        } catch (err) {
+            console.error('获取模型参数失败:', err)
+            queryParams.value = []
+        }
     }
 }
 

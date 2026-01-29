@@ -1,9 +1,10 @@
 package repository
 
 import (
-	"gorm.io/gorm"
-
 	"metadata-platform/internal/module/metadata/model"
+	"metadata-platform/internal/utils"
+
+	"gorm.io/gorm"
 )
 
 // MdModelRepository 模型定义仓库接口
@@ -76,12 +77,13 @@ func (r *mdModelRepository) DeleteModel(id string) error {
 			&model.MdModelTable{},
 			&model.MdModelWhere{},
 			&model.MdQueryTemplate{},
+			&model.MdModelParam{},
 		}
 
 		// 循环删除各关联表中的记录
 		for _, m := range relatedModels {
 			if err := tx.Where("model_id = ?", id).Delete(m).Error; err != nil {
-				return err
+				utils.SugarLogger.Fatalf("删除关联表记录失败: %v", err)
 			}
 		}
 

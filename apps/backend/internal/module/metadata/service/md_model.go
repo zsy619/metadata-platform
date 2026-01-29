@@ -35,6 +35,7 @@ type MdModelService interface {
 	Generate16Code() string
 	Generate32Code() string
 	Generate64Code() string
+	GetModelParams(modelID string) ([]model.MdModelParam, error)
 }
 
 type BuildFromViewRequest struct {
@@ -93,23 +94,25 @@ type BuildFromTableRequest struct {
 
 // mdModelService 模型定义服务实现
 type mdModelService struct {
-	modelRepo    repository.MdModelRepository
-	fieldRepo    repository.MdModelFieldRepository
-	modelSqlRepo repository.MdModelSqlRepository
-	connService  MdConnService
-	snowflake    *utils.Snowflake
+	modelRepo      repository.MdModelRepository
+	fieldRepo      repository.MdModelFieldRepository
+	modelSqlRepo   repository.MdModelSqlRepository
+	modelParamRepo repository.MdModelParamRepository
+	connService    MdConnService
+	snowflake      *utils.Snowflake
 }
 
 // NewMdModelService 创建模型定义服务实例
-func NewMdModelService(modelRepo repository.MdModelRepository, fieldRepo repository.MdModelFieldRepository, modelSqlRepo repository.MdModelSqlRepository, connService MdConnService) MdModelService {
+func NewMdModelService(modelRepo repository.MdModelRepository, fieldRepo repository.MdModelFieldRepository, modelSqlRepo repository.MdModelSqlRepository, modelParamRepo repository.MdModelParamRepository, connService MdConnService) MdModelService {
 	// 创建雪花算法生成器实例，使用默认数据中心ID和机器ID
 	snowflake := utils.NewSnowflake(1, 1)
 	return &mdModelService{
-		modelRepo:    modelRepo,
-		fieldRepo:    fieldRepo,
-		modelSqlRepo: modelSqlRepo,
-		connService:  connService,
-		snowflake:    snowflake,
+		modelRepo:      modelRepo,
+		fieldRepo:      fieldRepo,
+		modelSqlRepo:   modelSqlRepo,
+		modelParamRepo: modelParamRepo,
+		connService:    connService,
+		snowflake:      snowflake,
 	}
 }
 
@@ -152,6 +155,11 @@ func (s *mdModelService) Generate64Code() string {
 	id := s.snowflake.GenerateIDString()
 	hash := sha256.Sum256([]byte(id))
 	return strings.ToUpper(hex.EncodeToString(hash[:]))
+}
+
+// GetModelParams 获取模型参数列表
+func (s *mdModelService) GetModelParams(modelID string) ([]model.MdModelParam, error) {
+	return s.modelParamRepo.GetByModelID(modelID)
 }
 
 // GetModelByID 根据ID获取模型定义
@@ -412,6 +420,27 @@ func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
 			return err
 		}
 	}
+
+	// 保存参数到独立的参数表
+	for _, param := range req.Parameters {
+		modelParam := &model.MdModelParam{
+			ID:       s.snowflake.GenerateIDString(),
+			TenantID: req.TenantID,
+			ModelID:  modelID,
+			Name:     param.Name,
+			Type:     param.Type,
+			Required: param.Required,
+			Default:  param.Default,
+			CreateID: req.UserID,
+			CreateBy: req.Username,
+			UpdateID: req.UserID,
+			UpdateBy: req.Username,
+		}
+		if err := s.modelParamRepo.Create(modelParam); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

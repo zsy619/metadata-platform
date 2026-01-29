@@ -140,6 +140,9 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		modelGroup.PUT("/:id/fields/:fieldId", modelHandler.UpdateModelField)
 		modelGroup.DELETE("/:id/fields/:fieldId", modelHandler.DeleteModelField)
 
+		// 模型参数路由
+		modelGroup.GET("/:id/params", modelHandler.GetModelParams)
+
 		modelGroup.GET("", modelHandler.ListModels)
 		modelGroup.GET("/all", modelHandler.GetAllModels)
 		modelGroup.GET("/conn/:conn_id", modelHandler.GetModelsByConnID)
