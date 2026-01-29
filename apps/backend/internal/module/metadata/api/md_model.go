@@ -346,6 +346,38 @@ func (h *MdModelHandler) DeleteModel(c context.Context, ctx *app.RequestContext)
 	utils.SuccessResponse(ctx, nil)
 }
 
+// GenerateCode 生成 32 位模型编码
+func (h *MdModelHandler) GenerateCode(c context.Context, ctx *app.RequestContext) {
+	code := h.modelService.Generate32Code()
+	utils.SuccessResponse(ctx, map[string]string{
+		"code": code,
+	})
+}
+
+// ListModels 获取模型列表（分页和搜索）
+func (h *MdModelHandler) ListModels(c context.Context, ctx *app.RequestContext) {
+	page, _ := strconv.Atoi(ctx.Query("page"))
+	pageSize, _ := strconv.Atoi(ctx.Query("page_size"))
+	search := ctx.Query("search")
+	modelKind, _ := strconv.Atoi(ctx.Query("model_kind"))
+
+	tenantID, _ := ctx.Get("tenant_id")
+	models, total, err := h.modelService.GetModels(strconv.FormatUint(uint64(tenantID.(uint)), 10), page, pageSize, search, modelKind)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	utils.SuccessWithPagination(ctx, models, total, page, pageSize)
+}
+
 // GetAllModels 获取所有模型
 func (h *MdModelHandler) GetAllModels(c context.Context, ctx *app.RequestContext) {
 	tenantID, _ := ctx.Get("tenant_id")

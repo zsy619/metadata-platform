@@ -28,7 +28,7 @@
                             <el-input v-model="baseForm.modelName" placeholder="请输入模型名称" />
                         </el-form-item>
                         <el-form-item label="模型编码" prop="modelCode">
-                            <el-input v-model="baseForm.modelCode" placeholder="请输入模型编码（唯一标识）" />
+                            <el-input v-model="baseForm.modelCode" placeholder="不填则自动生成 32 位编码" />
                         </el-form-item>
                         <el-form-item label="描述" prop="remark">
                             <el-input v-model="baseForm.remark" type="textarea" :rows="3" placeholder="请输入模型描述" />
@@ -129,7 +129,7 @@
 </template>
 <script setup lang="ts">
 import { getConns, getDBTables } from '@/api/metadata'
-import { createModelSql, testSQL } from '@/api/model'
+import { createModelSql, generateModelCode, testSQL } from '@/api/model'
 import type { FieldMapping, SQLParameter } from '@/types/metadata/model-params'
 import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
@@ -168,7 +168,7 @@ const baseForm = reactive({
 const baseRules = {
     connID: [{ required: true, message: '请选择数据源', trigger: 'change' }],
     modelName: [{ required: true, message: '请输入模型名称', trigger: 'blur' }],
-    modelCode: [{ required: true, message: '请输入模型编码', trigger: 'blur' }]
+    modelCode: [{ required: false }]
 }
 
 // SQL 内容
@@ -186,6 +186,9 @@ const permissions = reactive({
 })
 
 onMounted(async () => {
+    // 自动获取模型编码
+    fetchGeneratedCode()
+
     try {
         const res: any = await getConns()
         dataSources.value = Array.isArray(res) ? res : (res.data || [])
@@ -193,6 +196,17 @@ onMounted(async () => {
         console.error('Failed to load data sources', error)
     }
 })
+
+const fetchGeneratedCode = async () => {
+    try {
+        const res = await generateModelCode()
+        if (res.code) {
+            baseForm.modelCode = res.code
+        }
+    } catch (error) {
+        console.error('Failed to auto generate model code', error)
+    }
+}
 
 const goBack = () => {
     router.push('/metadata/model/list')

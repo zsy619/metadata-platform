@@ -24,8 +24,12 @@ export interface Model extends BaseEntity {
     connName: string;
     /** 模型名称 */
     modelName: string;
+    /** 模型名称 (后端原始字段) */
+    model_name?: string;
     /** 模型编码 */
     modelCode: string;
+    /** 模型编码 (后端原始字段) */
+    model_code?: string;
     /** 模型版本 */
     modelVersion: string;
     /** 模型图片 */

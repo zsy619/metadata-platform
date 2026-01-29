@@ -22,6 +22,17 @@ export const getModels = async (params?: ModelQueryParams): Promise<ModelRespons
 }
 
 /**
+ * 自动生成模型编码
+ * @returns 生成的编码
+ */
+export const generateModelCode = async (): Promise<{ code: string }> => {
+    return request({
+        url: '/api/metadata/models/generate-code',
+        method: 'get'
+    })
+}
+
+/**
  * 获取模型详情
  * @param id 模型ID
  * @returns 模型详情

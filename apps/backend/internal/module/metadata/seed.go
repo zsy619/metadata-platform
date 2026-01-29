@@ -46,29 +46,29 @@ func SeedData(db *gorm.DB) {
 		}
 	}
 
-	// 2. 初始化默认模型组 (ParentID = "0")
-	defaultModelGroup := model.MdModel{
-		ID:        sf.GenerateIDString(),
-		TenantID:  "1",
-		ParentID:  "0",
-		ModelName: "默认模型组",
-		ModelCode: "default_group",
-		ModelKind: 0, // 0 as folder/group
-		IsDeleted: false,
-		CreateBy:  "system",
-		CreateAt:  now,
-		UpdateBy:  "system",
-		UpdateAt:  now,
-	}
+	// // 2. 初始化默认模型组 (ParentID = "0")
+	// defaultModelGroup := model.MdModel{
+	// 	ID:        sf.GenerateIDString(),
+	// 	TenantID:  "1",
+	// 	ParentID:  "0",
+	// 	ModelName: "默认模型组",
+	// 	ModelCode: "default_group",
+	// 	ModelKind: 0, // 0 as folder/group
+	// 	IsDeleted: false,
+	// 	CreateBy:  "system",
+	// 	CreateAt:  now,
+	// 	UpdateBy:  "system",
+	// 	UpdateAt:  now,
+	// }
 
-	db.Model(&model.MdModel{}).Where("model_code = ?", "default_group").Count(&count)
-	if count == 0 {
-		if err := db.Create(&defaultModelGroup).Error; err != nil {
-			utils.SugarLogger.Errorf("Failed to seed default model group: %v", err)
-		} else {
-			utils.SugarLogger.Info("Seeded default model group")
-		}
-	}
+	// db.Model(&model.MdModel{}).Where("model_code = ?", "default_group").Count(&count)
+	// if count == 0 {
+	// 	if err := db.Create(&defaultModelGroup).Error; err != nil {
+	// 		utils.SugarLogger.Errorf("Failed to seed default model group: %v", err)
+	// 	} else {
+	// 		utils.SugarLogger.Info("Seeded default model group")
+	// 	}
+	// }
 
 	utils.SugarLogger.Info("Metadata database seeding completed")
 }

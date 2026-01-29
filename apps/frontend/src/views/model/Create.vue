@@ -109,7 +109,7 @@
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="模型编码" prop="modelCode">
-                                <el-input v-model="modelForm.modelCode" placeholder="请输入模型编码（字母数字下划线组合）" clearable />
+                                <el-input v-model="modelForm.modelCode" placeholder="不填则自动生成 32 位编码" clearable />
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -161,6 +161,7 @@
     </div>
 </template>
 <script setup lang="ts">
+import { generateModelCode } from '@/api/model'
 import type { Model } from '@/types/metadata'
 import type { DataSource } from '@/types/metadata/datasource'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -218,9 +219,7 @@ const formRules = reactive({
         { min: 2, max: 100, message: '模型名称长度在 2 到 100 个字符', trigger: 'blur' }
     ],
     modelCode: [
-        { required: true, message: '请输入模型编码', trigger: 'blur' },
-        { pattern: /^[a-zA-Z0-9_]+$/, message: '模型编码只能包含字母、数字和下划线', trigger: 'blur' },
-        { min: 2, max: 50, message: '模型编码长度在 2 到 50 个字符', trigger: 'blur' }
+        { required: false }
     ],
     modelVersion: [
         { required: true, message: '请输入模型版本', trigger: 'blur' }
@@ -244,6 +243,7 @@ const route = useRoute()
 
 onMounted(() => {
     fetchDataSources()
+    fetchGeneratedCode()
 
     // 处理 URL 参数中的 kind
     const queryKind = route.query.kind
@@ -252,6 +252,17 @@ onMounted(() => {
         handleKindChange(modelForm.modelKind)
     }
 })
+
+const fetchGeneratedCode = async () => {
+    try {
+        const res = await generateModelCode()
+        if (res.code) {
+            modelForm.modelCode = res.code
+        }
+    } catch (error) {
+        console.error('Failed to auto generate model code', error)
+    }
+}
 
 // 获取数据源列表
 const fetchDataSources = async () => {

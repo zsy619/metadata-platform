@@ -30,6 +30,13 @@ func (m *MockMdModelService) GetModelByCode(code string) (*model.MdModel, error)
 }
 func (m *MockMdModelService) UpdateModel(model *model.MdModel) error { return m.Called(model).Error(0) }
 func (m *MockMdModelService) DeleteModel(id string) error { return m.Called(id).Error(0) }
+func (m *MockMdModelService) GetModels(tenantID string, page, pageSize int, search string, modelKind int) ([]model.MdModel, int64, error) {
+	args := m.Called(tenantID, page, pageSize, search, modelKind)
+	return args.Get(0).([]model.MdModel), args.Get(1).(int64), args.Error(2)
+}
+func (m *MockMdModelService) Generate32Code() string {
+	return m.Called().String(0)
+}
 func (m *MockMdModelService) GetModelsByConnID(connID string) ([]model.MdModel, error) {
 	return m.Called(connID).Get(0).([]model.MdModel), m.Called(connID).Error(1)
 }

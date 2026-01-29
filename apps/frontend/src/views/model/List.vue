@@ -32,17 +32,37 @@
         <el-card class="main-card">
             <!-- 搜索区域 -->
             <div class="search-area">
-                <el-input v-model="searchQuery" placeholder="搜索模型名称或编码" clearable style="width: 300px" @keyup.enter="handleSearch" />
+                <el-input v-model="searchQuery" placeholder="搜索模型名称或编码" clearable style="width: 260px" @keyup.enter="handleSearch" />
+                <el-select v-model="filterKind" placeholder="筛选模型类型" style="width: 160px" clearable @change="handleSearch">
+                    <el-option label="全部类型" :value="0" />
+                    <el-option label="SQL 语句" :value="1" />
+                    <el-option label="视图 / 表" :value="2" />
+                    <el-option label="存储过程" :value="3" />
+                    <el-option label="关联" :value="4" />
+                </el-select>
                 <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
                 <el-button :icon="RefreshLeft" @click="handleReset">重置</el-button>
             </div>
             <!-- 表格区域 -->
             <div class="table-area">
                 <el-table v-loading="loading" :data="models" border style="width: 100%" height="100%">
-                    <el-table-column prop="modelName" label="模型名称" min-width="150" sortable />
-                    <el-table-column prop="modelCode" label="模型代码" min-width="150" sortable />
+                    <el-table-column prop="model_name" label="模型名称" min-width="150" sortable />
+                    <el-table-column prop="model_code" label="模型代码" min-width="150" sortable />
+                    <el-table-column prop="model_kind" label="模型类型" width="120">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.model_kind === 1">SQL 语句</el-tag>
+                            <el-tag v-else-if="scope.row.model_kind === 2" type="success">视图 / 表</el-tag>
+                            <el-tag v-else-if="scope.row.model_kind === 3" type="warning">存储过程</el-tag>
+                            <el-tag v-else-if="scope.row.model_kind === 4" type="info">关联</el-tag>
+                            <el-tag v-else type="info">未知</el-tag>
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="remark" label="描述" min-width="200" show-overflow-tooltip />
-                    <el-table-column prop="createAt" label="创建时间" width="180" />
+                    <el-table-column prop="create_at" label="创建时间" width="160">
+                        <template #default="scope">
+                            {{ formatDateTime(scope.row.create_at) }}
+                        </template>
+                    </el-table-column>
                     <el-table-column label="操作" width="200" fixed="right" class-name="action-column">
                         <template #default="scope">
                             <el-button type="primary" link :icon="View" @click="handleEdit(scope.row)">编辑</el-button>
@@ -72,9 +92,23 @@ const router = useRouter()
 const loading = ref(false)
 const models = ref<Model[]>([])
 const searchQuery = ref('')
+const filterKind = ref(0)
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(20)
+
+// 格式化日期
+const formatDateTime = (dateStr: string) => {
+    if (!dateStr) return '-'
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return dateStr
+    const Y = date.getFullYear()
+    const M = String(date.getMonth() + 1).padStart(2, '0')
+    const D = String(date.getDate()).padStart(2, '0')
+    const h = String(date.getHours()).padStart(2, '0')
+    const m = String(date.getMinutes()).padStart(2, '0')
+    return `${Y}-${M}-${D} ${h}:${m}`
+}
 
 // 生命周期钩子
 onMounted(() => {
@@ -88,7 +122,8 @@ const fetchModels = async () => {
         const response: any = await getModels({
             page: currentPage.value,
             pageSize: pageSize.value,
-            search: searchQuery.value
+            search: searchQuery.value,
+            model_kind: filterKind.value
         })
 
         // 处理后端 SuccessWithPagination 返回结构 { code: 200, data: { list: [], total: 0 } }
@@ -118,6 +153,7 @@ const handleSearch = () => {
 // 重置
 const handleReset = () => {
     searchQuery.value = ''
+    filterKind.value = 0
     currentPage.value = 1
     fetchModels()
 }
@@ -154,7 +190,7 @@ const handleEdit = (row: Model) => {
 
 // 删除模型
 const handleDelete = (row: Model) => {
-    ElMessageBox.confirm(`确定要删除模型 "${row.modelName}" 吗？`, '警告', {
+    ElMessageBox.confirm(`确定要删除模型 "${row.model_name}" 吗？`, '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'

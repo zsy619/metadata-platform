@@ -9,9 +9,9 @@ export interface ModelQueryParams {
     /** 搜索关键词 */
     search?: string;
     /** 模型类型 */
-    kind?: number;
+    model_kind?: number;
     /** 数据连接ID */
-    connID?: number;
+    conn_id?: string;
 }
 
 /**

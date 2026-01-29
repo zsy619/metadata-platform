@@ -1,12 +1,14 @@
 package service
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
-
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/repository"
 	"metadata-platform/internal/utils"
+	"strings"
 )
 
 // MdModelService 模型定义服务接口
@@ -16,8 +18,8 @@ type MdModelService interface {
 	GetModelByCode(code string) (*model.MdModel, error)
 	UpdateModel(model *model.MdModel) error
 	DeleteModel(id string) error
+	GetModels(tenantID string, page, pageSize int, search string, modelKind int) ([]model.MdModel, int64, error)
 	GetModelsByConnID(connID string) ([]model.MdModel, error)
-	GetAllModels(tenantID string) ([]model.MdModel, error)
 	BuildFromTable(req *BuildFromTableRequest) error
 	BuildFromView(req *BuildFromViewRequest) error
 	BuildFromSQL(req *BuildFromSQLRequest) error
@@ -27,29 +29,30 @@ type MdModelService interface {
 	CreateField(field *model.MdModelField) error
 	UpdateField(field *model.MdModelField) error
 	DeleteField(id string) error
+	Generate32Code() string
 }
 
 type BuildFromViewRequest struct {
-	ConnID      string
-	Schema      string
-	View        string
-	ModelName   string
-	ModelCode   string
-	TenantID    string
-	UserID      string
-	Username    string
+	ConnID    string
+	Schema    string
+	View      string
+	ModelName string
+	ModelCode string
+	TenantID  string
+	UserID    string
+	Username  string
 }
 
 type BuildFromSQLRequest struct {
-	ConnID       string
-	ModelName    string
-	ModelCode    string
-	SQLContent   string
-	Parameters   []SQLParameter
+	ConnID        string
+	ModelName     string
+	ModelCode     string
+	SQLContent    string
+	Parameters    []SQLParameter
 	FieldMappings []FieldMapping
-	TenantID     string
-	UserID       string
-	Username     string
+	TenantID      string
+	UserID        string
+	Username      string
 }
 
 type TestSQLRequest struct {
@@ -73,23 +76,23 @@ type FieldMapping struct {
 }
 
 type BuildFromTableRequest struct {
-	ConnID      string
-	Schema      string
-	Table       string
-	ModelName   string
-	ModelCode   string
-	TenantID    string
-	UserID      string
-	Username    string
+	ConnID    string
+	Schema    string
+	Table     string
+	ModelName string
+	ModelCode string
+	TenantID  string
+	UserID    string
+	Username  string
 }
 
 // mdModelService 模型定义服务实现
 type mdModelService struct {
-	modelRepo   repository.MdModelRepository
-	fieldRepo   repository.MdModelFieldRepository
+	modelRepo    repository.MdModelRepository
+	fieldRepo    repository.MdModelFieldRepository
 	modelSqlRepo repository.MdModelSqlRepository
-	connService MdConnService
-	snowflake   *utils.Snowflake
+	connService  MdConnService
+	snowflake    *utils.Snowflake
 }
 
 // NewMdModelService 创建模型定义服务实例
@@ -110,6 +113,11 @@ func (s *mdModelService) CreateModel(model *model.MdModel) error {
 	// 使用雪花算法生成唯一ID
 	model.ID = s.snowflake.GenerateIDString()
 
+	// 如果编码为空，自动生成 32 位编码
+	if model.ModelCode == "" {
+		model.ModelCode = s.Generate32Code()
+	}
+
 	// 检查模型编码是否已存在
 	existingModel, err := s.modelRepo.GetModelByCode(model.ModelCode)
 	if err == nil && existingModel != nil {
@@ -118,6 +126,13 @@ func (s *mdModelService) CreateModel(model *model.MdModel) error {
 
 	// 创建模型
 	return s.modelRepo.CreateModel(model)
+}
+
+// Generate32Code 生成 32 位唯一编码 (MD5(SnowflakeID))
+func (s *mdModelService) Generate32Code() string {
+	id := s.snowflake.GenerateIDString()
+	hash := md5.Sum([]byte(id))
+	return strings.ToUpper(hex.EncodeToString(hash[:]))
 }
 
 // GetModelByID 根据ID获取模型定义
@@ -162,15 +177,21 @@ func (s *mdModelService) DeleteModel(id string) error {
 	return s.modelRepo.DeleteModel(id)
 }
 
+// GetModels 获取模型定义列表（支持分页、搜索和类型过滤）
+func (s *mdModelService) GetModels(tenantID string, page, pageSize int, search string, modelKind int) ([]model.MdModel, int64, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	offset := (page - 1) * pageSize
+	return s.modelRepo.GetModels(tenantID, offset, pageSize, search, modelKind)
+}
+
 // GetModelsByConnID 根据连接ID获取模型定义列表
 func (s *mdModelService) GetModelsByConnID(connID string) ([]model.MdModel, error) {
 	return s.modelRepo.GetModelsByConnID(connID)
-}
-
-// GetAllModels 获取所有模型定义
-// GetAllModels 获取所有模型定义
-func (s *mdModelService) GetAllModels(tenantID string) ([]model.MdModel, error) {
-	return s.modelRepo.GetAllModels(tenantID)
 }
 
 // GetFieldsByModelID 获取模型下的所有字段
@@ -195,8 +216,6 @@ func (s *mdModelService) DeleteField(id string) error {
 
 // BuildFromView 从视图构建模型
 func (s *mdModelService) BuildFromView(req *BuildFromViewRequest) error {
-	// 复用 BuildFromTable 的逻辑，但由于视图也是表结构，流程基本一致
-	// 唯一的区别可能在于模型类型标记或者某些属性
 	tableReq := &BuildFromTableRequest{
 		ConnID:    req.ConnID,
 		Schema:    req.Schema,
@@ -212,113 +231,21 @@ func (s *mdModelService) BuildFromView(req *BuildFromViewRequest) error {
 
 // BuildFromTable 从表构建模型
 func (s *mdModelService) BuildFromTable(req *BuildFromTableRequest) error {
-	// 1. 获取数据连接信息
 	conn, err := s.connService.GetConnByID(req.ConnID)
 	if err != nil {
 		return err
 	}
 
-	// 2. 获取表结构
 	columns, err := s.connService.GetTableStructure(conn, req.Schema, req.Table)
 	if err != nil {
 		return err
 	}
 
-	// 3. 创建模型头信息
 	modelID := s.snowflake.GenerateIDString()
-	mdModel := &model.MdModel{
-		ID:           modelID,
-		TenantID:     req.TenantID,
-		ParentID:     "0", // 默认根目录
-		ConnID:       req.ConnID,
-		ConnName:     conn.ConnName,
-		ModelName:    req.ModelName,
-		ModelCode:    req.ModelCode,
-		ModelVersion: "1.0.0",
-		ModelKind:    2, // 2: 视图/表
-		IsPublic:     false,
-		IsLocked:     false,
-		IsDeleted:    false,
-		CreateID:     req.UserID,
-		CreateBy:     req.Username,
-		UpdateID:     req.UserID,
-		UpdateBy:     req.Username,
+	if req.ModelCode == "" {
+		req.ModelCode = s.Generate32Code()
 	}
 
-	// 检查模型编码是否已存在
-	existingModel, err := s.modelRepo.GetModelByCode(req.ModelCode)
-	if err == nil && existingModel != nil {
-		return errors.New("模型编码已存在")
-	}
-
-	if err := s.modelRepo.CreateModel(mdModel); err != nil {
-		return err
-	}
-
-	// 4. 创建模型字段信息
-	for _, col := range columns {
-		// 类型映射
-		dataType := mapDataType(col.Type)
-		
-		field := &model.MdModelField{
-			ID:              s.snowflake.GenerateIDString(),
-			TenantID:        req.TenantID,
-			ModelID:         modelID,
-			TableSchema:     req.Schema,
-			TableID:         "",
-			TableNameStr:    req.Table,
-			TableTitle:      req.Table,
-			ColumnID:        "",
-			ColumnName:      col.Name,
-			ColumnTitle:     col.Comment,
-			Func:            "", // 默认无函数
-			AggFunc:         "", // 默认无聚合
-			ColumnType:      col.Type,
-			ColumnLength:    col.Length,
-			IsNullable:      col.IsNullable,
-			IsPrimaryKey:    col.IsPrimaryKey,
-			IsAutoIncrement: col.IsAutoIncrement,
-			FieldType:       dataType,
-			MaxLength:       col.Length,
-			ShowTitle:       col.Comment,
-			ShowWidth:       150,
-			IsDeleted:       false,
-			CreateID:        req.UserID,
-			CreateBy:        req.Username,
-			UpdateID:        req.UserID,
-			UpdateBy:        req.Username,
-		}
-
-		// 默认值处理
-		if col.DefaultValue != nil {
-			field.DefaultValue = fmt.Sprintf("%v", col.DefaultValue)
-		}
-		
-		// 如果没有注释，使用列名作为显示标题
-		if field.ColumnTitle == "" {
-			field.ColumnTitle = col.Name
-			field.ShowTitle = col.Name
-		}
-
-		if err := s.fieldRepo.CreateField(field); err != nil {
-			// TODO: 考虑回滚模型创建
-			return err
-		}
-	}
-
-	return nil
-}
-
-// BuildFromSQL 从 SQL 构建模型
-func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
-	// 1. 获取数据连接信息
-	conn, err := s.connService.GetConnByID(req.ConnID)
-	if err != nil {
-		return err
-	}
-
-	// 2. 创建模型头信息
-	modelID := s.snowflake.GenerateIDString()
 	mdModel := &model.MdModel{
 		ID:           modelID,
 		TenantID:     req.TenantID,
@@ -328,7 +255,7 @@ func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
 		ModelName:    req.ModelName,
 		ModelCode:    req.ModelCode,
 		ModelVersion: "1.0.0",
-		ModelKind:    1, // 1: SQL 语句
+		ModelKind:    2,
 		IsPublic:     false,
 		IsLocked:     false,
 		IsDeleted:    false,
@@ -338,7 +265,6 @@ func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
 		UpdateBy:     req.Username,
 	}
 
-	// 检查模型编码是否已存在
 	existingModel, err := s.modelRepo.GetModelByCode(req.ModelCode)
 	if err == nil && existingModel != nil {
 		return errors.New("模型编码已存在")
@@ -348,80 +274,143 @@ func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
 		return err
 	}
 
-	// 3. 保存 SQL 内容
-	modelSql := &model.MdModelSql{
-		ID:        s.snowflake.GenerateIDString(),
-		TenantID:  req.TenantID,
-		ModelID:   modelID,
-		Content:   req.SQLContent,
-		Remark:    "",
-		CreateID:  req.UserID,
-		CreateBy:  req.Username,
-		UpdateID:  req.UserID,
-		UpdateBy:  req.Username,
-	}
-	if err := s.modelSqlRepo.Create(modelSql); err != nil {
-		return err
-	}
-
-	// 4. 创建模型字段信息 (基于映射配置)
-	for _, mapping := range req.FieldMappings {
+	for _, col := range columns {
+		dataType := mapDataType(col.Type)
 		field := &model.MdModelField{
 			ID:           s.snowflake.GenerateIDString(),
 			TenantID:     req.TenantID,
 			ModelID:      modelID,
-			ColumnName:   mapping.ColumnName,
-			ColumnTitle:  mapping.ShowTitle,
-			ShowTitle:    mapping.ShowTitle,
-			ShowWidth:    mapping.ShowWidth,
-			FieldType:    "string", // 默认 string，后续可通过预览解析更精确
+			TableSchema:  req.Schema,
+			TableNameStr: req.Table,
+			TableTitle:   req.Table,
+			ColumnName:   col.Name,
+			ColumnTitle:  col.Comment,
+			FieldType:    dataType,
+			MaxLength:    col.Length,
+			ShowTitle:    col.Comment,
+			ShowWidth:    150,
 			IsDeleted:    false,
 			CreateID:     req.UserID,
 			CreateBy:     req.Username,
 			UpdateID:     req.UserID,
 			UpdateBy:     req.Username,
 		}
+
+		if col.DefaultValue != nil {
+			field.DefaultValue = fmt.Sprintf("%v", col.DefaultValue)
+		}
+		if field.ColumnTitle == "" {
+			field.ColumnTitle = col.Name
+			field.ShowTitle = col.Name
+		}
+
 		if err := s.fieldRepo.CreateField(field); err != nil {
 			return err
 		}
 	}
-
-	return nil
 	return nil
 }
 
-// TestSQL 测试/预览 SQL，返回字段映射
+// BuildFromSQL 从 SQL 构建模型
+func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
+	conn, err := s.connService.GetConnByID(req.ConnID)
+	if err != nil {
+		return err
+	}
+
+	modelID := s.snowflake.GenerateIDString()
+	if req.ModelCode == "" {
+		req.ModelCode = s.Generate32Code()
+	}
+
+	mdModel := &model.MdModel{
+		ID:           modelID,
+		TenantID:     req.TenantID,
+		ParentID:     "0",
+		ConnID:       req.ConnID,
+		ConnName:     conn.ConnName,
+		ModelName:    req.ModelName,
+		ModelCode:    req.ModelCode,
+		ModelVersion: "1.0.0",
+		ModelKind:    1,
+		IsPublic:     false,
+		IsLocked:     false,
+		IsDeleted:    false,
+		CreateID:     req.UserID,
+		CreateBy:     req.Username,
+		UpdateID:     req.UserID,
+		UpdateBy:     req.Username,
+	}
+
+	existingModel, err := s.modelRepo.GetModelByCode(req.ModelCode)
+	if err == nil && existingModel != nil {
+		return errors.New("模型编码已存在")
+	}
+
+	if err := s.modelRepo.CreateModel(mdModel); err != nil {
+		return err
+	}
+
+	modelSql := &model.MdModelSql{
+		ID:       s.snowflake.GenerateIDString(),
+		TenantID: req.TenantID,
+		ModelID:  modelID,
+		Content:  req.SQLContent,
+		CreateID: req.UserID,
+		CreateBy: req.Username,
+		UpdateID: req.UserID,
+		UpdateBy: req.Username,
+	}
+	if err := s.modelSqlRepo.Create(modelSql); err != nil {
+		return err
+	}
+
+	for _, mapping := range req.FieldMappings {
+		field := &model.MdModelField{
+			ID:          s.snowflake.GenerateIDString(),
+			TenantID:    req.TenantID,
+			ModelID:     modelID,
+			ColumnName:  mapping.ColumnName,
+			ColumnTitle: mapping.ShowTitle,
+			ShowTitle:   mapping.ShowTitle,
+			ShowWidth:   mapping.ShowWidth,
+			FieldType:   "string",
+			IsDeleted:   false,
+			CreateID:    req.UserID,
+			CreateBy:    req.Username,
+			UpdateID:    req.UserID,
+			UpdateBy:    req.Username,
+		}
+		if err := s.fieldRepo.CreateField(field); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// TestSQL 测试/预览 SQL
 func (s *mdModelService) TestSQL(req *TestSQLRequest) ([]FieldMapping, error) {
-	// 1. 获取数据连接
 	conn, err := s.connService.GetConnByID(req.ConnID)
 	if err != nil {
 		return nil, err
 	}
-
-	// 2. 执行 SQL 获取列信息 (仅获取结构，不获取数据)
-	// 构建参数 map
 	params := make(map[string]interface{})
 	for _, p := range req.Parameters {
 		params[p.Name] = p.Default
 	}
-
-	// 3. 执行查询获取列信息
 	columns, err := s.connService.ExecuteSQLForColumns(conn, req.SQLContent, params)
 	if err != nil {
 		return nil, err
 	}
-
-	// 4. 转换为 FieldMapping
 	mappings := make([]FieldMapping, 0, len(columns))
 	for _, col := range columns {
 		mappings = append(mappings, FieldMapping{
 			ColumnName: col.Name,
-			ShowTitle:  col.Name, // 默认显示标题为列名
+			ShowTitle:  col.Name,
 			ShowWidth:  150,
 			Format:     "",
 		})
 	}
-
 	return mappings, nil
 }
 
