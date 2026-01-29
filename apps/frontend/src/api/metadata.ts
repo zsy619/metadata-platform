@@ -344,3 +344,19 @@ export const previewTableData = async (id: string, tableName: string, schema?: s
         params: { schema, limit }
     })
 }
+
+/**
+ * 获取数据库所有字段（跨表）
+ * @param connID 数据连接ID
+ * @returns 字段列表
+ */
+export const getDBFields = async (connID: string): Promise<MdTableField[]> => {
+    return request({
+        url: '/api/metadata/fields',
+        method: 'get',
+        params: {
+            conn_id: connID
+        }
+    })
+}
+

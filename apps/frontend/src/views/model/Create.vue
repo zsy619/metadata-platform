@@ -49,8 +49,8 @@
                     <h3>选择表/视图</h3>
                     <el-form-item label="对象类型">
                         <el-radio-group v-model="objectType" @change="handleObjectTypeChange">
-                            <el-radio-button label="table">表</el-radio-button>
-                            <el-radio-button label="view">视图</el-radio-button>
+                            <el-radio-button value="table">表</el-radio-button>
+                            <el-radio-button value="view">视图</el-radio-button>
                         </el-radio-group>
                     </el-form-item>
                     <el-form-item :label="`选择${objectType === 'table' ? '表' : '视图'}`">

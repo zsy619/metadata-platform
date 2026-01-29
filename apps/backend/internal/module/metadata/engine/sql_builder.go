@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/repository"
+	"regexp"
 	"strings"
 
 	"gorm.io/gorm"
@@ -699,20 +700,172 @@ func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (strin
 		return "", nil, fmt.Errorf("raw SQL content is empty for model %s", data.Model.ID)
 	}
 
-	sql := data.SQL.Content
+	sqlContent := data.SQL.Content
 	var args []any
-
-	if params != nil && len(params) > 0 {
-		for key, val := range params {
-			placeholder := ":" + key
-			if strings.Contains(sql, placeholder) {
-				args = append(args, val)
-				sql = strings.Replace(sql, placeholder, "?", 1)
-			}
-		}
+	
+	// 如果没有参数，直接返回
+	if params == nil || len(params) == 0 {
+		return sqlContent, nil, nil
 	}
 
-	return sql, args, nil
+	dialect := b.db.Dialector.Name() // "mysql", "sqlite", "postgres"
+
+	var sb strings.Builder
+	length := len(sqlContent)
+	
+	for i := 0; i < length; i++ {
+		char := sqlContent[i]
+
+		// 1. 处理字符串字面量 '...' (只处理单引号，双引号通常是标识符)
+		if char == '\'' {
+			// 捕获整个字符串内容
+			quote := char
+			i++
+			contentBuilder := strings.Builder{}
+			
+			for i < length {
+				curr := sqlContent[i]
+				if curr == quote {
+					if i+1 < length && sqlContent[i+1] == quote {
+						// 转义: 'It''s'
+						contentBuilder.WriteByte(curr)
+						i++ // skip next
+					} else {
+						break // End
+					}
+				} else {
+					contentBuilder.WriteByte(curr)
+				}
+				i++
+			}
+			
+			literalContent := contentBuilder.String()
+			
+			// 检查内部是否有参数 :param
+			// 使用正则查找 param
+			re := regexp.MustCompile(`:[a-zA-Z_][a-zA-Z0-9_]*`)
+			matches := re.FindAllStringIndex(literalContent, -1)
+			
+			if len(matches) > 0 {
+				// 存在参数，需要重写为拼接形式
+				// "prefix" + ? + "suffix"
+				// MySQL: CONCAT('prefix', ?, 'suffix')
+				// SQLite/Pg: 'prefix' || ? || 'suffix'
+				
+				parts := []string{}
+				lastIdx := 0
+				
+				for _, match := range matches {
+					mStart, mEnd := match[0], match[1]
+					paramName := literalContent[mStart+1 : mEnd] // remove :
+					
+					// 只有当参数存在于 map 中时才替换
+					if val, ok := params[paramName]; ok {
+						// 添加前面的静态部分
+						if mStart > lastIdx {
+							parts = append(parts, "'"+b.escapeString(literalContent[lastIdx:mStart])+"'")
+						}
+						// 添加参数占位符
+						parts = append(parts, "?")
+						args = append(args, val)
+                        lastIdx = mEnd
+					} else {
+                        // 参数不存在，保留原样（当作普通字符串的一部分）
+                        // 注意：这里比较麻烦，因为我们要拼接。
+                        // 如果不替换，就变成静态字符串的一部分 ":name"
+                        // 我们把 :name 当作普通文本处理
+                    }
+				}
+                // 添加剩余部分
+                if lastIdx < len(literalContent) {
+                     parts = append(parts, "'"+b.escapeString(literalContent[lastIdx:])+"'")
+                }
+                
+                // 根据 Dialect 拼接
+                if len(parts) > 0 {
+                    if dialect == "mysql" {
+                        sb.WriteString("CONCAT(")
+                        sb.WriteString(strings.Join(parts, ", "))
+                        sb.WriteString(")")
+                    } else {
+                        // SQLite, Postgres use ||
+                        sb.WriteString("(")
+                        sb.WriteString(strings.Join(parts, " || "))
+                        sb.WriteString(")")
+                    }
+                } else {
+                    // Should not happen if matches found, but safe fallback
+                    sb.WriteByte('\'')
+                    sb.WriteString(b.escapeString(literalContent))
+                    sb.WriteByte('\'')
+                }
+
+			} else {
+				// 无参数，原样写入
+				sb.WriteByte('\'')
+                // 注意：我们需要还原 sql 中的 escape (double quote)
+                // 这里简单起见，重新 escape 单引号
+				sb.WriteString(strings.ReplaceAll(literalContent, "'", "''"))
+				sb.WriteByte('\'')
+			}
+			continue
+		}
+        
+        // 双引号 "..." (标识符)，通常不含参数，直接跳过并写入
+        if char == '"' {
+            sb.WriteByte(char)
+            i++
+            for i < length {
+                curr := sqlContent[i]
+                sb.WriteByte(curr)
+                if curr == '"' {
+                     // 简单处理结束
+                     break
+                }
+                i++
+            }
+            continue
+        }
+
+		// 2. 检测 Top-level 参数占位符 :param (不在引号内)
+		if char == ':' {
+			if i+1 < length && sqlContent[i+1] == ':' {
+				sb.WriteString("::")
+				i++
+				continue
+			}
+			
+			start := i + 1
+			end := start
+			for end < length {
+				c := sqlContent[end]
+				if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' {
+					end++
+				} else {
+					break
+				}
+			}
+
+			if end > start {
+				paramName := sqlContent[start:end]
+				if val, ok := params[paramName]; ok {
+					args = append(args, val)
+					sb.WriteString("?")
+					i = end - 1
+					continue
+				}
+			}
+		}
+
+		sb.WriteByte(char)
+	}
+
+	return sb.String(), args, nil
+}
+
+// escapeString 简单的 SQL 字符串转义 (主要转义单引号)
+func (b *SQLBuilder) escapeString(s string) string {
+    return strings.ReplaceAll(s, "'", "''")
 }
 
 // validateSQL 执行基本的 SQL 安全检查

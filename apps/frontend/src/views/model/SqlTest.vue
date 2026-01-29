@@ -28,8 +28,8 @@
                             </el-form-item>
                             <el-form-item label="查询模式">
                                 <el-radio-group v-model="queryMode">
-                                    <el-radio-button label="id">按模型 ID</el-radio-button>
-                                    <el-radio-button label="code">按模型代码</el-radio-button>
+                                    <el-radio-button value="id">按模型 ID</el-radio-button>
+                                    <el-radio-button value="code">按模型代码</el-radio-button>
                                 </el-radio-group>
                             </el-form-item>
                             <div v-if="selectedModel" class="parameters-section">
@@ -38,8 +38,8 @@
                                     <el-tag v-if="!queryParams.length" type="info" size="small">无</el-tag>
                                 </div>
                                 <el-table v-if="queryParams.length" :data="queryParams" border stripe size="small" style="width: 100%; margin-top: 10px">
-                                    <el-table-column prop="name" label="参数名称" width="120" />
-                                    <el-table-column prop="type" label="类型" width="100" />
+                                    <el-table-column prop="name" label="参数" width="100" />
+                                    <el-table-column prop="type" label="类型" width="60" />
                                     <el-table-column label="值">
                                         <template #default="{ row }">
                                             <el-input v-model="testForm.params[row.name]" :placeholder="`输入${row.name}`" size="small" />

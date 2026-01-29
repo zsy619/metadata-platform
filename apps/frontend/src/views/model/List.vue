@@ -38,7 +38,7 @@
                     <el-option label="SQL 语句" :value="1" />
                     <el-option label="视图 / 表" :value="2" />
                     <el-option label="存储过程" :value="3" />
-                    <el-option label="关联" :value="4" />
+                    <el-option label="模型关联" :value="4" />
                 </el-select>
                 <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
                 <el-button :icon="RefreshLeft" @click="handleReset">重置</el-button>

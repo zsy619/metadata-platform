@@ -43,7 +43,7 @@
                 <div v-show="activeStep === 1" class="step-content sql-step">
                     <el-alert title="提示：使用 :parameter_name 格式定义参数，例如 WHERE id = :user_id" type="info" show-icon class="mb-3" />
                     <div class="sql-editor-wrapper">
-                        <Codemirror v-model="sqlContent" placeholder="请输入 SQL 查询语句..." :style="{ height: '400px' }" :autofocus="true" :indent-with-tab="true" :tab-size="2" :extensions="extensions" @change="detectParameters" />
+                        <Codemirror v-model="sqlContent" placeholder="请输入 SQL 查询语句..." :style="{ height: '400px' }" :autofocus="true" :indent-with-tab="true" :tab-size="2" :extensions="extensions" @change="handleSqlChange" />
                     </div>
                 </div>
                 <!-- 步骤 3: 参数配置 -->
@@ -149,15 +149,14 @@ const activeStep = ref(0)
 const submitting = ref(false)
 
 // 数据库元数据用于自动补全
-const dbTables = ref<string[]>([])
+const dbSchema = ref<Record<string, any[]>>({})
 
 // CodeMirror Extensions
 const extensions = computed(() => {
-    const schema: Record<string, string[]> = {}
-    dbTables.value.forEach(table => {
-        schema[table] = [] // 目前仅补全表名，列名补全需要额外 API
-    })
-    return [sql({ schema }), oneDark]
+    return [sql({
+        schema: dbSchema.value,
+        upperCaseKeywords: true
+    }), oneDark]
 })
 
 // 基础信息
@@ -245,18 +244,98 @@ const handleNext = async () => {
     }
 }
 
-// 获取库表元数据用于补全
+
+
+import { getFieldsByTableId } from '@/api/metadata'
+import { debounce } from 'lodash-es'
+
+// 存储表名到ID的映射
+const tableMap = ref<Record<string, string>>({})
+// 标记已加载字段的表
+const loadedTables = new Set<string>()
+
+// 获取库表元数据（仅获取表）
 const fetchDbMetadata = async () => {
     if (!baseForm.connID) return
     try {
         const res: any = await getDBTables(baseForm.connID)
-        // 后端返回成功结构是 { code: 200, data: [...] }
-        const list = res.data || []
-        dbTables.value = list.map((t: any) => typeof t === 'string' ? t : (t.name || t.label || t.TableName))
+        const tableList = res.data || []
+
+        const schema: Record<string, any[]> = {}
+        const tMap: Record<string, string> = {}
+
+        tableList.forEach((t: any) => {
+            const tableName = typeof t === 'string' ? t : (t.name || t.label || t.TableName)
+            const tableId = typeof t === 'string' ? '' : t.id // 假设返回对象包含id
+            schema[tableName] = []
+            if (tableId) {
+                tMap[tableName] = tableId
+            }
+        })
+
+        dbSchema.value = schema
+        tableMap.value = tMap
+        loadedTables.clear()
+
+        // 初始检测一次
+        debouncedDetectTables()
     } catch (error) {
         console.error('Failed to fetch DB metadata for autocomplete', error)
     }
 }
+
+// 增量获取表字段
+const fetchTableFields = async (tableName: string) => {
+    if (loadedTables.has(tableName) || !tableMap.value[tableName]) return
+
+    loadedTables.add(tableName) // 标记为处理中/已完成
+
+    try {
+        const fieldsRes = await getFieldsByTableId(tableMap.value[tableName])
+        const fieldList = Array.isArray(fieldsRes) ? fieldsRes : (fieldsRes as any).data || []
+
+        // 更新 Schema
+        const newSchema = { ...dbSchema.value }
+        if (!newSchema[tableName]) newSchema[tableName] = []
+
+        fieldList.forEach((f: any) => {
+            newSchema[tableName].push({
+                label: f.column_name,
+                type: 'property',
+                detail: f.column_type || 'column',
+                info: f.column_comment || ''
+            })
+        })
+
+        dbSchema.value = newSchema
+    } catch (error) {
+        console.error(`Failed to load fields for table ${tableName}`, error)
+        loadedTables.delete(tableName) // 如果失败允许重试
+    }
+}
+
+// 识别 SQL 中的表名
+const detectTables = () => {
+    if (!sqlContent.value) return
+    // 简单正则匹配 FROM 或 JOIN 后的表名
+    // 匹配 pattern: FROM/JOIN table_name
+    const regex = /(?:FROM|JOIN|UPDATE|INTO)\s+([a-zA-Z0-9_]+)/gi
+    let match
+    while ((match = regex.exec(sqlContent.value)) !== null) {
+        const tableName = match[1]
+        if (tableMap.value[tableName]) {
+            fetchTableFields(tableName)
+        }
+    }
+}
+const debouncedDetectTables = debounce(detectTables, 1000)
+
+// 替换原有的 detectParameters，组合调用
+const handleSqlChange = () => {
+    detectParameters()
+    debouncedDetectTables()
+}
+
 
 // 监听步骤变化，进入 SQL 编辑步时获取元数据
 watch(activeStep, (newStep) => {
@@ -407,5 +486,12 @@ const handleSubmit = async () => {
     height: 400px;
     font-size: 14px;
     font-family: 'Fira Code', 'Menlo', monospace;
+}
+
+/* Customize Autocomplete Icons */
+:deep(.cm-completionIcon-property),
+:deep(.cm-completionIcon-class) {
+    color: #409eff !important;
+    /* Blue color for fields and tables */
 }
 </style>
