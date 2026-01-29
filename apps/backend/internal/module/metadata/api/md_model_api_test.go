@@ -89,6 +89,18 @@ func (m *MockMdModelService) GetModelParams(modelID string) ([]model.MdModelPara
 	return args.Get(0).([]model.MdModelParam), args.Error(1)
 }
 
+func (m *MockMdModelService) UpdateSQLModel(req *service.UpdateSQLModelRequest) error {
+	return m.Called(req).Error(0)
+}
+
+func (m *MockMdModelService) GetSQLByModelID(modelID string) (*model.MdModelSql, error) {
+	args := m.Called(modelID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.MdModelSql), args.Error(1)
+}
+
 func BenchmarkBuildFromTable(b *testing.B) {
 	mockSvc := new(MockMdModelService)
 	handler := NewMdModelHandler(mockSvc)

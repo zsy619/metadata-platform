@@ -128,6 +128,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		modelGroup.POST("/build-from-table", modelHandler.BuildFromTable)
 		modelGroup.POST("/build-from-view", modelHandler.BuildFromView)
 		modelGroup.POST("/build-from-sql", modelHandler.BuildFromSQL)
+		modelGroup.PUT("/update-sql", modelHandler.UpdateSQLModel)
 		modelGroup.POST("/test-sql", modelHandler.TestSQL)
 		modelGroup.POST("", modelHandler.CreateModel)
 		modelGroup.GET("/:id", modelHandler.GetModelByID)
@@ -142,6 +143,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 
 		// 模型参数路由
 		modelGroup.GET("/:id/params", modelHandler.GetModelParams)
+		modelGroup.GET("/:id/sql", modelHandler.GetSQLByModelID)
 
 		modelGroup.GET("", modelHandler.ListModels)
 		modelGroup.GET("/all", modelHandler.GetAllModels)

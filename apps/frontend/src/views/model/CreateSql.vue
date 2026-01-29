@@ -1,7 +1,7 @@
 <template>
     <div class="create-sql-container">
         <div class="page-header">
-            <h1>创建 SQL 模型</h1>
+            <h1>{{ isEdit ? '编辑 SQL 模型' : '创建 SQL 模型' }}</h1>
             <el-button @click="goBack" :icon="ArrowLeft">
                 返回列表
             </el-button>
@@ -20,7 +20,7 @@
                 <div v-show="activeStep === 0" class="step-content">
                     <el-form ref="baseFormRef" :model="baseForm" :rules="baseRules" label-width="100px" class="max-w-800">
                         <el-form-item label="数&#8194;据&#8194;源" prop="connID">
-                            <el-select v-model="baseForm.connID" placeholder="请选择数据源" class="w-full">
+                            <el-select v-model="baseForm.connID" placeholder="请选择数据源" class="w-full" :disabled="isEdit">
                                 <el-option v-for="item in dataSources" :key="item.id" :label="item.conn_name" :value="item.id" />
                             </el-select>
                         </el-form-item>
@@ -28,9 +28,9 @@
                             <el-input v-model="baseForm.modelName" placeholder="请输入模型名称" />
                         </el-form-item>
                         <el-form-item label="模型编码" prop="modelCode">
-                            <el-input v-model="baseForm.modelCode" placeholder="自动生成或手动输入">
+                            <el-input v-model="baseForm.modelCode" placeholder="自动生成或手动输入" :disabled="isEdit">
                                 <template #append>
-                                    <el-button :icon="Refresh" @click="fetchGeneratedCode" title="重新获取编码" />
+                                    <el-button :icon="Refresh" @click="fetchGeneratedCode" title="重新获取编码" :disabled="isEdit" />
                                 </template>
                             </el-input>
                         </el-form-item>
@@ -124,7 +124,7 @@
                     <el-button v-if="activeStep > 0" @click="handlePrev">上一步</el-button>
                     <el-button v-if="activeStep < 4" type="primary" @click="handleNext">下一步</el-button>
                     <el-button v-if="activeStep === 4" type="primary" :loading="submitting" @click="handleSubmit">
-                        完成创建
+                        {{ isEdit ? '保存更新' : '完成创建' }}
                     </el-button>
                 </div>
             </div>
@@ -133,20 +133,23 @@
 </template>
 <script setup lang="ts">
 import { getConns, getDBTables } from '@/api/metadata'
-import { createModelSql, generateModelCode, testSQL } from '@/api/model'
+import { createModelSql, generateModelCode, getModelById, getModelFields, getModelParams, getModelSql, testSQL, updateModelSql } from '@/api/model'
 import type { FieldMapping, SQLParameter } from '@/types/metadata/model-params'
 import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import { ElLoading, ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { Codemirror } from 'vue-codemirror'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const activeStep = ref(0)
 const submitting = ref(false)
+const modelID = ref<string>(route.params.id as string)
+const isEdit = computed(() => !!modelID.value)
 
 // 数据库元数据用于自动补全
 const dbSchema = ref<Record<string, any[]>>({})
@@ -189,16 +192,70 @@ const permissions = reactive({
 })
 
 onMounted(async () => {
-    // 自动获取模型编码
-    fetchGeneratedCode()
-
+    // 获取数据源
     try {
         const res: any = await getConns()
         dataSources.value = Array.isArray(res) ? res : (res.data || [])
     } catch (error) {
         console.error('Failed to load data sources', error)
     }
+
+    if (isEdit.value) {
+        loadModelData()
+    } else {
+        // 自动获取模型编码
+        fetchGeneratedCode()
+    }
 })
+
+const loadModelData = async () => {
+    console.log('Loading model data for ID:', modelID.value)
+    const loading = ElLoading.service({ text: '正在加载模型数据...' })
+    try {
+        // 1. 获取模型基础信息
+        const res: any = await getModelById(modelID.value)
+        console.log('Model info response:', res)
+        const modelData = res.data || res
+
+        baseForm.connID = modelData.connID || modelData.conn_id
+        baseForm.modelName = modelData.modelName || modelData.model_name
+        baseForm.modelCode = modelData.modelCode || modelData.model_code
+        baseForm.remark = modelData.remark
+        permissions.isPublic = modelData.isPublic ?? modelData.is_public
+
+        // 2. 获取 SQL 内容
+        const sqlRes = await getModelSql(modelID.value)
+        console.log('SQL content response:', sqlRes)
+        sqlContent.value = sqlRes.data?.content || sqlRes.content || ''
+
+        // 3. 获取参数
+        const paramsRes = await getModelParams(modelID.value)
+        console.log('Params response:', paramsRes)
+        parameters.value = (Array.isArray(paramsRes) ? paramsRes : (paramsRes as any).data || []).map((p: any) => ({
+            name: p.name,
+            type: p.type || 'string',
+            required: p.required ?? true,
+            default: p.default || ''
+        }))
+
+        // 4. 获取字段映射
+        const fieldsRes = await getModelFields(modelID.value)
+        console.log('Fields response:', fieldsRes)
+        fieldMappings.value = (Array.isArray(fieldsRes) ? fieldsRes : (fieldsRes as any).data || []).map((f: any) => ({
+            column_name: f.columnName || f.column_name,
+            show_title: f.showTitle || f.columnTitle || f.show_title || f.column_name,
+            show_width: f.showWidth || 150,
+            format: f.format || ''
+        }))
+
+        ElMessage.success('模型数据加载成功')
+    } catch (error) {
+        console.error('Failed to load model data', error)
+        ElMessage.error('加载模型数据失败')
+    } finally {
+        loading.close()
+    }
+}
 
 const fetchGeneratedCode = async () => {
     try {
@@ -408,7 +465,7 @@ const fetchColumns = async () => {
 const handleSubmit = async () => {
     submitting.value = true
     try {
-        const payload = {
+        const payload: any = {
             conn_id: baseForm.connID,
             model_name: baseForm.modelName,
             model_code: baseForm.modelCode,
@@ -419,12 +476,18 @@ const handleSubmit = async () => {
             remark: baseForm.remark
         }
 
-        await createModelSql(payload)
-        ElMessage.success('模型创建成功')
+        if (isEdit.value) {
+            payload.model_id = modelID.value
+            await updateModelSql(payload)
+            ElMessage.success('模型更新成功')
+        } else {
+            await createModelSql(payload)
+            ElMessage.success('模型创建成功')
+        }
         router.push('/metadata/model/list')
     } catch (error) {
         console.error(error)
-        ElMessage.error('创建失败')
+        ElMessage.error(isEdit.value ? '更新失败' : '创建失败')
     } finally {
         submitting.value = false
     }

@@ -134,6 +134,19 @@ export const createModelSql = async (params: SQLModelBuildParams): Promise<Model
 }
 
 /**
+ * 更新SQL模型
+ * @param params 构建参数
+ * @returns 构建结果
+ */
+export const updateModelSql = async (params: SQLModelBuildParams): Promise<Model> => {
+    return request({
+        url: '/api/metadata/models/update-sql',
+        method: 'put',
+        data: params
+    })
+}
+
+/**
  * 测试SQL
  * @param params 测试参数
  * @returns 测试结果
@@ -166,6 +179,18 @@ export const getModelFields = async (modelId: string): Promise<ModelField[]> => 
 export const getModelParams = async (modelId: string): Promise<any[]> => {
     return request({
         url: `/api/metadata/models/${modelId}/params`,
+        method: 'get'
+    })
+}
+
+/**
+ * 获取模型SQL内容
+ * @param modelId 模型ID
+ * @returns SQL内容
+ */
+export const getModelSql = async (modelId: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/models/${modelId}/sql`,
         method: 'get'
     })
 }

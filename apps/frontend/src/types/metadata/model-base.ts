@@ -36,6 +36,8 @@ export interface Model extends BaseEntity {
     modelLogo: string;
     /** 模型类型：1sql语句、2视图/表、3存储过程、4关联 */
     modelKind: number;
+    /** 模型类型 (后端原始字段) */
+    model_kind?: number;
     /** 是否公开 */
     isPublic: boolean;
     /** 是否锁定 */

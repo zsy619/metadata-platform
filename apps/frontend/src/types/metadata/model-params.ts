@@ -60,6 +60,7 @@ export interface FieldMapping {
  * SQL模型构建参数
  */
 export interface SQLModelBuildParams {
+    model_id?: string
     conn_id: string
     model_name: string
     model_code: string
@@ -67,4 +68,5 @@ export interface SQLModelBuildParams {
     parameters: SQLParameter[]
     field_mappings: FieldMapping[]
     is_public?: boolean
+    remark?: string
 }

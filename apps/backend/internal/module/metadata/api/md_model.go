@@ -50,6 +50,18 @@ type BuildFromSQLRequest struct {
 	FieldMappings []service.FieldMapping `json:"field_mappings"`
 }
 
+// UpdateSQLModelRequest 更新 SQL 模型请求
+type UpdateSQLModelRequest struct {
+	ModelID       string                 `json:"model_id" binding:"required"`
+	ModelName     string                 `json:"model_name" binding:"required"`
+	ModelCode     string                 `json:"model_code" binding:"required"`
+	SQLContent    string                 `json:"sql_content" binding:"required"`
+	Parameters    []service.SQLParameter `json:"parameters"`
+	FieldMappings []service.FieldMapping `json:"field_mappings"`
+	IsPublic      bool                   `json:"is_public"`
+	Remark        string                 `json:"remark"`
+}
+
 // TestSQLRequest 测试 SQL 请求
 type TestSQLRequest struct {
 	ConnID     string                 `json:"conn_id" binding:"required"`
@@ -207,6 +219,43 @@ func (h *MdModelHandler) BuildFromSQL(c context.Context, ctx *app.RequestContext
 	utils.SuccessResponse(ctx, "模型构建成功")
 }
 
+// UpdateSQLModel 更新 SQL 模型
+func (h *MdModelHandler) UpdateSQLModel(c context.Context, ctx *app.RequestContext) {
+	var req UpdateSQLModelRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(consts.StatusBadRequest, map[string]interface{}{
+			"code":    400,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	tenantID, _ := ctx.Get("tenant_id")
+	userID, _ := ctx.Get("user_id")
+	username, _ := ctx.Get("username")
+	
+	serviceReq := &service.UpdateSQLModelRequest{
+		ModelID:       req.ModelID,
+		ModelName:     req.ModelName,
+		ModelCode:     req.ModelCode,
+		SQLContent:    req.SQLContent,
+		Parameters:    req.Parameters,
+		FieldMappings: req.FieldMappings,
+		IsPublic:      req.IsPublic,
+		Remark:        req.Remark,
+		TenantID:      strconv.FormatUint(uint64(tenantID.(uint)), 10),
+		UserID:        userID.(string),
+		Username:      username.(string),
+	}
+
+	if err := h.modelService.UpdateSQLModel(serviceReq); err != nil {
+		utils.ErrorResponse(ctx, consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, "模型更新成功")
+}
+
 // TestSQL 测试/预览 SQL
 func (h *MdModelHandler) TestSQL(c context.Context, ctx *app.RequestContext) {
 	var req TestSQLRequest
@@ -287,6 +336,18 @@ func (h *MdModelHandler) GetModelByID(c context.Context, ctx *app.RequestContext
 	}
 
 	utils.SuccessResponse(ctx, model)
+}
+
+// GetSQLByModelID 获取模型 SQL 内容
+func (h *MdModelHandler) GetSQLByModelID(c context.Context, ctx *app.RequestContext) {
+	id := ctx.Param("id")
+	sql, err := h.modelService.GetSQLByModelID(id)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusNotFound, "SQL内容不存在")
+		return
+	}
+
+	utils.SuccessResponse(ctx, sql)
 }
 
 // UpdateModel 更新模型

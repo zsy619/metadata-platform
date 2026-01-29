@@ -26,6 +26,8 @@ type MdModelService interface {
 	BuildFromTable(req *BuildFromTableRequest) error
 	BuildFromView(req *BuildFromViewRequest) error
 	BuildFromSQL(req *BuildFromSQLRequest) error
+	UpdateSQLModel(req *UpdateSQLModelRequest) error
+	GetSQLByModelID(modelID string) (*model.MdModelSql, error)
 	TestSQL(req *TestSQLRequest) ([]FieldMapping, error)
 	// ModelField operations
 	GetFieldsByModelID(modelID string) ([]model.MdModelField, error)
@@ -56,6 +58,20 @@ type BuildFromSQLRequest struct {
 	SQLContent    string
 	Parameters    []SQLParameter
 	FieldMappings []FieldMapping
+	TenantID      string
+	UserID        string
+	Username      string
+}
+
+type UpdateSQLModelRequest struct {
+	ModelID       string                 `json:"model_id" binding:"required"`
+	ModelName     string                 `json:"model_name" binding:"required"`
+	ModelCode     string                 `json:"model_code" binding:"required"`
+	SQLContent    string                 `json:"sql_content" binding:"required"`
+	Parameters    []SQLParameter         `json:"parameters"`
+	FieldMappings []FieldMapping         `json:"field_mappings"`
+	IsPublic      bool                   `json:"is_public"`
+	Remark        string                 `json:"remark"`
 	TenantID      string
 	UserID        string
 	Username      string
@@ -160,6 +176,11 @@ func (s *mdModelService) Generate64Code() string {
 // GetModelParams 获取模型参数列表
 func (s *mdModelService) GetModelParams(modelID string) ([]model.MdModelParam, error) {
 	return s.modelParamRepo.GetByModelID(modelID)
+}
+
+// GetSQLByModelID 根据模型ID获取 SQL 内容
+func (s *mdModelService) GetSQLByModelID(modelID string) (*model.MdModelSql, error) {
+	return s.modelSqlRepo.GetByModelID(modelID)
 }
 
 // GetModelByID 根据ID获取模型定义
@@ -427,6 +448,117 @@ func (s *mdModelService) BuildFromSQL(req *BuildFromSQLRequest) error {
 			ID:       s.snowflake.GenerateIDString(),
 			TenantID: req.TenantID,
 			ModelID:  modelID,
+			Name:     param.Name,
+			Type:     param.Type,
+			Required: param.Required,
+			Default:  param.Default,
+			CreateID: req.UserID,
+			CreateBy: req.Username,
+			UpdateID: req.UserID,
+			UpdateBy: req.Username,
+		}
+		if err := s.modelParamRepo.Create(modelParam); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// UpdateSQLModel 更新 SQL 模型
+func (s *mdModelService) UpdateSQLModel(req *UpdateSQLModelRequest) error {
+	// 1. 获取原模型
+	mod, err := s.modelRepo.GetModelByID(req.ModelID)
+	if err != nil {
+		return errors.New("模型不存在")
+	}
+
+	// 2. 检查编码冲突
+	if mod.ModelCode != req.ModelCode {
+		existing, err := s.modelRepo.GetModelByCode(req.ModelCode)
+		if err == nil && existing != nil {
+			return errors.New("模型编码已存在")
+		}
+	}
+
+	// 3. 更新基本信息
+	mod.ModelName = req.ModelName
+	mod.ModelCode = req.ModelCode
+	mod.IsPublic = req.IsPublic
+	mod.Remark = req.Remark
+	paramsJson, _ := json.Marshal(req.Parameters)
+	mod.Parameters = string(paramsJson)
+	mod.UpdateID = req.UserID
+	mod.UpdateBy = req.Username
+
+	if err := s.modelRepo.UpdateModel(mod); err != nil {
+		return err
+	}
+
+	// 4. 更新 SQL 内容
+	// 先获取 sql 记录
+	modelSql, err := s.modelSqlRepo.GetByModelID(req.ModelID)
+	// 如果不存在，则创建
+	if err != nil || modelSql == nil {
+		// 创建
+		modelSql = &model.MdModelSql{
+			ID:       s.snowflake.GenerateIDString(),
+			TenantID: req.TenantID,
+			ModelID:  req.ModelID,
+			Content:  req.SQLContent,
+			CreateID: req.UserID,
+			CreateBy: req.Username,
+			UpdateID: req.UserID,
+			UpdateBy: req.Username,
+		}
+		if err := s.modelSqlRepo.Create(modelSql); err != nil {
+			return err
+		}
+	} else {
+		modelSql.Content = req.SQLContent
+		modelSql.UpdateID = req.UserID
+		modelSql.UpdateBy = req.Username
+		if err := s.modelSqlRepo.Update(modelSql); err != nil {
+			return err
+		}
+	}
+	
+	// 5. 更新字段 (删除原有，重新创建)
+	if err := s.fieldRepo.DeleteFieldsByModelID(req.ModelID); err != nil {
+		return err
+	}
+
+	for _, mapping := range req.FieldMappings {
+		field := &model.MdModelField{
+			ID:          s.snowflake.GenerateIDString(),
+			TenantID:    req.TenantID,
+			ModelID:     req.ModelID,
+			ColumnName:  mapping.ColumnName,
+			ColumnTitle: mapping.ShowTitle,
+			ShowTitle:   mapping.ShowTitle,
+			ShowWidth:   mapping.ShowWidth,
+			FieldType:   "string",
+			IsDeleted:   false,
+			CreateID:    req.UserID,
+			CreateBy:    req.Username,
+			UpdateID:    req.UserID,
+			UpdateBy:    req.Username,
+		}
+		if err := s.fieldRepo.CreateField(field); err != nil {
+			return err
+		}
+	}
+
+	// 6. 更新参数 (删除原有，重新创建)
+	if err := s.modelParamRepo.DeleteByModelID(req.ModelID); err != nil {
+		return err
+	}
+	
+	for _, param := range req.Parameters {
+		modelParam := &model.MdModelParam{
+			ID:       s.snowflake.GenerateIDString(),
+			TenantID: req.TenantID,
+			ModelID:  req.ModelID,
 			Name:     param.Name,
 			Type:     param.Type,
 			Required: param.Required,

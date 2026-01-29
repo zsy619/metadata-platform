@@ -194,7 +194,12 @@ const handleCreateCommand = (kind: number) => {
 
 // 编辑模型
 const handleEdit = (row: Model) => {
-    router.push(`/metadata/model/${row.id}/edit`)
+    const kind = row.modelKind ?? row.model_kind
+    if (kind === 1) {
+        router.push(`/metadata/model/edit-sql/${row.id}`)
+    } else {
+        router.push(`/metadata/model/${row.id}/edit`)
+    }
 }
 
 // 删除模型

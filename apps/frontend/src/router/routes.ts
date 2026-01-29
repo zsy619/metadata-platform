@@ -118,6 +118,12 @@ const routes: RouteRecordRaw[] = [
                         meta: { title: '创建SQL模型', hidden: true }
                     },
                     {
+                        path: 'edit-sql/:id',
+                        name: 'ModelEditSql',
+                        component: () => import('@/views/model/CreateSql.vue'),
+                        meta: { title: '编辑SQL模型', hidden: true }
+                    },
+                    {
                         path: ':id/edit',
                         name: 'ModelEdit',
                         component: () => import('@/views/model/Edit.vue'),
