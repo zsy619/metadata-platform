@@ -53,7 +53,12 @@
                 </el-button>
             </div>
             <div class="table-area">
-                <el-table v-loading="loading" :data="pagedDataSources" border stripe style="width: 100%; height: 100%;" @selection-change="handleSelectionChange">
+                <el-table v-loading="loading" :element-loading-text="loadingText" :data="pagedDataSources" border stripe style="width: 100%; height: 100%;" @selection-change="handleSelectionChange">
+                    <template #empty>
+                        <el-empty :description="searchQuery ? '未搜索到相关数据源' : '暂无数据源'">
+                            <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增数据源</el-button>
+                        </el-empty>
+                    </template>
                     <el-table-column type="selection" width="55" />
                     <el-table-column prop="conn_name" label="数据源名称" width="200" show-overflow-tooltip />
                     <el-table-column prop="conn_kind" label="类型" width="120" />
@@ -113,6 +118,7 @@ import { deleteConn, getConns, testConn } from '@/api/metadata'
 import DataPreview from '@/components/DataPreview.vue'
 import ObjectBrowser from '@/components/ObjectBrowser.vue'
 import type { MdConn } from '@/types/metadata'
+import { showDeleteConfirm } from '@/utils/confirm'
 import {
     Connection,
     DataLine,
@@ -123,12 +129,13 @@ import {
     RefreshLeft,
     Search
 } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const loading = ref(false)
+const loadingText = ref('加载中...')
 const dataSources = ref<MdConn[]>([])
 const searchQuery = ref('')
 const filterType = ref('')
@@ -174,6 +181,7 @@ const formatDateTime = (dateStr: string | undefined) => {
 }
 
 const fetchDataSources = async () => {
+    loadingText.value = '加载中...'
     loading.value = true
     try {
         const res: any = await getConns()
@@ -205,34 +213,31 @@ const handleCreate = () => router.push('/metadata/datasource/create')
 const handleEdit = (row: MdConn) => router.push(`/metadata/datasource/${row.id}/edit`)
 
 const handleDelete = (row: MdConn) => {
-    ElMessageBox.confirm(`确定要删除 "${row.conn_name}" 吗？`, '警告', {
-        type: 'warning'
-    }).then(async () => {
+    showDeleteConfirm(`确定要删除 "${row.conn_name}" 吗？`).then(async () => {
         try {
             await deleteConn(row.id)
             ElMessage.success('删除成功')
             fetchDataSources()
         } catch (error) {
-            ElMessage.error('删除失败')
+            console.error(error)
         }
     })
 }
 
 const handleBatchDelete = () => {
-    ElMessageBox.confirm(`确定要删除选中的 ${selectedRows.value.length} 个数据源吗？`, '警告', {
-        type: 'warning'
-    }).then(async () => {
+    showDeleteConfirm(`确定要删除选中的 ${selectedRows.value.length} 个数据源吗？`).then(async () => {
         try {
             await Promise.all(selectedRows.value.map(row => deleteConn(row.id)))
             ElMessage.success('批量删除成功')
             fetchDataSources()
         } catch (error) {
-            ElMessage.error('部分删除失败，请刷新重试')
+            console.error(error)
         }
     })
 }
 
 const handleTestConnection = async (row: MdConn) => {
+    loadingText.value = `正在测试与 "${row.conn_name}" 的连接...`
     loading.value = true
     try {
         const res = await testConn(row.id)

@@ -26,7 +26,10 @@
             </div>
             <!-- 表格区域 -->
             <div class="table-area">
-                <el-table v-loading="loading" :data="pagedFields" border stripe style="width: 100%; height: 100%">
+                <el-table v-loading="loading" :element-loading-text="loadingText" :data="pagedFields" border stripe style="width: 100%; height: 100%">
+                    <template #empty>
+                        <el-empty :description="searchQuery ? '未搜索到相关字段' : '暂无字段数据'" />
+                    </template>
                     <el-table-column prop="table_name" label="表名称" width="180" sortable show-overflow-tooltip />
                     <el-table-column prop="column_name" label="字段名称" width="180" sortable show-overflow-tooltip />
                     <el-table-column prop="column_type" label="类型" width="130" />
@@ -85,8 +88,9 @@
 <script setup lang="ts">
 import { deleteField, getConns, getFields, getTables, updateField } from '@/api/metadata'
 import type { MdTable, MdTableField } from '@/types/metadata'
+import { showDeleteConfirm } from '@/utils/confirm'
 import { Delete, Edit, List, RefreshLeft, Search } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -94,6 +98,7 @@ const route = useRoute()
 
 // 响应式数据
 const loading = ref(false)
+const loadingText = ref('加载中...')
 const selectedConn = ref('')
 const selectedTable = ref('')
 const connections = ref<any[]>([])
@@ -151,6 +156,7 @@ const handleCurrentChange = (val: number) => {
 
 // 核心搜索/加载函数
 const doSearch = async () => {
+    loadingText.value = '加载中...'
     loading.value = true
     try {
         console.log(`执行搜索: 数据源=${selectedConn.value}, 表=${selectedTable.value}`)
@@ -209,24 +215,20 @@ const handleEditSubmit = async () => {
 
 // 删除处理
 const handleDelete = (row: MdTableField) => {
-    ElMessageBox.confirm(
-        `确定要物理删除字段 "${row.column_name}" 的元数据吗？此操作不可恢复。`,
-        '风险提示',
-        {
-            confirmButtonText: '确定删除',
-            cancelButtonText: '取消',
-            type: 'warning'
-        }
-    ).then(async () => {
+    showDeleteConfirm(`确定要物理删除字段 "${row.column_name}" 的元数据吗？此操作不可恢复。`).then(async () => {
+        loadingText.value = '正在删除...'
+        loading.value = true
         try {
             await deleteField(row.id)
             ElMessage.success('删除成功')
-            doSearch() // 刷新列表
+            // doSearch will reset loading text
+            doSearch()
         } catch (error) {
             console.error('删除字段失败:', error)
             ElMessage.error('操作失败')
+            loading.value = false
         }
-    }).catch(() => { })
+    })
 }
 
 // 侦听器 - 联动逻辑

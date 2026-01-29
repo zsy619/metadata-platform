@@ -33,7 +33,10 @@
             </div>
             <!-- 表格区域 -->
             <div class="table-area">
-                <el-table v-loading="loading" :data="pagedTables" border stripe style="width: 100%; height: 100%">
+                <el-table v-loading="loading" :element-loading-text="loadingText" :data="pagedTables" border stripe style="width: 100%; height: 100%">
+                    <template #empty>
+                        <el-empty :description="searchQuery ? '未搜索到相关表/视图' : '暂无表/视图数据'" />
+                    </template>
                     <el-table-column prop="table_name" label="名称" min-width="150" sortable />
                     <el-table-column prop="table_title" label="标题" min-width="150" />
                     <el-table-column prop="table_comment" label="备注" min-width="200" />
@@ -160,12 +163,14 @@
 <script setup lang="ts">
 import { createField, createTable, deleteFieldsByTableId, deleteTable, getConns, getDBTables, getDBViews, getFieldsByTableId, getSchemas, getTablesByConnId, getTableStructureFromDB, updateTable } from '@/api/metadata'
 import type { MdTable, MdTableField } from '@/types/metadata'
+import { showConfirm, showDeleteConfirm } from '@/utils/confirm'
 import { ArrowDown, Delete, Edit, Grid, Refresh, RefreshLeft, Search, View } from '@element-plus/icons-vue'
-import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
+import { ElLoading, ElMessage } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
 
 // 响应式数据
 const loading = ref(false)
+const loadingText = ref('加载中...')
 const selectedConn = ref('')
 const connections = ref<any[]>([])
 const allTables = ref<MdTable[]>([])
@@ -251,6 +256,12 @@ const fetchDBObjects = async () => {
 const handleConfirmSelect = async () => {
     if (selectedValues.value.length === 0) {
         ElMessage.warning('请选择至少一项')
+        return
+    }
+
+    try {
+        await showConfirm(`确定要导入选中的 ${selectedValues.value.length} 个${dialogType.value === 'TABLE' ? '表' : '视图'}吗？`, '导入确认', 'info')
+    } catch {
         return
     }
 
@@ -422,6 +433,7 @@ const fetchConnections = async () => {
 // 获取表列表
 const fetchTables = async () => {
     if (!selectedConn.value) return
+    loadingText.value = '加载中...'
     loading.value = true
     try {
         const res: any = await getTablesByConnId(selectedConn.value)
@@ -487,10 +499,10 @@ const handleDetailSync = async () => {
     if (!currentTable.value.id) return
 
     try {
-        await ElMessageBox.confirm(
+        await showConfirm(
             '同步将重新从数据库读取字段结构并更新当前元数据, 确认继续?',
             '同步确认',
-            { type: 'info' }
+            'info'
         )
 
         detailSyncing.value = true
@@ -560,14 +572,10 @@ const doRefreshTable = async (table: any) => {
 
 // 刷新表字段 (主页面调用)
 const handleRefreshTable = async (row: MdTable) => {
-    ElMessageBox.confirm(
+    showConfirm(
         `刷新将删除现有字段并重新从数据库同步,确定要刷新表 "${row.table_title || row.table_name}" 吗?`,
         '刷新确认',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-        }
+        'warning'
     ).then(async () => {
         const loading = ElLoading.service({ text: '正在刷新...' })
         try {
@@ -652,17 +660,11 @@ const handleDelete = async (row: MdTable) => {
     }
 
     // 执行删除确认
-    ElMessageBox.confirm(
-        checkFailed
-            ? `无法获取该表的字段列表（可能数据异常），是否确定要强制删除表 "${row.table_title || row.table_name}"？`
-            : `确定要删除表 "${row.table_title || row.table_name}" 吗?`,
-        '删除确认',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: checkFailed ? 'error' : 'warning'
-        }
-    ).then(async () => {
+    const confirmMsg = checkFailed
+        ? `无法获取该表的字段列表（可能数据异常），是否确定要强制删除表 "${row.table_title || row.table_name}"？`
+        : `确定要删除表 "${row.table_title || row.table_name}" 吗?`
+
+    showDeleteConfirm(confirmMsg).then(async () => {
         try {
             await deleteTable(row.id as string)
             ElMessage.success('删除成功')

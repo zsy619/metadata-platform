@@ -55,7 +55,7 @@
                     </el-form-item>
                     <el-form-item :label="`选择${objectType === 'table' ? '表' : '视图'}`">
                         <el-tree v-loading="loadingTables" :data="tables" :props="tableTreeProps" node-key="id" ref="tableTree" @node-click="handleTableClick" style="max-height: 400px; overflow-y: auto">
-                            <template #default="{ node, data }">
+                            <template #default="{ data }">
                                 <span class="custom-tree-node">
                                     <span>{{ data.label }}</span>
                                     <span class="node-subtitle">{{ data.comment || '无描述' }}</span>

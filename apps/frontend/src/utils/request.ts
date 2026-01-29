@@ -1,7 +1,24 @@
 import router from '@/router'
+import { NProgress } from '@/utils/progress'
 import storage from '@/utils/storage'
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+
+// 请求计数器，用于控制 NProgress
+let requestCount = 0
+const startLoading = () => {
+    if (requestCount === 0) {
+        NProgress.start()
+    }
+    requestCount++
+}
+const endLoading = () => {
+    if (requestCount <= 0) return
+    requestCount--
+    if (requestCount === 0) {
+        NProgress.done()
+    }
+}
 
 // 创建Axios实例
 const request: AxiosInstance = axios.create({
@@ -15,6 +32,7 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
     (config: any) => {
+        startLoading()
         // 获取token
         const token = storage.get('token')
         if (token) {
@@ -24,6 +42,7 @@ request.interceptors.request.use(
         return config
     },
     (error: AxiosError) => {
+        endLoading()
         console.error('请求错误:', error)
         return Promise.reject(error)
     }
@@ -32,6 +51,7 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
     (response: AxiosResponse) => {
+        endLoading()
         const { data } = response
 
         // 如果是二进制数据或文件下载，直接返回
@@ -51,6 +71,7 @@ request.interceptors.response.use(
         return data
     },
     (error: any) => {
+        endLoading()
         console.error('响应错误:', error)
 
         let errorMessage = '网络请求失败，请稍后重试'
@@ -77,25 +98,27 @@ request.interceptors.response.use(
                     break
                 case 403:
                     errorMessage = '没有权限访问该资源'
+                    router.push('/403')
                     break
                 case 404:
                     errorMessage = '请求的资源不存在'
                     break
                 case 500:
                     errorMessage = '服务器内部错误'
+                    router.push('/500')
                     break
                 case 502:
-                    errorMessage = '网关错误'
-                    break
                 case 503:
-                    errorMessage = '服务暂时不可用'
-                    break
                 case 504:
-                    errorMessage = '网关超时'
+                    errorMessage = '服务不可用或系统维护中'
+                    router.push('/503')
                     break
                 default:
                     errorMessage = data?.message || `请求失败，状态码：${status}`
             }
+        } else if (error.code === 'ERR_NETWORK') {
+            errorMessage = '网络连接失败'
+            router.push('/network-error')
         } else if (error.request) {
             errorMessage = '网络请求超时，请检查网络连接'
         }

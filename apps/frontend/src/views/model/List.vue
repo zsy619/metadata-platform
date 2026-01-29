@@ -45,7 +45,10 @@
             </div>
             <!-- 表格区域 -->
             <div class="table-area">
-                <el-table v-loading="loading" :data="models" border style="width: 100%" height="100%">
+                <el-table v-loading="loading" :element-loading-text="loadingText" :data="models" border style="width: 100%" height="100%">
+                    <template #empty>
+                        <el-empty :description="searchQuery || filterKind ? '未搜索到相关模型' : '暂无模型数据'" />
+                    </template>
                     <el-table-column prop="model_name" label="模型名称" min-width="150" sortable />
                     <el-table-column prop="model_code" label="模型代码" min-width="150" sortable />
                     <el-table-column prop="model_kind" label="模型类型" width="120">
@@ -81,8 +84,9 @@
 <script setup lang="ts">
 import { deleteModel, getModels } from '@/api/model'
 import type { Model } from '@/types/metadata'
+import { showDeleteConfirm } from '@/utils/confirm'
 import { ArrowDown, Box, Delete, Plus, RefreshLeft, Search, View } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -90,6 +94,7 @@ const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
+const loadingText = ref('加载中...')
 const models = ref<Model[]>([])
 const searchQuery = ref('')
 const filterKind = ref(0)
@@ -117,6 +122,7 @@ onMounted(() => {
 
 // 获取模型列表
 const fetchModels = async () => {
+    loadingText.value = '加载中...'
     loading.value = true
     try {
         const response: any = await getModels({
@@ -190,19 +196,19 @@ const handleEdit = (row: Model) => {
 
 // 删除模型
 const handleDelete = (row: Model) => {
-    ElMessageBox.confirm(`确定要删除模型 "${row.model_name}" 吗？`, '警告', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-    }).then(async () => {
+    showDeleteConfirm(`确定要删除模型 "${row.model_name}" 吗？`).then(async () => {
+        loadingText.value = '正在删除...'
+        loading.value = true
         try {
             await deleteModel(row.id)
             ElMessage.success('删除成功')
+            // fetchModels will reset loading text to '加载中...'
             fetchModels()
         } catch (error) {
             console.error('删除模型失败:', error)
+            loading.value = false // only reset if error, success handled by fetch
         }
-    }).catch(() => { })
+    })
 }
 </script>
 <style scoped>

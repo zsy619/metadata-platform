@@ -80,7 +80,7 @@ const loadMetadata = async () => {
 const fetchData = async () => {
     loading.value = true
     try {
-        const res = await previewModelData(Number(modelId), { page: page.value, pageSize: pageSize.value, search: search.value })
+        const res = await previewModelData(String(modelId), { page: page.value, pageSize: pageSize.value, search: search.value })
         tableData.value = res.data || []
         total.value = res.total || 0
     } catch (e) {

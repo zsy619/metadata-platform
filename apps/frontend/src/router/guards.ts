@@ -1,10 +1,14 @@
 import { useUserStore } from '@/stores/user'
+import { NProgress } from '@/utils/progress'
 import storage from '@/utils/storage'
 import type { Router } from 'vue-router'
 
 export function setupGuards(router: Router) {
     // 路由前置守卫
     router.beforeEach(async (to, _from, next) => {
+        // 开启进度条
+        NProgress.start()
+
         // 设置页面标题
         document.title = (to.meta.title as string) || '元数据管理平台'
 
@@ -45,12 +49,12 @@ export function setupGuards(router: Router) {
     // 路由后置守卫
     router.afterEach(() => {
         // 关闭进度条
-        // NProgress.done()
+        NProgress.done()
     })
 
     // 错误处理
     router.onError((error) => {
-        // NProgress.done()
+        NProgress.done()
         console.error('路由错误:', error)
     })
 }

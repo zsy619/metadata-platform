@@ -219,6 +219,30 @@ const routes: RouteRecordRaw[] = [
         ]
     },
     {
+        path: '/403',
+        name: 'Forbidden',
+        component: () => import('@/views/error/403.vue'),
+        meta: { title: '无权限', hidden: true }
+    },
+    {
+        path: '/500',
+        name: 'ServerError',
+        component: () => import('@/views/error/500.vue'),
+        meta: { title: '服务器错误', hidden: true }
+    },
+    {
+        path: '/503',
+        name: 'ServiceUnavailable',
+        component: () => import('@/views/error/503.vue'),
+        meta: { title: '服务维护中', hidden: true }
+    },
+    {
+        path: '/network-error',
+        name: 'NetworkError',
+        component: () => import('@/views/error/NetworkError.vue'),
+        meta: { title: '网络错误', hidden: true }
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
         component: () => import('@/views/error/404.vue'),

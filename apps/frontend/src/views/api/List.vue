@@ -42,7 +42,12 @@
             </div>
             <!-- 表格区域 -->
             <div class="table-area">
-                <el-table v-loading="loading" :data="apis" border style="width: 100%" height="100%">
+                <el-table v-loading="loading" :element-loading-text="loadingText" :data="apis" border style="width: 100%" height="100%">
+                    <template #empty>
+                        <el-empty :description="searchQuery ? '未搜索到相关接口' : '暂无接口数据'">
+                            <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增接口</el-button>
+                        </el-empty>
+                    </template>
                     <el-table-column prop="apiName" label="接口名称" width="200" />
                     <el-table-column prop="apiCode" label="接口编码" width="180" />
                     <el-table-column prop="apiPath" label="接口路径" width="250">
@@ -103,6 +108,7 @@
 </template>
 <script setup lang="ts">
 import type { API } from '@/types/api'
+import { showDeleteConfirm } from '@/utils/confirm'
 import {
     Connection,
     Delete,
@@ -114,7 +120,7 @@ import {
     Search,
     View
 } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -122,6 +128,7 @@ const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
+const loadingText = ref('加载中...')
 const searchQuery = ref('')
 const filterType = ref('')
 const filterState = ref('')
@@ -137,6 +144,7 @@ onMounted(() => {
 
 // 获取接口列表
 const fetchAPIs = async () => {
+    loadingText.value = '加载中...'
     loading.value = true
     try {
         // TODO: 替换为真实 API 调用
@@ -248,14 +256,14 @@ const handleBatchGenerate = () => router.push('/api/batch-generate')
 const handleEdit = (row: API) => router.push(`/api/${row.apiID}/edit`)
 
 const handleDelete = (row: API) => {
-    ElMessageBox.confirm(`确定要删除接口 "${row.apiName}" 吗？`, '删除确认', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-    }).then(() => {
+    showDeleteConfirm(`确定要删除接口 "${row.apiName}" 吗？`).then(async () => {
+        loadingText.value = '正在删除...'
+        loading.value = true
+        // Simulate async delete
+        await new Promise(resolve => setTimeout(resolve, 500))
         ElMessage.success('删除成功')
-        fetchAPIs()
-    }).catch(() => { })
+        fetchAPIs() // resets loading
+    })
 }
 
 const handleTest = (row: API) => router.push(`/api/${row.apiID}/test`)
