@@ -40,6 +40,16 @@ func (s *mdTableFieldService) CreateField(field *model.MdTableField) error {
 	// 使用雪花算法生成唯一ID
 	field.ID = s.snowflake.GenerateIDString()
 
+	// 兜底逻辑：如果排序字段为0，自动计算下一个排序值
+	if field.Sort == 0 {
+		fields, err := s.fieldRepo.GetFieldsByTableID(field.TableID)
+		if err == nil {
+			field.Sort = len(fields) + 1
+		} else {
+			field.Sort = 1
+		}
+	}
+
 	// 创建字段
 	return s.fieldRepo.CreateField(field)
 }
@@ -73,6 +83,7 @@ func (s *mdTableFieldService) UpdateField(field *model.MdTableField) error {
 	existingField.IsAutoIncrement = field.IsAutoIncrement
 	existingField.DefaultValue = field.DefaultValue
 	existingField.ExtraInfo = field.ExtraInfo
+	existingField.Sort = field.Sort
 
 	return s.fieldRepo.UpdateField(existingField)
 }

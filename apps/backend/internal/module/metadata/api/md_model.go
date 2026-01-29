@@ -105,6 +105,26 @@ type CreateModelFieldRequest struct {
 	ShowWidth   int    `json:"show_width"`
 }
 
+// SaveVisualModelRequest 可视化构建保存模型请求
+type SaveVisualModelRequest struct {
+	ModelID      string               `json:"model_id"`
+	ConnID       string               `json:"conn_id" binding:"required"`
+	ModelName    string               `json:"model_name" binding:"required"`
+	ModelCode    string               `json:"model_code" binding:"required"`
+	ModelVersion string               `json:"model_version"`
+	ModelKind    int                  `json:"model_kind"`
+	IsPublic     bool                 `json:"is_public"`
+	Remark       string               `json:"remark"`
+	Parameters   string               `json:"parameters"`
+	Tables       []model.MdModelTable `json:"tables"`
+	Fields       []model.MdModelField `json:"fields"`
+	Joins        []model.MdModelJoin  `json:"joins"`
+	Wheres       []model.MdModelWhere `json:"wheres"`
+	Orders       []model.MdModelOrder `json:"orders"`
+	Groups       []model.MdModelGroup `json:"groups"`
+	Havings      []model.MdModelHaving `json:"havings"`
+}
+
 // UpdateModelFieldRequest 更新模型字段请求
 type UpdateModelFieldRequest struct {
 	ColumnTitle string `json:"column_title"`
@@ -591,4 +611,49 @@ func (h *MdModelHandler) DeleteModelField(c context.Context, ctx *app.RequestCon
 	}
 
 	utils.SuccessResponse(ctx, nil)
+}
+// SaveVisualModel 全量保存可视化构建模型
+func (h *MdModelHandler) SaveVisualModel(c context.Context, ctx *app.RequestContext) {
+	var req SaveVisualModelRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(consts.StatusBadRequest, map[string]interface{}{
+			"code":    400,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	tenantID, _ := ctx.Get("tenant_id")
+	userID, _ := ctx.Get("user_id")
+	username, _ := ctx.Get("username")
+
+	serviceReq := &service.SaveVisualModelRequest{
+		ModelID:      req.ModelID,
+		ConnID:       req.ConnID,
+		ModelName:    req.ModelName,
+		ModelCode:    req.ModelCode,
+		ModelVersion: req.ModelVersion,
+		ModelKind:    req.ModelKind,
+		IsPublic:     req.IsPublic,
+		Remark:       req.Remark,
+		Parameters:   req.Parameters,
+		Tables:       req.Tables,
+		Fields:       req.Fields,
+		Joins:        req.Joins,
+		Wheres:       req.Wheres,
+		Orders:       req.Orders,
+		Groups:       req.Groups,
+		Havings:      req.Havings,
+		TenantID:     strconv.FormatUint(uint64(tenantID.(uint)), 10),
+		UserID:       userID.(string),
+		Username:     username.(string),
+	}
+
+	res, err := h.modelService.SaveVisualModel(serviceReq)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, res)
 }

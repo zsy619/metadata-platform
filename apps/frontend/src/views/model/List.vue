@@ -50,7 +50,7 @@
                         <el-empty :description="searchQuery || filterKind ? '未搜索到相关模型' : '暂无模型数据'" />
                     </template>
                     <el-table-column prop="model_name" label="模型名称" min-width="150" sortable />
-                    <el-table-column prop="model_code" label="模型代码" min-width="150" sortable />
+                    <el-table-column prop="model_code" label="模型代码" min-width="180" sortable />
                     <el-table-column prop="model_kind" label="模型类型" width="120">
                         <template #default="scope">
                             <el-tag v-if="scope.row.model_kind === 1">SQL 语句</el-tag>
@@ -184,6 +184,8 @@ const handleDebouncedSearch = debounce(handleSearch, 500)
 const handleCreateCommand = (kind: number) => {
     if (kind === 1) {
         router.push('/metadata/model/create-sql')
+    } else if (kind === 2) {
+        router.push('/metadata/model/visual-create')
     } else {
         router.push({
             path: '/metadata/model/create',
@@ -221,21 +223,11 @@ const handleDelete = (row: Model) => {
 </script>
 <style scoped>
 /* ==================== 标准布局样式 ==================== */
-.container-padding {
-    padding: 20px;
-    padding-bottom: 0;
-    height: calc(100vh - 84px);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     flex-shrink: 0;
 }
 

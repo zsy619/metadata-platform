@@ -374,3 +374,30 @@ export const queryDataByCode = async (code: string, data: any): Promise<any> => 
         data
     })
 }
+
+/**
+ * 全量保存可视化模型
+ * @param data 模型数据
+ * @returns 保存结果
+ */
+export const saveVisualModel = async (data: any): Promise<Model> => {
+    return request({
+        url: '/api/metadata/models/save-visual',
+        method: 'post',
+        data
+    })
+}
+
+/**
+ * 预览可视化模型SQL
+ * @param data 模型数据
+ * @returns SQL预览结果
+ */
+export const previewVisualModelSQL = async (data: any, execute = false): Promise<any> => {
+    return request({
+        url: '/api/metadata/models/preview-visual',
+        method: 'post',
+        params: { execute },
+        data
+    })
+}

@@ -1,31 +1,33 @@
 <template>
-    <el-scrollbar wrap-class="scrollbar-wrapper">
-        <el-menu :default-active="activeMenu" :collapse="!sidebar.opened" :unique-opened="false" :collapse-transition="true" background-color="#FFFFFF" text-color="#303133" active-text-color="#4051B5" mode="vertical" class="sidebar-menu">
-            <div class="sidebar-logo-container" :class="{ 'collapse': !sidebar.opened }">
-                <!-- Logo Logic kept same -->
-                <transition name="sidebarLogoFade">
-                    <router-link v-if="!sidebar.opened" key="collapse" class="sidebar-logo-link" to="/">
-                        <div v-if="showLogo" class="sidebar-logo-container-inner">
-                            <AnimatedLogo class="sidebar-logo" />
-                        </div>
-                        <h1 class="sidebar-title" v-else>元数据平台</h1>
-                    </router-link>
-                    <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-                        <div v-if="showLogo" class="sidebar-logo-container-inner">
-                            <AnimatedLogo class="sidebar-logo" />
-                        </div>
-                        <h1 class="sidebar-title">元数据管理平台</h1>
-                    </router-link>
-                </transition>
-            </div>
-            <sidebar-item v-for="route in routes" :key="route.path" :item="route" :base-path="route.path" />
-        </el-menu>
-    </el-scrollbar>
+    <div class="sidebar-wrapper">
+        <el-scrollbar wrap-class="scrollbar-wrapper">
+            <el-menu :default-active="activeMenu" :collapse="!sidebar.opened" :unique-opened="false" :collapse-transition="true" background-color="#FFFFFF" text-color="#303133" active-text-color="#4051B5" mode="vertical" class="sidebar-menu">
+                <div class="sidebar-logo-container" :class="{ 'collapse': !sidebar.opened }">
+                    <transition name="sidebarLogoFade">
+                        <router-link v-if="!sidebar.opened" key="collapse" class="sidebar-logo-link" to="/">
+                            <div v-if="showLogo" class="sidebar-logo-container-inner">
+                                <AnimatedLogo class="sidebar-logo" />
+                            </div>
+                            <h1 class="sidebar-title" v-else>元数据平台</h1>
+                        </router-link>
+                        <router-link v-else key="expand" class="sidebar-logo-link" to="/">
+                            <div v-if="showLogo" class="sidebar-logo-container-inner">
+                                <AnimatedLogo class="sidebar-logo" />
+                            </div>
+                            <h1 class="sidebar-title">元数据管理平台</h1>
+                        </router-link>
+                    </transition>
+                </div>
+                <sidebar-item v-for="route in routes" :key="route.path" :item="route" :base-path="route.path" />
+            </el-menu>
+        </el-scrollbar>
+        <div v-if="sidebar.opened" class="drag-handle" @mousedown="startResize" @dblclick="resetWidth"></div>
+    </div>
 </template>
 <script setup lang="ts">
 import AnimatedLogo from '@/components/AnimatedLogo.vue'
 import { useAppStore } from '@/stores/app'
-import { computed } from 'vue'
+import { computed, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SidebarItem from './SidebarItem.vue'
 
@@ -34,6 +36,40 @@ const router = useRouter()
 const appStore = useAppStore()
 const sidebar = computed(() => appStore.sidebar)
 const showLogo = true
+
+// Resize logic
+const startResize = (e: MouseEvent) => {
+    e.preventDefault()
+    appStore.setResizing(true)
+    document.addEventListener('mousemove', doResize)
+    document.addEventListener('mouseup', stopResize)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none' // Prevent text selection
+}
+
+const doResize = (e: MouseEvent) => {
+    const newWidth = e.clientX
+    // Min width 210, Max width 600
+    if (newWidth >= 210 && newWidth <= 600) {
+        appStore.setSidebarWidth(newWidth)
+    }
+}
+
+const stopResize = () => {
+    appStore.setResizing(false)
+    document.removeEventListener('mousemove', doResize)
+    document.removeEventListener('mouseup', stopResize)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+}
+
+const resetWidth = () => {
+    appStore.setSidebarWidth(310)
+}
+
+onBeforeUnmount(() => {
+    stopResize()
+})
 
 // 获取所有路由作为菜单，实际应从 permissionStore 获取
 const routes = computed(() => router.options.routes)
@@ -47,6 +83,27 @@ const activeMenu = computed(() => {
 })
 </script>
 <style scoped>
+.sidebar-wrapper {
+    height: 100%;
+    position: relative;
+    width: 100%;
+}
+
+.drag-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 100;
+    transition: background-color 0.3s;
+}
+
+.drag-handle:hover {
+    background-color: rgba(64, 81, 181, 0.2);
+}
+
 .scrollbar-wrapper {
     height: 100%;
     overflow-x: hidden !important;
@@ -74,7 +131,7 @@ const activeMenu = computed(() => {
 }
 
 .sidebar-menu:not(.el-menu--collapse) {
-    width: 210px;
+    width: 100%;
 }
 
 .sidebar-logo-container {

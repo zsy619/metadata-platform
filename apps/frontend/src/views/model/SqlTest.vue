@@ -1,5 +1,5 @@
 <template>
-    <div class="sql-test-container">
+    <div class="sql-test-container container-padding">
         <div class="page-header">
             <div class="header-left">
                 <el-icon :size="24" class="page-icon">
@@ -9,10 +9,10 @@
             </div>
             <el-tag type="info" effect="plain">验证动态查询接口与参数配置</el-tag>
         </div>
-        <div class="content-wrapper">
-            <el-row :gutter="20" class="content-row">
+        <div class="content-wrapper" ref="wrapperRef">
+            <div class="content-body">
                 <!-- 左侧：配置区域 -->
-                <el-col :span="8">
+                <div class="config-panel" :style="{ width: leftWidth + 'px' }">
                     <el-card class="config-card" shadow="hover">
                         <template #header>
                             <div class="card-header">
@@ -67,9 +67,13 @@
                             </div>
                         </el-form>
                     </el-card>
-                </el-col>
+                </div>
+
+                <!-- 拖拽手柄 -->
+                <div class="resize-handle" @mousedown="startResize"></div>
+
                 <!-- 右侧：结果展示区域 -->
-                <el-col :span="16">
+                <div class="result-panel">
                     <el-card class="result-card" shadow="hover">
                         <template #header>
                             <div class="card-header">
@@ -108,17 +112,20 @@
                             <el-empty v-else description="暂无查询结果，请点击执行查询" />
                         </div>
                     </el-card>
-                </el-col>
-            </el-row>
+                </div>
+            </div>
         </div>
     </div>
 </template>
 <script setup lang="ts">
 import { getAllModels, getModelFields, getModelParams, queryDataByCode, queryDataById } from '@/api/model'
+import { useAppStore } from '@/stores/app'
 import type { Model } from '@/types/metadata'
 import { Download, Monitor, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
+
+const appStore = useAppStore()
 
 const models = ref<Model[]>([])
 const selectedModelId = ref('')
@@ -130,6 +137,33 @@ const results = ref<any[]>([])
 const total = ref(0)
 const queryTime = ref(0)
 const queryProgress = ref(0)
+const leftWidth = ref(400) // 初始左侧宽度
+const isResizing = ref(false)
+
+const startResize = (e: MouseEvent) => {
+    isResizing.value = true
+    document.addEventListener('mousemove', doResize)
+    document.addEventListener('mouseup', stopResize)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+}
+
+const doResize = (e: MouseEvent) => {
+    if (!isResizing.value) return
+    const sidebarWidth = appStore.sidebar.opened ? appStore.sidebar.width : 64
+    const newWidth = e.clientX - sidebarWidth - 20 // 20 为 AppMain 的 padding
+    if (newWidth > 300 && newWidth < 800) {
+        leftWidth.value = newWidth
+    }
+}
+
+const stopResize = () => {
+    isResizing.value = false
+    document.removeEventListener('mousemove', doResize)
+    document.removeEventListener('mouseup', stopResize)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+}
 
 const testForm = reactive({
     params: {} as Record<string, any>
@@ -344,18 +378,14 @@ const performQuery = async () => {
 </script>
 <style scoped>
 .sql-test-container {
-    padding: 20px;
-    height: calc(100vh - 84px);
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
+    background-color: var(--el-bg-color-page);
 }
 
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     flex-shrink: 0;
 }
 
@@ -422,12 +452,50 @@ const performQuery = async () => {
     min-height: 0;
 }
 
-.content-row {
+.content-body {
+    display: flex;
+    height: 100%;
+    gap: 0; /* 使用 resize-handle 代替 gap */
+}
+
+.config-panel {
+    flex-shrink: 0;
+    min-width: 300px;
     height: 100%;
 }
 
-.content-row>.el-col {
+.result-panel {
+    flex: 1;
+    min-width: 400px;
     height: 100%;
+    overflow: hidden;
+}
+
+.resize-handle {
+    width: 8px;
+    height: 100%;
+    cursor: col-resize;
+    background-color: transparent;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+    background-color: var(--el-color-primary-light-8);
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 30px;
+    background-color: var(--el-border-color);
 }
 
 .w-full {

@@ -6,8 +6,4 @@
 </template>
 <script setup lang="ts">
 </script>
-<style scoped>
-.container-padding {
-    padding: 20px;
-}
-</style>
+<style scoped></style>

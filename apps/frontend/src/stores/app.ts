@@ -6,7 +6,9 @@ export const useAppStore = defineStore('app', () => {
     // 状态
     const sidebar = ref({
         opened: storage.get('sidebarStatus') ?? true,
-        withoutAnimation: false
+        withoutAnimation: false,
+        width: storage.get('sidebarWidth') || 310,
+        isResizing: false
     })
 
     const device = ref('desktop')
@@ -28,6 +30,15 @@ export const useAppStore = defineStore('app', () => {
         storage.set('sidebarStatus', 0)
         sidebar.value.opened = false
         sidebar.value.withoutAnimation = withoutAnimation
+    }
+
+    const setSidebarWidth = (width: number) => {
+        sidebar.value.width = width
+        storage.set('sidebarWidth', width)
+    }
+
+    const setResizing = (isResizing: boolean) => {
+        sidebar.value.isResizing = isResizing
     }
 
     const toggleDevice = (d: string) => {
@@ -58,6 +69,8 @@ export const useAppStore = defineStore('app', () => {
         closeSidebar,
         toggleDevice,
         setTheme,
-        setLanguage
+        setLanguage,
+        setSidebarWidth,
+        setResizing
     }
 })

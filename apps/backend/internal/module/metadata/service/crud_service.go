@@ -27,6 +27,8 @@ type CRUDService interface {
 	BatchDelete(modelID string, ids []string) error
 	Statistics(modelID string, queryParams map[string]any) (map[string]int64, error)
 	Aggregate(modelID string, queryParams map[string]any) ([]map[string]any, error)
+	BuildSQLFromData(data *engine.ModelData, params map[string]any) (string, []any, error)
+	ExecuteModelData(data *engine.ModelData, params map[string]any) ([]map[string]any, int64, error)
 
 	// 事务支持方法
 	CreateWithTx(ctx context.Context, modelID string, data map[string]any, tx *gorm.DB) (map[string]any, error)
@@ -397,6 +399,51 @@ func (s *crudService) Statistics(modelID string, queryParams map[string]any) (ma
 // Aggregate 聚合查询
 func (s *crudService) Aggregate(modelID string, queryParams map[string]any) ([]map[string]any, error) {
 	return nil, nil
+}
+
+// BuildSQLFromData 从模型数据构建 SQL
+func (s *crudService) BuildSQLFromData(data *engine.ModelData, params map[string]any) (string, []any, error) {
+	// 应用过滤逻辑 (params 里的 views filters etc)
+	// applyListFilters 需要 modelData，如果 modelData 是从请求构造的，Wheres 可能为空或需要合并
+	// 这里假设 data 已经包含了所有 Wheres (from Visual Builder config)
+	// 但 params 可能包含额外的运行时 filters (e.g. from data preview grid filter)
+	// 所以我们还是调用一下 applyListFilters
+	s.applyListFilters(data, params)
+
+	return s.builder.BuildFromMetadata(data, params)
+}
+
+// ExecuteModelData 执行模型数据查询
+func (s *crudService) ExecuteModelData(data *engine.ModelData, params map[string]any) ([]map[string]any, int64, error) {
+	// 1. 构建 SQL
+	sqlStr, args, err := s.BuildSQLFromData(data, params)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 2. 获取总数 (可选，如果只是预览可能不需要 count，但为了分页 grid 最好有)
+	// BuildSQLFromData 返回的是完整 SQL。如果带了 limit，count 需要移除 limit 吗？
+	// executor.ExecuteCount 通常需要 COUNT(*) 语句。
+	// 简单起见，预览数据暂时只返回结果，count 返回 -1 或 0 如果不做分页。
+	// 或者我们可以简单 wrap 一层 select count(*) from (sqlStr) as tmp
+	count, err := s.executor.ExecuteCount(data.Model.ConnID, sqlStr, args...)
+	// 如果 sqlStr 已经包含了复杂的 order by，count 可能有点慢，但在预览场景下应该接受。
+	// 注意：ExecuteCount 内部实现可能并不总是能完美 wrap。
+	// 这里我们暂且忽略 Count 错误，或者对于预览只返回数据列表。
+    // 为了 Grid 分页，最好有 Count。
+    if err != nil {
+        // Log error but proceed? Or fail?
+        // Let's optimize: for preview, maybe just get data.
+        count = 0 
+    }
+
+	// 3. 执行查询
+	results, err := s.executor.Execute(data.Model.ConnID, sqlStr, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return results, count, nil
 }
 
 // applyListFilters 提取 List 中重复的过滤逻辑

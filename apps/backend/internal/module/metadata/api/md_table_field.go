@@ -38,6 +38,7 @@ type CreateFieldRequest struct {
 	IsAutoIncrement bool   `json:"is_auto_increment"`
 	DefaultValue    string `json:"default_value"`
 	ExtraInfo       string `json:"extra_info"`
+	Sort            int    `json:"sort"`
 }
 
 // UpdateFieldRequest 更新数据连接表字段请求结构
@@ -56,6 +57,7 @@ type UpdateFieldRequest struct {
 	IsAutoIncrement bool   `json:"is_auto_increment"`
 	DefaultValue    string `json:"default_value"`
 	ExtraInfo       string `json:"extra_info"`
+	Sort            int    `json:"sort"`
 }
 
 // CreateField 创建数据连接表字段
@@ -83,6 +85,7 @@ func (h *MdTableFieldHandler) CreateField(c context.Context, ctx *app.RequestCon
 		IsAutoIncrement: req.IsAutoIncrement,
 		DefaultValue:    req.DefaultValue,
 		ExtraInfo:       req.ExtraInfo,
+		Sort:            req.Sort,
 	}
 
 	// 调用服务层创建数据连接表字段
@@ -174,6 +177,9 @@ func (h *MdTableFieldHandler) UpdateField(c context.Context, ctx *app.RequestCon
 	}
 	if req.ExtraInfo != "" {
 		field.ExtraInfo = req.ExtraInfo
+	}
+	if req.Sort != 0 {
+		field.Sort = req.Sort
 	}
 
 	// 调用服务层更新数据连接表字段

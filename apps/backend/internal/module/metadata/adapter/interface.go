@@ -12,6 +12,7 @@ type ColumnInfo struct {
 	Comment       string      `json:"comment"`
 	IsPrimaryKey  bool        `json:"is_primary_key"`
 	IsAutoIncrement bool      `json:"is_auto_increment"`
+	Sort          int         `json:"sort"`
 }
 
 // TableInfo 表信息

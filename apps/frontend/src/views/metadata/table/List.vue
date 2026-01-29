@@ -138,6 +138,7 @@
                         </el-button>
                     </div>
                     <el-table :data="currentTableFields" border stripe size="small" height="400px">
+                        <el-table-column prop="sort" label="排序" width="70" align="center" />
                         <el-table-column prop="column_name" label="字段名称" min-width="150" />
                         <el-table-column prop="column_title" label="字段标题" min-width="150" />
                         <el-table-column prop="column_type" label="类型" width="120" />
@@ -338,7 +339,7 @@ const handleConfirmSelect = async () => {
                             default_value: col.default_value || col.column_default || '',
                             extra_info: col.extra || '',
                             state: 1,
-                            sort: index + 1
+                            sort: col.sort || index + 1
                         }
                         return createField(fieldData)
                     })
@@ -564,7 +565,7 @@ const doRefreshTable = async (table: any) => {
                 default_value: col.default_value || col.column_default || '',
                 extra_info: col.extra || '',
                 state: 1,
-                sort: index + 1
+                sort: col.sort || index + 1
             }
             return createField(fieldData)
         })
@@ -684,22 +685,11 @@ const handleDelete = async (row: MdTable) => {
 </script>
 <style scoped>
 /* ==================== 标准布局样式 ==================== */
-.container-padding {
-    padding-top: 20px;
-    padding-bottom: 0;
-    padding-left: 0;
-    padding-right: 0;
-    height: calc(100vh - 70px);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .page-title {

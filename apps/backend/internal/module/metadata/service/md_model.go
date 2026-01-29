@@ -11,6 +11,7 @@ import (
 	"metadata-platform/internal/module/metadata/repository"
 	"metadata-platform/internal/utils"
 	"strings"
+	"time"
 )
 
 // MdModelService 模型定义服务接口
@@ -38,6 +39,29 @@ type MdModelService interface {
 	Generate32Code() string
 	Generate64Code() string
 	GetModelParams(modelID string) ([]model.MdModelParam, error)
+	SaveVisualModel(req *SaveVisualModelRequest) (*model.MdModel, error)
+}
+
+type SaveVisualModelRequest struct {
+	ModelID      string
+	ConnID       string
+	ModelName    string
+	ModelCode    string
+	ModelVersion string
+	ModelKind    int
+	IsPublic     bool
+	Remark       string
+	Parameters   string
+	Tables       []model.MdModelTable
+	Fields       []model.MdModelField
+	Joins        []model.MdModelJoin
+	Wheres       []model.MdModelWhere
+	Orders       []model.MdModelOrder
+	Groups       []model.MdModelGroup
+	Havings      []model.MdModelHaving
+	TenantID     string
+	UserID       string
+	Username     string
 }
 
 type BuildFromViewRequest struct {
@@ -624,4 +648,124 @@ func mapDataType(dbType string) string {
 	default:
 		return "string"
 	}
+}
+
+// SaveVisualModel 全量保存可视化模型
+func (s *mdModelService) SaveVisualModel(req *SaveVisualModelRequest) (*model.MdModel, error) {
+	// 1. 准备模型主表数据
+	mdModel := &model.MdModel{
+		ID:           req.ModelID,
+		TenantID:     req.TenantID,
+		ParentID:     "0",
+		ConnID:       req.ConnID,
+		ModelName:    req.ModelName,
+		ModelCode:    req.ModelCode,
+		ModelVersion: req.ModelVersion,
+		ModelKind:    req.ModelKind,
+		ModelLogo:    "", // logo 暂时留空
+		IsPublic:     req.IsPublic,
+		Remark:       req.Remark,
+		Parameters:   req.Parameters,
+		IsLocked:     false,
+		IsDeleted:    false,
+		UpdateID:     req.UserID,
+		UpdateBy:     req.Username,
+	}
+
+	// 如果是新建，生成ID
+	if mdModel.ID == "" {
+		mdModel.ID = s.snowflake.GenerateIDString()
+		mdModel.CreateID = req.UserID
+		mdModel.CreateBy = req.Username
+		mdModel.CreateAt = time.Now()
+	} else {
+		// 如果是更新，尝试获取原记录以保留 Create 信息
+		oldModel, err := s.modelRepo.GetModelByID(req.ModelID)
+		if err == nil && oldModel != nil {
+			mdModel.CreateID = oldModel.CreateID
+			mdModel.CreateBy = oldModel.CreateBy
+			mdModel.CreateAt = oldModel.CreateAt
+		}
+	}
+	mdModel.UpdateAt = time.Now()
+
+	// 2. 准备关联表数据
+	// 需要为子表项生成/补全 ID (如果是新加的)
+	// 同时补全关联外键 ModelID
+	for i := range req.Tables {
+		if req.Tables[i].ID == "" || strings.HasPrefix(req.Tables[i].ID, "tmp_") { // 假设前端临时ID
+			req.Tables[i].ID = s.snowflake.GenerateIDString()
+		}
+		req.Tables[i].ModelID = mdModel.ID
+		req.Tables[i].TenantID = req.TenantID
+		req.Tables[i].CreateID = req.UserID
+		req.Tables[i].CreateBy = req.Username
+	}
+
+	for i := range req.Fields {
+		if req.Fields[i].ID == "" || strings.HasPrefix(req.Fields[i].ID, "tmp_") {
+			req.Fields[i].ID = s.snowflake.GenerateIDString()
+		}
+		req.Fields[i].ModelID = mdModel.ID
+		req.Fields[i].TenantID = req.TenantID
+		req.Fields[i].CreateID = req.UserID
+		req.Fields[i].CreateBy = req.Username
+	}
+
+	for i := range req.Joins {
+		if req.Joins[i].ID == "" || strings.HasPrefix(req.Joins[i].ID, "tmp_") {
+			req.Joins[i].ID = s.snowflake.GenerateIDString()
+		}
+		req.Joins[i].ModelID = mdModel.ID
+		req.Joins[i].TenantID = req.TenantID
+		req.Joins[i].CreateID = req.UserID
+		req.Joins[i].CreateBy = req.Username
+	}
+
+	for i := range req.Wheres {
+		if req.Wheres[i].ID == "" || strings.HasPrefix(req.Wheres[i].ID, "tmp_") {
+			req.Wheres[i].ID = s.snowflake.GenerateIDString()
+		}
+		req.Wheres[i].ModelID = mdModel.ID
+		req.Wheres[i].TenantID = req.TenantID
+		req.Wheres[i].CreateID = req.UserID
+		req.Wheres[i].CreateBy = req.Username
+	}
+
+	for i := range req.Orders {
+		if req.Orders[i].ID == "" || strings.HasPrefix(req.Orders[i].ID, "tmp_") {
+			req.Orders[i].ID = s.snowflake.GenerateIDString()
+		}
+		req.Orders[i].ModelID = mdModel.ID
+		req.Orders[i].TenantID = req.TenantID
+		req.Orders[i].CreateID = req.UserID
+		req.Orders[i].CreateBy = req.Username
+	}
+
+	for i := range req.Groups {
+		if req.Groups[i].ID == "" || strings.HasPrefix(req.Groups[i].ID, "tmp_") {
+			req.Groups[i].ID = s.snowflake.GenerateIDString()
+		}
+		req.Groups[i].ModelID = mdModel.ID
+		req.Groups[i].TenantID = req.TenantID
+		req.Groups[i].CreateID = req.UserID
+		req.Groups[i].CreateBy = req.Username
+	}
+
+	for i := range req.Havings {
+		if req.Havings[i].ID == "" || strings.HasPrefix(req.Havings[i].ID, "tmp_") {
+			req.Havings[i].ID = s.snowflake.GenerateIDString()
+		}
+		req.Havings[i].ModelID = mdModel.ID
+		req.Havings[i].TenantID = req.TenantID
+		req.Havings[i].CreateID = req.UserID
+		req.Havings[i].CreateBy = req.Username
+	}
+
+	// 3. 调用 Repo 执行全量保存
+	if err := s.modelRepo.SaveVisualModel(mdModel, req.Tables, req.Fields, req.Joins, req.Wheres, req.Orders, req.Groups, req.Havings); err != nil {
+		return nil, err
+	}
+
+	return mdModel, nil
 }

@@ -46,6 +46,10 @@ func (m *MockModelRepo) GetAllModels(tenantID string) ([]model.MdModel, error) {
 	return m.Called(tenantID).Get(0).([]model.MdModel), m.Called(tenantID).Error(1)
 }
 
+func (m *MockModelRepo) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
+	return m.Called(md, tables, fields, joins, wheres, orders, groups, havings).Error(0)
+}
+
 // MockModelSqlRepo
 type MockModelSqlRepo struct {
 	mock.Mock
@@ -200,5 +204,41 @@ func TestMdModelService_BuildFromTable(t *testing.T) {
 		mockConnSvc.AssertExpectations(t)
 		mockModelRepo.AssertExpectations(t)
 		mockFieldRepo.AssertExpectations(t)
+	})
+}
+
+func TestMdModelService_SaveVisualModel(t *testing.T) {
+	mockModelRepo := new(MockModelRepo)
+	mockFieldRepo := new(MockFieldRepo)
+	mockModelSqlRepo := new(MockModelSqlRepo)
+	mockModelParamRepo := new(MockModelParamRepo)
+	mockConnSvc := new(MockConnService)
+	svc := NewMdModelService(mockModelRepo, mockFieldRepo, mockModelSqlRepo, mockModelParamRepo, mockConnSvc)
+
+	t.Run("Success", func(t *testing.T) {
+		req := &SaveVisualModelRequest{
+			ModelID:   "m1",
+			ConnID:    "c1",
+			ModelName: "Visual Model",
+			ModelCode: "v_model",
+			Groups: []model.MdModelGroup{
+				{ColumnName: "status"},
+			},
+			Havings: []model.MdModelHaving{
+				{Func: "COUNT(*)", Operator2: ">", Value1: "10"},
+			},
+			TenantID: "t1",
+			UserID:   "u1",
+			Username: "admin",
+		}
+
+		mockModelRepo.On("SaveVisualModel", mock.AnythingOfType("*model.MdModel"), mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+		res, err := svc.SaveVisualModel(req)
+		assert.NoError(t, err)
+		assert.NotNil(t, res)
+		assert.Equal(t, "m1", res.ID)
+
+		mockModelRepo.AssertExpectations(t)
 	})
 }

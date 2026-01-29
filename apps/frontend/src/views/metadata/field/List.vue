@@ -30,6 +30,7 @@
                     <template #empty>
                         <el-empty :description="searchQuery ? '未搜索到相关字段' : '暂无字段数据'" />
                     </template>
+                    <el-table-column prop="sort" label="排序" width="80" align="center" />
                     <el-table-column prop="table_name" label="表名称" width="180" sortable show-overflow-tooltip />
                     <el-table-column prop="column_name" label="字段名称" width="180" sortable show-overflow-tooltip />
                     <el-table-column prop="column_type" label="类型" width="130" />
@@ -300,22 +301,12 @@ const fetchTables = async () => {
 }
 </script>
 <style scoped>
-.container-padding {
-    padding-top: 20px;
-    padding-bottom: 0;
-    padding-left: 0;
-    padding-right: 0;
-    height: calc(100vh - 70px);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
+/* ==================== 标准布局样式 ==================== */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .page-title {

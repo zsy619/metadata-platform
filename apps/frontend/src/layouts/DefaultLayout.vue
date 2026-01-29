@@ -27,7 +27,23 @@ const classObj = computed(() => {
         hideSidebar: !sidebar.value.opened,
         openSidebar: sidebar.value.opened,
         withoutAnimation: sidebar.value.withoutAnimation,
-        mobile: device.value === 'mobile'
+        mobile: device.value === 'mobile',
+        'no-transition': sidebar.value.isResizing
+    }
+})
+
+// CSS Variables Sync - Self-healing mechanism
+import { watchEffect } from 'vue'
+watchEffect(() => {
+    const root = document.documentElement
+    if (device.value === 'mobile') {
+        root.style.setProperty('--sidebar-width', '210px')
+        root.style.setProperty('--main-margin', '0px')
+    } else {
+        const width = sidebar.value.opened ? sidebar.value.width + 'px' : '64px'
+        // We set both the actual sidebar width and the margin needed for the content
+        root.style.setProperty('--sidebar-width', sidebar.value.opened ? sidebar.value.width + 'px' : '64px')
+        root.style.setProperty('--main-margin', width)
     }
 })
 
@@ -71,6 +87,11 @@ onBeforeUnmount(() => {
 })
 </script>
 <style scoped>
+:root {
+    --sidebar-width: 260px;
+    --main-margin: 260px;
+}
+
 .app-wrapper {
     position: relative;
     height: 100%;
@@ -80,7 +101,7 @@ onBeforeUnmount(() => {
 
 .sidebar-container {
     transition: width 0.3s;
-    width: 210px !important;
+    width: var(--sidebar-width);
     background-color: #FFFFFF;
     height: 100%;
     position: fixed;
@@ -93,12 +114,14 @@ onBeforeUnmount(() => {
 }
 
 .main-container {
+    flex: 1;
+    /* Force fill remaining space */
     min-height: 100%;
     transition: margin-left 0.3s;
-    margin-left: 210px;
-    width: 100%;
+    margin-left: var(--main-margin);
     position: relative;
     background-color: #f0f2f5;
+    overflow-x: hidden;
 }
 
 .fixed-header {
@@ -109,14 +132,6 @@ onBeforeUnmount(() => {
     transition: width 0.3s;
 }
 
-.hideSidebar .sidebar-container {
-    width: 64px !important;
-}
-
-.hideSidebar .main-container {
-    margin-left: 64px;
-}
-
 /* mobile responsive */
 .mobile .main-container {
     margin-left: 0px;
@@ -124,7 +139,7 @@ onBeforeUnmount(() => {
 
 .mobile .sidebar-container {
     transition: transform 0.3s;
-    width: 210px !important;
+    width: 210px;
 }
 
 .mobile.hideSidebar .sidebar-container {
@@ -143,20 +158,20 @@ onBeforeUnmount(() => {
     z-index: 999;
 }
 
-.fixed-header {
-    position: fixed;
-    top: 0;
-    right: 0;
-    z-index: 9;
-    width: calc(100% - 210px);
-    transition: width 0.3s;
-}
+/* Duplicate fixed-header removed - using sticky defined above */
 
-.hideSidebar .fixed-header {
+
+/* .hideSidebar .fixed-header {
     width: calc(100% - 64px)
-}
+} */
 
 .mobile .fixed-header {
     width: 100%;
+}
+
+.no-transition .sidebar-container,
+.no-transition .main-container,
+.no-transition .fixed-header {
+    transition: none !important;
 }
 </style>

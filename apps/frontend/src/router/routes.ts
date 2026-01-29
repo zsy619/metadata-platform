@@ -68,7 +68,7 @@ const routes: RouteRecordRaw[] = [
                                 path: 'list',
                                 name: 'MetadataTableList',
                                 component: () => import('@/views/metadata/table/List.vue'),
-                                meta: { title: '表与视图列表', icon: 'List' }
+                                meta: { title: '表视图列表', icon: 'List' }
                             }
                         ]
                     },
@@ -110,6 +110,18 @@ const routes: RouteRecordRaw[] = [
                         name: 'ModelCreate',
                         component: () => import('@/views/model/Create.vue'),
                         meta: { title: '创建模型', hidden: true }
+                    },
+                    {
+                        path: 'visual-create',
+                        name: 'ModelVisualCreate',
+                        component: () => import('@/views/model/VisualCreate.vue'),
+                        meta: { title: '可视化创建模型', hidden: true }
+                    },
+                    {
+                        path: 'visual-edit/:id',
+                        name: 'ModelVisualEdit',
+                        component: () => import('@/views/model/VisualCreate.vue'),
+                        meta: { title: '可视化编辑模型', hidden: true }
                     },
                     {
                         path: 'create-sql',

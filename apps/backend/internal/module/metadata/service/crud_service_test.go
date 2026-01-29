@@ -36,6 +36,10 @@ func (m *MockMdModelRepo) GetModels(tenantID string, offset, limit int, search s
 }
 func (m *MockMdModelRepo) GetAllModels(tenantID string) ([]model.MdModel, error) { return nil, nil }
 
+func (m *MockMdModelRepo) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
+	return m.Called(md, tables, fields, joins, wheres, orders, groups, havings).Error(0)
+}
+
 type MockMdConnRepo struct{ mock.Mock }
 
 func (m *MockMdConnRepo) CreateConn(conn *model.MdConn) error { return nil }
@@ -75,7 +79,7 @@ func TestCRUDService_Lifecycle(t *testing.T) {
 	queryTemplateRepo := repository.NewMdQueryTemplateRepository(metaDB)
 	queryConditionRepo := repository.NewMdQueryConditionRepository(metaDB)
 	queryTemplateService := NewQueryTemplateService(queryTemplateRepo, queryConditionRepo)
-	
+
 	// Create Audit logging tables in metaDB for testing
 	audit.Migrate(metaDB)
 	auditSvc := auditService.NewAuditService(metaDB, nil) // Use metaDB for audit logs in test, queue nil

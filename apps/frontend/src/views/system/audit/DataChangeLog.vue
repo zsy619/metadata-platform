@@ -214,21 +214,12 @@ onMounted(() => {
 </script>
 <style scoped>
 /* ==================== 标准布局样式 ==================== */
-.container-padding {
-    padding: 20px;
-    padding-bottom: 0;
-    height: calc(100vh - 84px);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
+/* ==================== 标准布局样式 ==================== */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     flex-shrink: 0;
 }
 

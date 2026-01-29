@@ -21,14 +21,14 @@ const cachedViews = computed(() => [])
     min-height: calc(100vh - 50px);
     width: 100%;
     position: relative;
+    padding: 0;
     overflow: hidden;
-    padding: 20px;
     background-color: var(--el-bg-color-page);
 }
 
-.fixed-header+.app-main {
+/* .fixed-header+.app-main {
     padding-top: 50px;
-}
+} */
 
 /* fade-transform */
 .fade-transform-leave-active,

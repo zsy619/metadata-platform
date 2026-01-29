@@ -42,14 +42,11 @@ const handleSubmit = async (formData: Partial<MdConn>) => {
 }
 </script>
 <style scoped>
-.container-padding {
-    padding: 20px;
-}
-
+/* ==================== 标准布局样式 ==================== */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 </style>

@@ -17,6 +17,7 @@ type MdModelRepository interface {
 	GetModelsByConnID(connID string) ([]model.MdModel, error)
 	GetModels(tenantID string, offset, limit int, search string, modelKind int) ([]model.MdModel, int64, error)
 	GetAllModels(tenantID string) ([]model.MdModel, error)
+	SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error
 }
 
 // mdModelRepository 模型定义仓库实现
@@ -141,4 +142,69 @@ func (r *mdModelRepository) GetAllModels(tenantID string) ([]model.MdModel, erro
 	var models []model.MdModel
 	err := r.db.Where("tenant_id = ? AND is_deleted = ?", tenantID, false).Order("create_at DESC").Find(&models).Error
 	return models, err
+}
+// SaveVisualModel 全量事务保存可视化模型相关配置
+func (r *mdModelRepository) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. 保存/更新模型主表
+		if err := tx.Save(md).Error; err != nil {
+			return err
+		}
+
+		// 2. 清理旧的关联记录
+		relatedModels := []interface{}{
+			&model.MdModelTable{},
+			&model.MdModelField{},
+			&model.MdModelJoin{},
+			&model.MdModelWhere{},
+			&model.MdModelOrder{},
+			&model.MdModelGroup{},
+			&model.MdModelHaving{},
+			// 对可视化模型构建器，我们暂时只管理这几张表。其它如 enhancement/limit 可根据需要后续加入。
+		}
+		for _, m := range relatedModels {
+			if err := tx.Where("model_id = ?", md.ID).Delete(m).Error; err != nil {
+				return err
+			}
+		}
+
+		// 3. 批量插入新记录 (如果存在)
+		if len(tables) > 0 {
+			if err := tx.Create(&tables).Error; err != nil {
+				return err
+			}
+		}
+		if len(fields) > 0 {
+			if err := tx.Create(&fields).Error; err != nil {
+				return err
+			}
+		}
+		if len(joins) > 0 {
+			if err := tx.Create(&joins).Error; err != nil {
+				return err
+			}
+		}
+		if len(wheres) > 0 {
+			if err := tx.Create(&wheres).Error; err != nil {
+				return err
+			}
+		}
+		if len(orders) > 0 {
+			if err := tx.Create(&orders).Error; err != nil {
+				return err
+			}
+		}
+		if len(groups) > 0 {
+			if err := tx.Create(&groups).Error; err != nil {
+				return err
+			}
+		}
+		if len(havings) > 0 {
+			if err := tx.Create(&havings).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }

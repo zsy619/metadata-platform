@@ -134,6 +134,8 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		modelGroup.GET("/:id", modelHandler.GetModelByID)
 		modelGroup.PUT("/:id", modelHandler.UpdateModel)
 		modelGroup.DELETE("/:id", modelHandler.DeleteModel)
+		modelGroup.POST("/save-visual", modelHandler.SaveVisualModel)
+		modelGroup.POST("/preview-visual", queryHandler.PreviewVisualModelSQL)
 
 		// 模型字段路由
 		modelGroup.GET("/:id/fields", modelHandler.GetFieldsByModelID)

@@ -100,11 +100,12 @@
             </div>
         </el-card>
         <!-- Object Browser Dialog -->
-        <el-dialog v-model="browserVisible" :title="`浏览数据源: ${currentConn?.conn_name}`" width="80%" top="5vh" custom-class="browser-dialog" destroy-on-close>
+        <el-dialog v-model="browserVisible" :title="`浏览数据源: ${currentConn?.conn_name}`" width="90%" top="5vh" custom-class="browser-dialog" destroy-on-close>
             <div class="browser-container">
-                <div class="browser-sidebar">
+                <div class="browser-sidebar" :style="{ width: browserSidebarWidth + 'px' }">
                     <ObjectBrowser v-if="currentConn" :data-source-id="currentConn.id" @select-table="handleSelectTable" @select-view="handleSelectView" />
                 </div>
+                <div class="resize-handle" @mousedown="startBrowserResize"></div>
                 <div class="browser-main">
                     <DataPreview v-if="selectedTable && currentConn" :conn-id="currentConn.id" :table-name="selectedTable" />
                     <el-empty v-else description="请从左侧选择表或视图查看数据" />
@@ -146,6 +147,38 @@ const selectedRows = ref<MdConn[]>([])
 const browserVisible = ref(false)
 const currentConn = ref<MdConn>()
 const selectedTable = ref('')
+const browserSidebarWidth = ref(300)
+const isBrowserResizing = ref(false)
+
+const startBrowserResize = (e: MouseEvent) => {
+    isBrowserResizing.value = true
+    document.addEventListener('mousemove', doBrowserResize)
+    document.addEventListener('mouseup', stopBrowserResize)
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+}
+
+const doBrowserResize = (e: MouseEvent) => {
+    if (!isBrowserResizing.value) return
+    // 对于 Dialog，我们简化计算，因为它是居中的
+    // 但更稳妥的是基于 Offset
+    const container = document.querySelector('.browser-container')
+    if (container) {
+        const rect = container.getBoundingClientRect()
+        const newWidth = e.clientX - rect.left
+        if (newWidth > 200 && newWidth < 600) {
+            browserSidebarWidth.value = newWidth
+        }
+    }
+}
+
+const stopBrowserResize = () => {
+    isBrowserResizing.value = false
+    document.removeEventListener('mousemove', doBrowserResize)
+    document.removeEventListener('mouseup', stopBrowserResize)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+}
 
 // Pagination
 const currentPage = ref(1)
@@ -277,18 +310,7 @@ onMounted(() => {
 })
 </script>
 <style scoped>
-.container-padding {
-    padding-top: 20px;
-    padding-bottom: 0;
-    padding-left: 0;
-    padding-right: 0;
-    height: calc(100vh - 70px);
-    /* 100vh - 50px(Header) - 20px(AppMain Bottom Padding) */
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
+/* ==================== 标准布局样式 ==================== */
 .main-card {
     flex: 1;
     display: flex;
@@ -353,13 +375,42 @@ onMounted(() => {
 }
 
 .browser-sidebar {
-    width: 300px;
+    flex-shrink: 0;
     border-right: 1px solid var(--el-border-color);
+    background-color: #f8f9fa;
+}
+
+.resize-handle {
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    background-color: transparent;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+    background-color: var(--el-color-primary-light-8);
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 30px;
+    background-color: var(--el-border-color);
 }
 
 .browser-main {
     flex: 1;
     overflow: hidden;
+    background-color: #fff;
 }
 
 /* Deep selector for dialog body to maximize space */

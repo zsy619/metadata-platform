@@ -4,40 +4,40 @@ import "time"
 
 // MdModelWhere 模型-where条件模型
 type MdModelWhere struct {
-	ID                string    `json:"id" gorm:"primary_key;type:varchar(64);comment:主键ID"`
-	TenantID          string    `json:"tenant_id" gorm:"index;type:varchar(64);not null;default:'0';comment:租户ID"`
-	ModelID           string    `json:"model_id" gorm:"index;type:varchar(64);not null;default:'0';comment:模型ID"`
-	Operator1         string    `json:"operator1" gorm:"size:64;not null;default:''"`
-	Brackets1         string    `json:"brackets1" gorm:"size:64;not null;default:''"`
-	TableSchema       string    `json:"table_schema" gorm:"size:64;default:''"`
-	TableID           string    `json:"table_id" gorm:"type:varchar(64);not null;default:'0'"`
-	TableNameStr      string    `json:"table_name" gorm:"column:table_name;size:256;not null;default:''"`
-	TableTitle        string    `json:"table_title" gorm:"size:256;default:''"`
-	ColumnID          string    `json:"column_id" gorm:"type:varchar(64);not null;default:'0'"`
-	ColumnName        string    `json:"column_name" gorm:"size:256;default:''"`
-	ColumnTitle       string    `json:"column_title" gorm:"size:256;default:''"`
-	Func              string    `json:"func" gorm:"size:256;not null;default:''"`
-	Operator2         string    `json:"operator2" gorm:"size:64;not null;default:''"`
-	WhereTableSchema  string    `json:"where_table_schema" gorm:"size:64;default:''"`
-	WhereTableID      string    `json:"where_table_id" gorm:"type:varchar(64);not null;default:'0'"`
-	WhereTableNameStr string    `json:"where_table_name" gorm:"column:where_table_name;size:256;not null;default:''"`
-	WhereTableTitle   string    `json:"where_table_title" gorm:"size:256;default:''"`
-	WhereColumnID     string    `json:"where_column_id" gorm:"type:varchar(64);not null;default:'0'"`
-	WhereColumnName   string    `json:"where_column_name" gorm:"size:256;not null;default:''"`
-	WhereColumnTitle  string    `json:"where_column_title" gorm:"size:256;not null;default:''"`
-	WhereFunc         string    `json:"where_func" gorm:"size:64;not null;default:''"`
-	Value1            string    `json:"value1" gorm:"size:128;not null;default:''"`
-	Value2            string    `json:"value2" gorm:"size:128;not null;default:''"`
-	ParamKey          string    `json:"param_key" gorm:"size:128;not null;default:''"`
-	Brackets2         string    `json:"brackets2" gorm:"size:64;not null;default:''"`
-	Remark            string    `json:"remark" gorm:"size:1024;default:'';comment:备注"`
-	IsDeleted         bool      `json:"is_deleted" gorm:"default:false;comment:是否删除"`
-	CreateID          string    `json:"create_id" gorm:"size:64;default:'0';comment:创建人ID"`
-	CreateBy          string    `json:"create_by" gorm:"size:64;default:'';comment:创建人"`
-	CreateAt          time.Time `json:"create_at" gorm:"autoCreateTime;comment:创建时间"`
-	UpdateID          string    `json:"update_id" gorm:"size:64;default:'0';comment:更新人ID"`
-	UpdateBy          string    `json:"update_by" gorm:"size:64;default:'';comment:更新人"`
-	UpdateAt          time.Time `json:"update_at" gorm:"autoUpdateTime;comment:更新时间"`
+	ID                string    `json:"id" form:"id" gorm:"primary_key;type:varchar(64);comment:主键ID"`
+	TenantID          string    `json:"tenant_id" form:"tenant_id" gorm:"index;type:varchar(64);not null;default:'0';comment:租户ID"`
+	ModelID           string    `json:"model_id" form:"model_id" gorm:"index;type:varchar(64);not null;default:'0';comment:模型ID"`
+	Operator1         string    `json:"operator1" form:"operator1" gorm:"size:64;not null;default:'';comment:操作符：and/or"`
+	Brackets1         string    `json:"brackets1" form:"brackets1" gorm:"size:64;not null;default:'';comment:括号：("`
+	TableSchema       string    `json:"table_schema" form:"table_schema" gorm:"size:64;default:'';comment:表模式"`
+	TableID           string    `json:"table_id" form:"table_id" gorm:"type:varchar(64);not null;default:'0';comment:表ID"`
+	TableNameStr      string    `json:"table_name" form:"table_name" gorm:"column:table_name;size:256;not null;default:'';comment:表名称"`
+	TableTitle        string    `json:"table_title" form:"table_title" gorm:"size:256;default:'';comment:表标题"`
+	ColumnID          string    `json:"column_id" form:"column_id" gorm:"type:varchar(64);not null;default:'0';comment:字段ID"`
+	ColumnName        string    `json:"column_name" form:"column_name" gorm:"size:256;default:'';comment:字段名称"`
+	ColumnTitle       string    `json:"column_title" form:"column_title" gorm:"size:256;default:'';comment:字段标题"`
+	Func              string    `json:"func" form:"func" gorm:"size:256;not null;default:'';comment:字段函数"`
+	Operator2         string    `json:"operator2" form:"operator2" gorm:"size:64;not null;default:'';comment:运算符：=/</>/<=/>=/like/between"`
+	WhereTableSchema  string    `json:"where_table_schema" form:"where_table_schema" gorm:"size:64;default:'';comment:表模式"`
+	WhereTableID      string    `json:"where_table_id" form:"where_table_id" gorm:"type:varchar(64);not null;default:'0';comment:比较表ID"`
+	WhereTableNameStr string    `json:"where_table_name" form:"where_table_name" gorm:"column:where_table_name;size:256;not null;default:'';comment:比较表名称"`
+	WhereTableTitle   string    `json:"where_table_title" form:"where_table_title" gorm:"size:256;default:'';comment:比较表标题"`
+	WhereColumnID     string    `json:"where_column_id" form:"where_column_id" gorm:"type:varchar(64);not null;default:'0';comment:比较字段ID"`
+	WhereColumnName   string    `json:"where_column_name" form:"where_column_name" gorm:"size:256;not null;default:'';comment:比较字段名称"`
+	WhereColumnTitle  string    `json:"where_column_title" form:"where_column_title" gorm:"size:256;not null;default:'';comment:比较字段标题"`
+	WhereFunc         string    `json:"where_func" form:"where_func" gorm:"size:64;not null;default:'';comment:比较字段函数"`
+	Value1            string    `json:"value1" form:"value1" gorm:"size:128;not null;default:'';comment:值1"`
+	Value2            string    `json:"value2" form:"value2" gorm:"size:128;not null;default:'';comment:值2"`
+	ParamKey          string    `json:"param_key" form:"param_key" gorm:"size:128;not null;default:''"`
+	Brackets2         string    `json:"brackets2" form:"brackets2" gorm:"size:64;not null;default:'';comment:括号：)"`
+	Remark            string    `json:"remark" form:"remark" gorm:"size:1024;default:'';comment:备注"`
+	IsDeleted         bool      `json:"is_deleted" form:"is_deleted" gorm:"default:false;comment:是否删除"`
+	CreateID          string    `json:"create_id" form:"create_id" gorm:"size:64;default:'0';comment:创建人ID"`
+	CreateBy          string    `json:"create_by" form:"create_by" gorm:"size:64;default:'';comment:创建人"`
+	CreateAt          time.Time `json:"create_at" form:"create_at" gorm:"autoCreateTime;comment:创建时间"`
+	UpdateID          string    `json:"update_id" form:"update_id" gorm:"size:64;default:'0';comment:更新人ID"`
+	UpdateBy          string    `json:"update_by" form:"update_by" gorm:"size:64;default:'';comment:更新人"`
+	UpdateAt          time.Time `json:"update_at" form:"update_at" gorm:"autoUpdateTime;comment:更新时间"`
 }
 
 // TableName 指定表名

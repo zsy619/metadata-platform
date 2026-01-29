@@ -101,6 +101,14 @@ func (m *MockMdModelService) GetSQLByModelID(modelID string) (*model.MdModelSql,
 	return args.Get(0).(*model.MdModelSql), args.Error(1)
 }
 
+func (m *MockMdModelService) SaveVisualModel(req *service.SaveVisualModelRequest) (*model.MdModel, error) {
+	args := m.Called(req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.MdModel), args.Error(1)
+}
+
 func BenchmarkBuildFromTable(b *testing.B) {
 	mockSvc := new(MockMdModelService)
 	handler := NewMdModelHandler(mockSvc)

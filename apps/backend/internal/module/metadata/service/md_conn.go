@@ -265,7 +265,15 @@ func (s *mdConnService) GetTableStructure(conn *model.MdConn, schema, table stri
 	if schema == "" {
 		schema = conn.ConnDatabase
 	}
-	return extractor.GetColumns(schema, table)
+	columns, err := extractor.GetColumns(schema, table)
+	if err != nil {
+		return nil, err
+	}
+	// 为每一列分配从 1 开始的排序号
+	for i := range columns {
+		columns[i].Sort = i + 1
+	}
+	return columns, nil
 }
 
 // PreviewTableData 预览表数据

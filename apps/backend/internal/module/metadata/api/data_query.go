@@ -2,6 +2,9 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"metadata-platform/internal/module/metadata/engine"
+	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/service"
 	"metadata-platform/internal/utils"
 
@@ -156,4 +159,99 @@ func (h *DataQueryHandler) HandleAggregateWithModelID(ctx *app.RequestContext, m
 	}
 
 	utils.SuccessResponse(ctx, results)
+}
+
+// PreviewVisualModelSQL 预览可视化模型 SQL
+func (h *DataQueryHandler) PreviewVisualModelSQL(c context.Context, ctx *app.RequestContext) {
+	var req SaveVisualModelRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		utils.ErrorResponse(ctx, consts.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	// 转换请求为 ModelData
+	modelData := &engine.ModelData{
+		Model: &model.MdModel{
+			ID:        req.ModelID,
+			ModelKind: 2, // Visual
+			ConnID:    req.ConnID,
+		},
+		Tables: make([]*model.MdModelTable, len(req.Tables)),
+		Fields: make([]*model.MdModelField, len(req.Fields)),
+		Joins:   make([]*model.MdModelJoin, len(req.Joins)),
+		Wheres:  make([]*model.MdModelWhere, len(req.Wheres)),
+		Orders:  make([]*model.MdModelOrder, len(req.Orders)),
+		Groups:  make([]*model.MdModelGroup, len(req.Groups)),
+		Havings: make([]*model.MdModelHaving, len(req.Havings)),
+	}
+
+	for i := range req.Tables {
+		modelData.Tables[i] = &req.Tables[i]
+	}
+	for i := range req.Fields {
+		modelData.Fields[i] = &req.Fields[i]
+	}
+	for i := range req.Joins {
+		modelData.Joins[i] = &req.Joins[i]
+	}
+	for i := range req.Wheres {
+		modelData.Wheres[i] = &req.Wheres[i]
+	}
+	for i := range req.Orders {
+		modelData.Orders[i] = &req.Orders[i]
+	}
+	for i := range req.Groups {
+		modelData.Groups[i] = &req.Groups[i]
+	}
+	for i := range req.Havings {
+		modelData.Havings[i] = &req.Havings[i]
+	}
+
+	// Parsing Parameters for Limit
+	if req.Parameters != "" {
+		var paramsObj struct {
+			Visual struct {
+				Config struct {
+					Limit int `json:"limit"`
+				} `json:"config"`
+			} `json:"visual"`
+		}
+		_ = json.Unmarshal([]byte(req.Parameters), &paramsObj)
+		if paramsObj.Visual.Config.Limit > 0 {
+			modelData.Limit = &model.MdModelLimit{Limit: paramsObj.Visual.Config.Limit}
+		}
+	}
+
+	// 检查是否需要执行查询
+	execute := ctx.QueryArgs().Peek("execute")
+	if string(execute) == "true" {
+		data, count, err := h.crudService.ExecuteModelData(modelData, nil)
+		if err != nil {
+			utils.ErrorResponse(ctx, consts.StatusBadRequest, err.Error())
+			return
+		}
+
+		// 构造返回结构
+		// 为了前端 Grid 展示，我们可能还需要返回字段信息 (Columns)
+		// data 是 []map[string]any，前端可以直接用。
+		// 但为了能够生成动态列，我们可以分析 data[0] 或者直接从 modelConfig 推断。
+		// 直接返回 data 即可。
+
+		utils.SuccessResponse(ctx, map[string]any{
+			"data":  data,
+			"total": count,
+		})
+		return
+	}
+
+	sqlStr, args, err := h.crudService.BuildSQLFromData(modelData, nil)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, map[string]any{
+		"sql":  sqlStr,
+		"args": args,
+	})
 }
