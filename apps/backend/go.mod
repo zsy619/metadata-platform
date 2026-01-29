@@ -14,6 +14,7 @@ require (
 	github.com/godror/godror v0.50.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
+	github.com/hertz-contrib/websocket v0.1.0
 	github.com/lib/pq v1.10.2
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/microsoft/go-mssqldb v1.9.5

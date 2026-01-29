@@ -49,23 +49,83 @@ const pieChartRef = ref<HTMLElement>()
 let lineChart: echarts.EChartsType | null = null
 let pieChart: echarts.EChartsType | null = null
 
-const cards = [
-    { title: '总请求数', value: '1,234,567', desc: '较昨日', trend: 12.5, type: 'primary', tag: 'Total' },
-    { title: '平均响应时间', value: '128ms', desc: '较昨日', trend: -5.2, type: 'success', tag: 'Avg' },
-    { title: '错误率', value: '0.45%', desc: '较昨日', trend: -0.1, type: 'danger', tag: 'Error' },
-    { title: 'QPS', value: '450', desc: '较昨日', trend: 8.4, type: 'warning', tag: 'Realtime' }
-]
+const cards = ref([
+    { title: '总请求数', value: '0', desc: '较昨日', trend: 0, type: 'primary', tag: 'Total', key: 'requests' },
+    { title: '平均响应时间', value: '0ms', desc: '较昨日', trend: 0, type: 'success', tag: 'Avg', key: 'latency' },
+    { title: '错误率', value: '0%', desc: '较昨日', trend: 0, type: 'danger', tag: 'Error', key: 'error_rate' },
+    { title: 'QPS', value: '0', desc: '较昨日', trend: 0, type: 'warning', tag: 'Realtime', key: 'qps' }
+])
+
+// WebSocket Logic
+let ws: WebSocket | null = null
+const xAxisData = ref<string[]>([])
+const seriesData = ref<number[]>([])
+
+const initWebSocket = () => {
+    // Determine WS protocol based on current protocol
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    // Use localhost:8888 for dev, or relative path for prod
+    const wsUrl = `${protocol}//localhost:8888/api/monitor/ws`
+
+    ws = new WebSocket(wsUrl)
+
+    ws.onopen = () => {
+        console.log('Monitor WebSocket Connected')
+    }
+
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data)
+            if (data.type === 'realtime') {
+                // Update Cards
+                cards.value[0].value = data.requests.toLocaleString()
+                cards.value[1].value = `${data.latency}ms`
+                cards.value[2].value = `${(data.error_rate * 100).toFixed(2)}%`
+                cards.value[3].value = data.qps.toString()
+
+                // Update Chart
+                const timeStr = data.timestamp
+                updateLineChart(timeStr, data.qps)
+            }
+        } catch (e) {
+            console.error('WS Data Parse Error', e)
+        }
+    }
+
+    ws.onclose = () => {
+        console.log('Monitor WebSocket Closed, retrying in 3s...')
+        setTimeout(initWebSocket, 3000)
+    }
+}
+
+const updateLineChart = (time: string, value: number) => {
+    if (!lineChart) return
+
+    xAxisData.value.push(time)
+    seriesData.value.push(value)
+
+    if (xAxisData.value.length > 20) {
+        xAxisData.value.shift()
+        seriesData.value.shift()
+    }
+
+    lineChart.setOption({
+        xAxis: { data: xAxisData.value },
+        series: [{ data: seriesData.value }]
+    })
+}
 
 const initCharts = () => {
     if (lineChartRef.value) {
         lineChart = echarts.init(lineChartRef.value)
         lineChart.setOption({
             tooltip: { trigger: 'axis' },
-            xAxis: { type: 'category', data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'] },
+            xAxis: { type: 'category', data: [] },
             yAxis: { type: 'value' },
-            series: [{ data: [120, 132, 101, 134, 90, 230], type: 'line', smooth: true, areaStyle: {} }]
+            series: [{ data: [], type: 'line', smooth: true, areaStyle: {} }]
         })
     }
+    // ... Pie chart init (keep mock for now or update if backend sends it)
     if (pieChartRef.value) {
         pieChart = echarts.init(pieChartRef.value)
         pieChart.setOption({
@@ -94,10 +154,12 @@ const resizeHandler = () => {
 
 onMounted(() => {
     initCharts()
+    initWebSocket()
     window.addEventListener('resize', resizeHandler)
 })
 
 onUnmounted(() => {
+    ws?.close()
     window.removeEventListener('resize', resizeHandler)
     lineChart?.dispose()
     pieChart?.dispose()

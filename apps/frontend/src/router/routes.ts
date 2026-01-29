@@ -55,28 +55,35 @@ const routes: RouteRecordRaw[] = [
                 ]
             },
             {
-                path: 'table',
+                path: 'maintenance',
                 component: RouterView,
-                meta: { title: '表与视图', icon: 'Grid' },
+                meta: { title: '元数据维护', icon: 'Tools' },
                 children: [
                     {
-                        path: 'list',
-                        name: 'MetadataTableList',
-                        component: () => import('@/views/metadata/table/List.vue'),
-                        meta: { title: '表列表', icon: 'List' }
-                    }
-                ]
-            },
-            {
-                path: 'field',
-                component: RouterView,
-                meta: { title: '字段列表', icon: 'Tickets' },
-                children: [
+                        path: 'table',
+                        component: RouterView,
+                        meta: { title: '表与视图', icon: 'Grid' },
+                        children: [
+                            {
+                                path: 'list',
+                                name: 'MetadataTableList',
+                                component: () => import('@/views/metadata/table/List.vue'),
+                                meta: { title: '表与视图列表', icon: 'List' }
+                            }
+                        ]
+                    },
                     {
-                        path: 'list',
-                        name: 'MetadataFieldList',
-                        component: () => import('@/views/metadata/field/List.vue'),
-                        meta: { title: '字段列表', icon: 'List' }
+                        path: 'field',
+                        component: RouterView,
+                        meta: { title: '字段列表', icon: 'Tickets' },
+                        children: [
+                            {
+                                path: 'list',
+                                name: 'MetadataFieldList',
+                                component: () => import('@/views/metadata/field/List.vue'),
+                                meta: { title: '字段列表', icon: 'List' }
+                            }
+                        ]
                     }
                 ]
             },

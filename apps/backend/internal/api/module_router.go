@@ -11,6 +11,8 @@ import (
 	metadata "metadata-platform/internal/module/metadata"
 
 	user "metadata-platform/internal/module/user"
+
+	"metadata-platform/internal/module/monitor"
 )
 
 // RegisterModuleRoutes 注册所有模块的路由
@@ -23,6 +25,9 @@ func RegisterModuleRoutes(h *server.Hertz, metadataDB, userDB, auditDB *gorm.DB,
 
 	// Register Audit Module
 	registerAuditRoutes(h, auditDB, auditQueue)
+
+	// Register Monitor Module
+	monitor.RegisterRoutes(h)
 }
 
 // registerMetadataRoutes 注册元数据模块路由
