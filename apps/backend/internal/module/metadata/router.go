@@ -1,6 +1,8 @@
 package metadata
 
 import (
+	"context"
+	"fmt"
 	globalMiddleware "metadata-platform/internal/middleware"
 	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/metadata/api"
@@ -9,12 +11,34 @@ import (
 	"metadata-platform/internal/module/metadata/service"
 	"metadata-platform/internal/utils"
 
+	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"gorm.io/gorm"
 )
 
 // RegisterRoutes 注册元数据模块路由
 func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) {
+	fmt.Println(">>> Initializing Metadata Routes...")
+	
+	// 注册全局 404 诊断处理器
+	r.NoRoute(func(c context.Context, ctx *app.RequestContext) {
+		path := string(ctx.Request.URI().Path())
+		method := string(ctx.Request.Method())
+		fmt.Printf("!!! Route Not Found: [%s] %s\n", method, path)
+		ctx.JSON(404, map[string]any{
+			"code":    404,
+			"message": "Route not found by Hertz",
+			"path":    path,
+			"method":  method,
+			"hint":    "Please check router.go registration",
+		})
+	})
+
+	// 隔离测试路由：不经过任何中间件，测试最基础的连通性
+	r.GET("/debug/metadata/generate-code", func(c context.Context, ctx *app.RequestContext) {
+		ctx.JSON(200, map[string]string{"message": "Debug route is working"})
+	})
+
 	// 初始化仓库
 	repos := repository.NewRepositories(db)
 
@@ -38,6 +62,11 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 	metadataGroup.Use(globalMiddleware.TenantMiddleware())
 	metadataGroup.Use(globalMiddleware.AuthMiddleware())
 	metadataGroup.Use(middleware.AuditMiddleware(services.Audit))
+
+	// 连通性探测路由 (用于诊断 404)
+	metadataGroup.GET("/ping", func(c context.Context, ctx *app.RequestContext) {
+		ctx.JSON(200, map[string]string{"message": "pong", "module": "metadata"})
+	})
 
 	// API路由
 	apiGroup := metadataGroup.Group("/apis")
@@ -99,7 +128,6 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		modelGroup.POST("/build-from-view", modelHandler.BuildFromView)
 		modelGroup.POST("/build-from-sql", modelHandler.BuildFromSQL)
 		modelGroup.POST("/test-sql", modelHandler.TestSQL)
-		modelGroup.GET("/actions/generate-code", modelHandler.GenerateCode)
 		modelGroup.POST("", modelHandler.CreateModel)
 		modelGroup.GET("/:id", modelHandler.GetModelByID)
 		modelGroup.PUT("/:id", modelHandler.UpdateModel)
@@ -131,6 +159,14 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		modelGroup.GET("/:id/fields/enhancements", enhancementHandler.GetEnhancementsByModelID)
 		modelGroup.PUT("/:id/fields/enhancements", enhancementHandler.UpdateEnhancements)
 		modelGroup.POST("/:id/fields/batch-enhancements", enhancementHandler.BatchUpdateEnhancements)
+	}
+
+	// 工具/辅助路由
+	utilsGroup := metadataGroup.Group("/utils")
+	{
+		utilsGroup.GET("/generate-model-code-16", modelHandler.Generate16Code)
+		utilsGroup.GET("/generate-model-code", modelHandler.GenerateCode)
+		utilsGroup.GET("/generate-model-code-64", modelHandler.Generate64Code)
 	}
 
 	// 树形结构 API

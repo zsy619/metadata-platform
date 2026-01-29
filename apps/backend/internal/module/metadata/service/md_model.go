@@ -2,6 +2,7 @@ package service
 
 import (
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -20,6 +21,7 @@ type MdModelService interface {
 	DeleteModel(id string) error
 	GetModels(tenantID string, page, pageSize int, search string, modelKind int) ([]model.MdModel, int64, error)
 	GetModelsByConnID(connID string) ([]model.MdModel, error)
+	GetAllModels(tenantID string) ([]model.MdModel, error)
 	BuildFromTable(req *BuildFromTableRequest) error
 	BuildFromView(req *BuildFromViewRequest) error
 	BuildFromSQL(req *BuildFromSQLRequest) error
@@ -29,7 +31,9 @@ type MdModelService interface {
 	CreateField(field *model.MdModelField) error
 	UpdateField(field *model.MdModelField) error
 	DeleteField(id string) error
+	Generate16Code() string
 	Generate32Code() string
+	Generate64Code() string
 }
 
 type BuildFromViewRequest struct {
@@ -128,10 +132,24 @@ func (s *mdModelService) CreateModel(model *model.MdModel) error {
 	return s.modelRepo.CreateModel(model)
 }
 
+// Generate16Code 生成 16 位唯一编码 (MD5(SnowflakeID) 的前 16 位)
+func (s *mdModelService) Generate16Code() string {
+	id := s.snowflake.GenerateIDString()
+	hash := md5.Sum([]byte(id))
+	return strings.ToUpper(hex.EncodeToString(hash[:8]))
+}
+
 // Generate32Code 生成 32 位唯一编码 (MD5(SnowflakeID))
 func (s *mdModelService) Generate32Code() string {
 	id := s.snowflake.GenerateIDString()
 	hash := md5.Sum([]byte(id))
+	return strings.ToUpper(hex.EncodeToString(hash[:]))
+}
+
+// Generate64Code 生成 64 位唯一编码 (SHA256(SnowflakeID))
+func (s *mdModelService) Generate64Code() string {
+	id := s.snowflake.GenerateIDString()
+	hash := sha256.Sum256([]byte(id))
 	return strings.ToUpper(hex.EncodeToString(hash[:]))
 }
 
@@ -192,6 +210,11 @@ func (s *mdModelService) GetModels(tenantID string, page, pageSize int, search s
 // GetModelsByConnID 根据连接ID获取模型定义列表
 func (s *mdModelService) GetModelsByConnID(connID string) ([]model.MdModel, error) {
 	return s.modelRepo.GetModelsByConnID(connID)
+}
+
+// GetAllModels 获取所有模型定义
+func (s *mdModelService) GetAllModels(tenantID string) ([]model.MdModel, error) {
+	return s.modelRepo.GetAllModels(tenantID)
 }
 
 // GetFieldsByModelID 获取模型下的所有字段

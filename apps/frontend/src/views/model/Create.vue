@@ -109,7 +109,11 @@
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="模型编码" prop="modelCode">
-                                <el-input v-model="modelForm.modelCode" placeholder="自动生成或手动输入" clearable />
+                                <el-input v-model="modelForm.modelCode" placeholder="自动生成或手动输入" clearable>
+                                    <template #append>
+                                        <el-button :icon="Refresh" @click="fetchGeneratedCode" title="重新获取编码" />
+                                    </template>
+                                </el-input>
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -164,7 +168,7 @@
 import { generateModelCode } from '@/api/model'
 import type { Model } from '@/types/metadata'
 import type { DataSource } from '@/types/metadata/datasource'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

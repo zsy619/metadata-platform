@@ -34,7 +34,13 @@ func (m *MockMdModelService) GetModels(tenantID string, page, pageSize int, sear
 	args := m.Called(tenantID, page, pageSize, search, modelKind)
 	return args.Get(0).([]model.MdModel), args.Get(1).(int64), args.Error(2)
 }
+func (m *MockMdModelService) Generate16Code() string {
+	return m.Called().String(0)
+}
 func (m *MockMdModelService) Generate32Code() string {
+	return m.Called().String(0)
+}
+func (m *MockMdModelService) Generate64Code() string {
 	return m.Called().String(0)
 }
 func (m *MockMdModelService) GetModelsByConnID(connID string) ([]model.MdModel, error) {

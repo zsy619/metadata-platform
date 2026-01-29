@@ -28,7 +28,11 @@
                             <el-input v-model="baseForm.modelName" placeholder="请输入模型名称" />
                         </el-form-item>
                         <el-form-item label="模型编码" prop="modelCode">
-                            <el-input v-model="baseForm.modelCode" placeholder="自动生成或手动输入" />
+                            <el-input v-model="baseForm.modelCode" placeholder="自动生成或手动输入">
+                                <template #append>
+                                    <el-button :icon="Refresh" @click="fetchGeneratedCode" title="重新获取编码" />
+                                </template>
+                            </el-input>
                         </el-form-item>
                         <el-form-item label="描&#12288;&#12288;述" prop="remark">
                             <el-input v-model="baseForm.remark" type="textarea" :rows="3" placeholder="请输入模型描述" />
@@ -78,14 +82,14 @@
                         <span>预览并配置结果集字段</span>
                         <el-button type="primary" link @click="fetchColumns">刷新字段</el-button>
                     </div>
-                    <el-table :data="fieldMappings" border style="width: 100%">
+                    <el-table :data="fieldMappings" border style="width: 100%" height="400">
                         <el-table-column prop="column_name" label="列名" width="180" />
                         <el-table-column label="显示名称">
                             <template #default="{ row }">
                                 <el-input v-model="row.show_title" size="small" />
                             </template>
                         </el-table-column>
-                        <el-table-column label="显示宽度" width="120">
+                        <el-table-column label="显示宽度" width="170">
                             <template #default="{ row }">
                                 <el-input-number v-model="row.show_width" size="small" :min="0" :step="10" />
                             </template>
@@ -133,7 +137,7 @@ import { createModelSql, generateModelCode, testSQL } from '@/api/model'
 import type { FieldMapping, SQLParameter } from '@/types/metadata/model-params'
 import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Refresh } from '@element-plus/icons-vue'
 import type { FormInstance } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'

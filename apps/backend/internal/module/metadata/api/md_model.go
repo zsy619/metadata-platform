@@ -2,14 +2,14 @@ package api
 
 import (
 	"context"
-	"strconv"
-
-	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/protocol/consts"
-
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/service"
 	"metadata-platform/internal/utils"
+	"strconv"
+	"strings"
+
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/protocol/consts"
 )
 
 // MdModelHandler 模型定义API处理器
@@ -346,9 +346,28 @@ func (h *MdModelHandler) DeleteModel(c context.Context, ctx *app.RequestContext)
 	utils.SuccessResponse(ctx, nil)
 }
 
+// Generate16Code 生成 16 位模型编码
+func (h *MdModelHandler) Generate16Code(c context.Context, ctx *app.RequestContext) {
+	code := h.modelService.Generate16Code()
+	code = strings.ToLower(code)
+	utils.SuccessResponse(ctx, map[string]string{
+		"code": code,
+	})
+}
+
 // GenerateCode 生成 32 位模型编码
 func (h *MdModelHandler) GenerateCode(c context.Context, ctx *app.RequestContext) {
 	code := h.modelService.Generate32Code()
+	code = strings.ToLower(code)
+	utils.SuccessResponse(ctx, map[string]string{
+		"code": code,
+	})
+}
+
+// Generate64Code 生成 64 位模型编码
+func (h *MdModelHandler) Generate64Code(c context.Context, ctx *app.RequestContext) {
+	code := h.modelService.Generate64Code()
+	code = strings.ToLower(code)
 	utils.SuccessResponse(ctx, map[string]string{
 		"code": code,
 	})

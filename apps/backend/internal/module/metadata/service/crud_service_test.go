@@ -31,7 +31,10 @@ func (m *MockMdModelRepo) GetModelByCode(code string) (*model.MdModel, error) {
 func (m *MockMdModelRepo) UpdateModel(md *model.MdModel) error                      { return m.Called(md).Error(0) }
 func (m *MockMdModelRepo) DeleteModel(id string) error                              { return m.Called(id).Error(0) }
 func (m *MockMdModelRepo) GetModelsByConnID(connID string) ([]model.MdModel, error) { return nil, nil }
-func (m *MockMdModelRepo) GetAllModels(tenantID string) ([]model.MdModel, error)    { return nil, nil }
+func (m *MockMdModelRepo) GetModels(tenantID string, offset, limit int, search string, modelKind int) ([]model.MdModel, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockMdModelRepo) GetAllModels(tenantID string) ([]model.MdModel, error) { return nil, nil }
 
 type MockMdConnRepo struct{ mock.Mock }
 

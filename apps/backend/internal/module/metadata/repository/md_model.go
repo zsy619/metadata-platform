@@ -15,6 +15,7 @@ type MdModelRepository interface {
 	DeleteModel(id string) error
 	GetModelsByConnID(connID string) ([]model.MdModel, error)
 	GetModels(tenantID string, offset, limit int, search string, modelKind int) ([]model.MdModel, int64, error)
+	GetAllModels(tenantID string) ([]model.MdModel, error)
 }
 
 // mdModelRepository 模型定义仓库实现
@@ -131,4 +132,11 @@ func (r *mdModelRepository) GetModels(tenantID string, offset, limit int, search
 	}
 
 	return models, total, nil
+}
+
+// GetAllModels 获取所有模型定义
+func (r *mdModelRepository) GetAllModels(tenantID string) ([]model.MdModel, error) {
+	var models []model.MdModel
+	err := r.db.Where("tenant_id = ? AND is_deleted = ?", tenantID, false).Order("create_at DESC").Find(&models).Error
+	return models, err
 }
