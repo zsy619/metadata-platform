@@ -40,24 +40,24 @@
         <el-divider content-position="left">连接配置</el-divider>
         <el-row :gutter="32">
             <el-col :span="12">
-                <el-form-item label="主机地址" prop="conn_host">
+                <el-form-item label="主&nbsp;机&nbsp;地&nbsp;址" prop="conn_host">
                     <el-input v-model="formData.conn_host" placeholder="例如: localhost 或 IP" clearable />
                 </el-form-item>
             </el-col>
             <el-col :span="12">
-                <el-form-item label="数据库名" prop="conn_database">
+                <el-form-item label="数&nbsp;据&nbsp;库&nbsp;名" prop="conn_database">
                     <el-input v-model="formData.conn_database" placeholder="数据库名称" clearable />
                 </el-form-item>
             </el-col>
         </el-row>
         <el-row :gutter="32">
             <el-col :span="12">
-                <el-form-item label="端口" prop="conn_port">
+                <el-form-item label="端&#12288;&#12288;&#12288;口" prop="conn_port">
                     <el-input-number v-model="formData.conn_port" :min="0" :max="65535" class="w-full" controls-position="right" />
                 </el-form-item>
             </el-col>
             <el-col :span="12">
-                <el-form-item label="版本" prop="conn_version">
+                <el-form-item label="版&#12288;&#12288;&#12288;本" prop="conn_version">
                     <el-input v-model="formData.conn_version" placeholder="如: 8.0" clearable />
                 </el-form-item>
             </el-col>
@@ -65,17 +65,17 @@
         <el-divider content-position="left">身份验证</el-divider>
         <el-row :gutter="32">
             <el-col :span="12">
-                <el-form-item label="用户名" prop="conn_user">
+                <el-form-item label="用&#12288;户&#12288;名" prop="conn_user">
                     <el-input v-model="formData.conn_user" placeholder="Username" clearable />
                 </el-form-item>
             </el-col>
             <el-col :span="12">
-                <el-form-item label="密码" prop="conn_password">
+                <el-form-item label="密&#12288;&#12288;&#12288;码" prop="conn_password">
                     <el-input v-model="formData.conn_password" type="password" placeholder="Password" show-password clearable />
                 </el-form-item>
             </el-col>
         </el-row>
-        <el-form-item label="备注说明">
+        <el-form-item label="备&nbsp;注&nbsp;说&nbsp;明">
             <el-input v-model="formData.remark" type="textarea" placeholder="补充详细说明..." :rows="4" clearable />
         </el-form-item>
         <div class="form-actions">

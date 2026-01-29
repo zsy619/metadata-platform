@@ -85,7 +85,7 @@
                                 </el-form-item>
                             </el-col>
                         </el-row>
-                        <el-form-item label="备注">
+                        <el-form-item label="备&#12288;&#12288;注">
                             <el-input v-model="apiForm.remark" type="textarea" placeholder="请输入接口描述信息" :rows="4" clearable />
                         </el-form-item>
                         <div class="form-actions">

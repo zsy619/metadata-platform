@@ -19,7 +19,7 @@
                 <!-- 步骤 1: 基础信息 -->
                 <div v-show="activeStep === 0" class="step-content">
                     <el-form ref="baseFormRef" :model="baseForm" :rules="baseRules" label-width="100px" class="max-w-800">
-                        <el-form-item label="数据源" prop="connID">
+                        <el-form-item label="数&#8194;据&#8194;源" prop="connID">
                             <el-select v-model="baseForm.connID" placeholder="请选择数据源" class="w-full">
                                 <el-option v-for="item in dataSources" :key="item.id" :label="item.conn_name" :value="item.id" />
                             </el-select>
@@ -28,9 +28,9 @@
                             <el-input v-model="baseForm.modelName" placeholder="请输入模型名称" />
                         </el-form-item>
                         <el-form-item label="模型编码" prop="modelCode">
-                            <el-input v-model="baseForm.modelCode" placeholder="不填则自动生成 32 位编码" />
+                            <el-input v-model="baseForm.modelCode" placeholder="自动生成或手动输入" />
                         </el-form-item>
-                        <el-form-item label="描述" prop="remark">
+                        <el-form-item label="描&#12288;&#12288;述" prop="remark">
                             <el-input v-model="baseForm.remark" type="textarea" :rows="3" placeholder="请输入模型描述" />
                         </el-form-item>
                     </el-form>
@@ -109,7 +109,7 @@
                             <el-switch v-model="permissions.isPublic" />
                             <span class="ml-2 text-gray-400 text-sm">开启后所有用户可见</span>
                         </el-form-item>
-                        <el-form-item label="备注">
+                        <el-form-item label="备&#12288;&#12288;注">
                             <el-input v-model="baseForm.remark" type="textarea" :rows="3" placeholder="请输入模型描述" />
                         </el-form-item>
                     </el-form>
@@ -168,7 +168,7 @@ const baseForm = reactive({
 const baseRules = {
     connID: [{ required: true, message: '请选择数据源', trigger: 'change' }],
     modelName: [{ required: true, message: '请输入模型名称', trigger: 'blur' }],
-    modelCode: [{ required: false }]
+    modelCode: [{ required: true, message: '请输入模型编码', trigger: 'blur' }]
 }
 
 // SQL 内容
@@ -199,9 +199,9 @@ onMounted(async () => {
 
 const fetchGeneratedCode = async () => {
     try {
-        const res = await generateModelCode()
-        if (res.code) {
-            baseForm.modelCode = res.code
+        const res: any = await generateModelCode()
+        if (res.data && res.data.code) {
+            baseForm.modelCode = res.data.code
         }
     } catch (error) {
         console.error('Failed to auto generate model code', error)

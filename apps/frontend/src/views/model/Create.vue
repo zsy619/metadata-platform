@@ -17,7 +17,7 @@
             <div v-if="activeStep === 0" class="step-content">
                 <h3>选择数据源与模型类型</h3>
                 <el-form :model="modelForm" label-width="120px">
-                    <el-form-item label="数据源" prop="connID">
+                    <el-form-item label="数&#8194;据&#8194;源" prop="connID">
                         <el-select v-model="modelForm.connID" placeholder="请选择数据源" style="width: 100%" @change="handleDataSourceChange">
                             <el-option v-for="conn in dataSources" :key="conn.id" :label="conn.connName" :value="conn.id">
                                 <div class="option-content">
@@ -109,7 +109,7 @@
                         </el-col>
                         <el-col :span="12">
                             <el-form-item label="模型编码" prop="modelCode">
-                                <el-input v-model="modelForm.modelCode" placeholder="不填则自动生成 32 位编码" clearable />
+                                <el-input v-model="modelForm.modelCode" placeholder="自动生成或手动输入" clearable />
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -133,7 +133,7 @@
                     <el-form-item label="是否公开">
                         <el-switch v-model="modelForm.isPublic" />
                     </el-form-item>
-                    <el-form-item label="备注">
+                    <el-form-item label="备&#12288;&#12288;注">
                         <el-input v-model="modelForm.remark" type="textarea" placeholder="请输入模型描述信息" :rows="4" clearable />
                     </el-form-item>
                     <div class="step-actions">
@@ -219,7 +219,7 @@ const formRules = reactive({
         { min: 2, max: 100, message: '模型名称长度在 2 到 100 个字符', trigger: 'blur' }
     ],
     modelCode: [
-        { required: false }
+        { required: true, message: '请输入模型编码', trigger: 'blur' }
     ],
     modelVersion: [
         { required: true, message: '请输入模型版本', trigger: 'blur' }
@@ -255,9 +255,9 @@ onMounted(() => {
 
 const fetchGeneratedCode = async () => {
     try {
-        const res = await generateModelCode()
-        if (res.code) {
-            modelForm.modelCode = res.code
+        const res: any = await generateModelCode()
+        if (res.data && res.data.code) {
+            modelForm.modelCode = res.data.code
         }
     } catch (error) {
         console.error('Failed to auto generate model code', error)

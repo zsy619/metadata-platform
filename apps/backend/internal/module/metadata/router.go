@@ -99,7 +99,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		modelGroup.POST("/build-from-view", modelHandler.BuildFromView)
 		modelGroup.POST("/build-from-sql", modelHandler.BuildFromSQL)
 		modelGroup.POST("/test-sql", modelHandler.TestSQL)
-		modelGroup.GET("/generate-code", modelHandler.GenerateCode)
+		modelGroup.GET("/actions/generate-code", modelHandler.GenerateCode)
 		modelGroup.POST("", modelHandler.CreateModel)
 		modelGroup.GET("/:id", modelHandler.GetModelByID)
 		modelGroup.PUT("/:id", modelHandler.UpdateModel)

@@ -42,7 +42,7 @@
                         </el-row>
                         <el-row :gutter="20">
                             <el-col :span="12">
-                                <el-form-item label="数据源" prop="connID">
+                                <el-form-item label="数&#8194;据&#8194;源" prop="connID">
                                     <el-select v-model="modelForm.connID" placeholder="请选择数据源" disabled>
                                         <el-option v-for="conn in dataSources" :key="conn.id" :label="conn.connName" :value="conn.id" />
                                     </el-select>
@@ -66,7 +66,7 @@
                                 </el-form-item>
                             </el-col>
                         </el-row>
-                        <el-form-item label="备注">
+                        <el-form-item label="备&#12288;&#12288;注">
                             <el-input v-model="modelForm.remark" type="textarea" placeholder="请输入模型描述信息" :rows="4" clearable />
                         </el-form-item>
                         <div class="form-actions">

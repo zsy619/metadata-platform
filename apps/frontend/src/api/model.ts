@@ -27,7 +27,7 @@ export const getModels = async (params?: ModelQueryParams): Promise<ModelRespons
  */
 export const generateModelCode = async (): Promise<{ code: string }> => {
     return request({
-        url: '/api/metadata/models/generate-code',
+        url: '/api/metadata/models/actions/generate-code',
         method: 'get'
     })
 }
