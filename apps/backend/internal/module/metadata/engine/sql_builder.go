@@ -12,16 +12,17 @@ import (
 
 // ModelData 聚合模型所有配置的结构体
 type ModelData struct {
-	Model   *model.MdModel
-	Tables  []*model.MdModelTable
-	Fields  []*model.MdModelField
-	Joins   []*model.MdModelJoin
-	Wheres  []*model.MdModelWhere
-	Groups  []*model.MdModelGroup
-	Havings []*model.MdModelHaving
-	Orders  []*model.MdModelOrder
-	Limit   *model.MdModelLimit
-	SQL     *model.MdModelSql
+	Model      *model.MdModel
+	Tables     []*model.MdModelTable
+	Fields     []*model.MdModelField
+	Joins      []*model.MdModelJoin
+	JoinFields []*model.MdModelJoinField
+	Wheres     []*model.MdModelWhere
+	Groups     []*model.MdModelGroup
+	Havings    []*model.MdModelHaving
+	Orders     []*model.MdModelOrder
+	Limit      *model.MdModelLimit
+	SQL        *model.MdModelSql
 }
 
 // SQLBuilder SQL生成引擎主类
@@ -97,6 +98,13 @@ func (b *SQLBuilder) LoadModelData(modelID string) (*ModelData, error) {
 		return nil, err
 	}
 	data.Joins = joins
+
+	// 加载关联字段
+	var joinFields []*model.MdModelJoinField
+	if err := b.db.Where("tenant_id = ? AND join_id IN (?)", md.TenantID, b.db.Table("md_model_join").Select("id").Where("model_id = ?", modelID)).Order("`order` asc").Find(&joinFields).Error; err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	data.JoinFields = joinFields
 
 	// 加载条件
 	var wheres []*model.MdModelWhere
@@ -311,15 +319,21 @@ func (b *SQLBuilder) buildJoinClause(data *ModelData) (string, error) {
 		joinMap[j.ParentID] = append(joinMap[j.ParentID], j)
 	}
 
+	// 按 join_id 分组 JoinFields
+	joinFieldsMap := make(map[string][]*model.MdModelJoinField)
+	for _, jf := range data.JoinFields {
+		joinFieldsMap[jf.JoinID] = append(joinFieldsMap[jf.JoinID], jf)
+	}
+
 	var sb strings.Builder
-	if err := b.generateJoinSQL(&sb, "0", joinMap); err != nil {
+	if err := b.generateJoinSQL(&sb, "0", joinMap, joinFieldsMap); err != nil {
 		return "", err
 	}
 
 	return sb.String(), nil
 }
 
-func (b *SQLBuilder) generateJoinSQL(sb *strings.Builder, parentID string, joinMap map[string][]*model.MdModelJoin) error {
+func (b *SQLBuilder) generateJoinSQL(sb *strings.Builder, parentID string, joinMap map[string][]*model.MdModelJoin, joinFieldsMap map[string][]*model.MdModelJoinField) error {
 	joins, ok := joinMap[parentID]
 	if !ok {
 		return nil
@@ -344,9 +358,9 @@ func (b *SQLBuilder) generateJoinSQL(sb *strings.Builder, parentID string, joinM
 		}
 		sb.WriteString(" ON ")
 
-		b.buildJoinConditions(sb, j)
+		b.buildJoinConditions(sb, j, joinFieldsMap[j.ID])
 
-		if err := b.generateJoinSQL(sb, j.ID, joinMap); err != nil {
+		if err := b.generateJoinSQL(sb, j.ID, joinMap, joinFieldsMap); err != nil {
 			return err
 		}
 	}
@@ -354,31 +368,81 @@ func (b *SQLBuilder) generateJoinSQL(sb *strings.Builder, parentID string, joinM
 	return nil
 }
 
-func (b *SQLBuilder) buildJoinConditions(sb *strings.Builder, j *model.MdModelJoin) {
-	leftExpr := ""
-	if j.TableNameStr != "" {
-		leftExpr = "`" + j.TableNameStr + "`.`" + j.ColumnName + "`"
-	} else {
-		leftExpr = "`" + j.ColumnName + "`"
+func (b *SQLBuilder) buildJoinConditions(sb *strings.Builder, j *model.MdModelJoin, joinFields []*model.MdModelJoinField) {
+	if len(joinFields) == 0 {
+		// Fallback: 如果没有字段条件,尝试使用 Remark 中的条件
+		if j.Remark != "" {
+			sb.WriteString(j.Remark)
+		}
+		return
 	}
 
-	rightExpr := ""
-	if j.JoinTableNameStr != "" {
-		rightExpr = "`" + j.JoinTableNameStr + "`.`" + j.JoinColumnName + "`"
-	} else {
-		rightExpr = "`" + j.JoinColumnName + "`"
-	}
+	// 构建字段条件
+	for i, jf := range joinFields {
+		// 添加逻辑运算符 (AND/OR)
+		if i > 0 {
+			op := strings.ToUpper(jf.Operator1)
+			if op == "" {
+				op = "AND"
+			}
+			sb.WriteString(" ")
+			sb.WriteString(op)
+			sb.WriteString(" ")
+		}
 
-	op := j.Operator2
-	if op == "" {
-		op = "="
-	}
+		// 添加左括号
+		if jf.Brackets1 != "" {
+			sb.WriteString(jf.Brackets1)
+		}
 
-	sb.WriteString(leftExpr)
-	sb.WriteString(" ")
-	sb.WriteString(op)
-	sb.WriteString(" ")
-	sb.WriteString(rightExpr)
+		// 构建左侧表达式 (主表字段)
+		leftExpr := ""
+		if j.TableNameStr != "" {
+			leftExpr = "`" + j.TableNameStr + "`.`" + jf.ColumnName + "`"
+		} else {
+			leftExpr = "`" + jf.ColumnName + "`"
+		}
+		if jf.Func != "" {
+			if strings.Contains(jf.Func, "%s") {
+				leftExpr = fmt.Sprintf(jf.Func, leftExpr)
+			} else {
+				leftExpr = jf.Func + "(" + leftExpr + ")"
+			}
+		}
+
+		// 构建右侧表达式 (关联表字段)
+		rightExpr := ""
+		if j.JoinTableNameStr != "" {
+			rightExpr = "`" + j.JoinTableNameStr + "`.`" + jf.JoinColumnName + "`"
+		} else {
+			rightExpr = "`" + jf.JoinColumnName + "`"
+		}
+		if jf.JoinFunc != "" {
+			if strings.Contains(jf.JoinFunc, "%s") {
+				rightExpr = fmt.Sprintf(jf.JoinFunc, rightExpr)
+			} else {
+				rightExpr = jf.JoinFunc + "(" + rightExpr + ")"
+			}
+		}
+
+		// 运算符
+		op := jf.Operator2
+		if op == "" {
+			op = "="
+		}
+
+		// 组装条件
+		sb.WriteString(leftExpr)
+		sb.WriteString(" ")
+		sb.WriteString(op)
+		sb.WriteString(" ")
+		sb.WriteString(rightExpr)
+
+		// 添加右括号
+		if jf.Brackets2 != "" {
+			sb.WriteString(jf.Brackets2)
+		}
+	}
 }
 
 // buildWhereClause 构建 WHERE 子句
@@ -702,9 +766,9 @@ func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (strin
 
 	sqlContent := data.SQL.Content
 	var args []any
-	
+
 	// 如果没有参数，直接返回
-	if params == nil || len(params) == 0 {
+	if len(params) == 0 {
 		return sqlContent, nil, nil
 	}
 
@@ -712,7 +776,7 @@ func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (strin
 
 	var sb strings.Builder
 	length := len(sqlContent)
-	
+
 	for i := 0; i < length; i++ {
 		char := sqlContent[i]
 
@@ -722,7 +786,7 @@ func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (strin
 			quote := char
 			i++
 			contentBuilder := strings.Builder{}
-			
+
 			for i < length {
 				curr := sqlContent[i]
 				if curr == quote {
@@ -738,27 +802,27 @@ func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (strin
 				}
 				i++
 			}
-			
+
 			literalContent := contentBuilder.String()
-			
+
 			// 检查内部是否有参数 :param
 			// 使用正则查找 param
 			re := regexp.MustCompile(`:[a-zA-Z_][a-zA-Z0-9_]*`)
 			matches := re.FindAllStringIndex(literalContent, -1)
-			
+
 			if len(matches) > 0 {
 				// 存在参数，需要重写为拼接形式
 				// "prefix" + ? + "suffix"
 				// MySQL: CONCAT('prefix', ?, 'suffix')
 				// SQLite/Pg: 'prefix' || ? || 'suffix'
-				
+
 				parts := []string{}
 				lastIdx := 0
-				
+
 				for _, match := range matches {
 					mStart, mEnd := match[0], match[1]
 					paramName := literalContent[mStart+1 : mEnd] // remove :
-					
+
 					// 只有当参数存在于 map 中时才替换
 					if val, ok := params[paramName]; ok {
 						// 添加前面的静态部分
@@ -768,64 +832,64 @@ func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (strin
 						// 添加参数占位符
 						parts = append(parts, "?")
 						args = append(args, val)
-                        lastIdx = mEnd
+						lastIdx = mEnd
 					} else {
-                        // 参数不存在，保留原样（当作普通字符串的一部分）
-                        // 注意：这里比较麻烦，因为我们要拼接。
-                        // 如果不替换，就变成静态字符串的一部分 ":name"
-                        // 我们把 :name 当作普通文本处理
-                    }
+						// 参数不存在，保留原样（当作普通字符串的一部分）
+						// 注意：这里比较麻烦，因为我们要拼接。
+						// 如果不替换，就变成静态字符串的一部分 ":name"
+						// 我们把 :name 当作普通文本处理
+					}
 				}
-                // 添加剩余部分
-                if lastIdx < len(literalContent) {
-                     parts = append(parts, "'"+b.escapeString(literalContent[lastIdx:])+"'")
-                }
-                
-                // 根据 Dialect 拼接
-                if len(parts) > 0 {
-                    if dialect == "mysql" {
-                        sb.WriteString("CONCAT(")
-                        sb.WriteString(strings.Join(parts, ", "))
-                        sb.WriteString(")")
-                    } else {
-                        // SQLite, Postgres use ||
-                        sb.WriteString("(")
-                        sb.WriteString(strings.Join(parts, " || "))
-                        sb.WriteString(")")
-                    }
-                } else {
-                    // Should not happen if matches found, but safe fallback
-                    sb.WriteByte('\'')
-                    sb.WriteString(b.escapeString(literalContent))
-                    sb.WriteByte('\'')
-                }
+				// 添加剩余部分
+				if lastIdx < len(literalContent) {
+					parts = append(parts, "'"+b.escapeString(literalContent[lastIdx:])+"'")
+				}
+
+				// 根据 Dialect 拼接
+				if len(parts) > 0 {
+					if dialect == "mysql" {
+						sb.WriteString("CONCAT(")
+						sb.WriteString(strings.Join(parts, ", "))
+						sb.WriteString(")")
+					} else {
+						// SQLite, Postgres use ||
+						sb.WriteString("(")
+						sb.WriteString(strings.Join(parts, " || "))
+						sb.WriteString(")")
+					}
+				} else {
+					// Should not happen if matches found, but safe fallback
+					sb.WriteByte('\'')
+					sb.WriteString(b.escapeString(literalContent))
+					sb.WriteByte('\'')
+				}
 
 			} else {
 				// 无参数，原样写入
 				sb.WriteByte('\'')
-                // 注意：我们需要还原 sql 中的 escape (double quote)
-                // 这里简单起见，重新 escape 单引号
+				// 注意：我们需要还原 sql 中的 escape (double quote)
+				// 这里简单起见，重新 escape 单引号
 				sb.WriteString(strings.ReplaceAll(literalContent, "'", "''"))
 				sb.WriteByte('\'')
 			}
 			continue
 		}
-        
-        // 双引号 "..." (标识符)，通常不含参数，直接跳过并写入
-        if char == '"' {
-            sb.WriteByte(char)
-            i++
-            for i < length {
-                curr := sqlContent[i]
-                sb.WriteByte(curr)
-                if curr == '"' {
-                     // 简单处理结束
-                     break
-                }
-                i++
-            }
-            continue
-        }
+
+		// 双引号 "..." (标识符)，通常不含参数，直接跳过并写入
+		if char == '"' {
+			sb.WriteByte(char)
+			i++
+			for i < length {
+				curr := sqlContent[i]
+				sb.WriteByte(curr)
+				if curr == '"' {
+					// 简单处理结束
+					break
+				}
+				i++
+			}
+			continue
+		}
 
 		// 2. 检测 Top-level 参数占位符 :param (不在引号内)
 		if char == ':' {
@@ -834,7 +898,7 @@ func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (strin
 				i++
 				continue
 			}
-			
+
 			start := i + 1
 			end := start
 			for end < length {
@@ -865,7 +929,7 @@ func (b *SQLBuilder) buildFromSQL(data *ModelData, params map[string]any) (strin
 
 // escapeString 简单的 SQL 字符串转义 (主要转义单引号)
 func (b *SQLBuilder) escapeString(s string) string {
-    return strings.ReplaceAll(s, "'", "''")
+	return strings.ReplaceAll(s, "'", "''")
 }
 
 // validateSQL 执行基本的 SQL 安全检查

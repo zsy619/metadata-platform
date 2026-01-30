@@ -104,7 +104,7 @@ func InternalServerErrorResponse(c *app.RequestContext, message string) {
 func GetPaginationParams(c *app.RequestContext) (page, pageSize int) {
 	// 默认值
 	page = 1
-	pageSize = 10
+	pageSize = 20
 
 	// 从查询参数中获取
 	if pageStr := c.Query("page"); pageStr != "" {

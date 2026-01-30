@@ -179,7 +179,7 @@ const searchQuery = ref('')
 
 // 分页状态
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
 const total = computed(() => filteredTables.value.length)
 
 // 弹窗相关

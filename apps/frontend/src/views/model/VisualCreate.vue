@@ -500,16 +500,104 @@ const handleTableSelect = async (selectedTables: MdTable[]) => {
 
 // 连线逻辑
 onConnect((params) => {
-    const edgeId = `e-${params.source}-${params.target}`
+    const sourceNode = elements.value.find(n => n.id === params.source)
+    const targetNode = elements.value.find(n => n.id === params.target)
+
+    // 检查是否已存在该表对之间的连接（只检查第一条）
+    const existingEdge = elements.value.find(el =>
+        el.source === params.source &&
+        el.target === params.target &&
+        (el.source && el.target) // 确保是边而不是节点
+    )
+
+    // 如果是字段级别的连接，且已存在该表对的连接，则添加到现有连接的条件中
+    if (params.sourceHandle && params.targetHandle && existingEdge) {
+        // 检查是否已存在相同的字段条件
+        const conditionExists = existingEdge.data.conditions?.some((cond: any) =>
+            cond.leftField === params.sourceHandle && cond.rightField === params.targetHandle
+        )
+
+        if (conditionExists) {
+            ElMessage.warning('该字段关联条件已存在')
+            return
+        }
+
+        // 添加新的字段条件到现有连接
+        if (!existingEdge.data.conditions) {
+            existingEdge.data.conditions = []
+        }
+
+        // 类型检查
+        let hasTypeMismatch = false
+        if (sourceNode && targetNode) {
+            const sField = sourceNode.data.fields?.find((f: any) => f.name === params.sourceHandle)
+            const tField = targetNode.data.fields?.find((f: any) => f.name === params.targetHandle)
+
+            if (sField && tField) {
+                const isString = (t: string) => /char|text|string/i.test(t)
+                const isNum = (t: string) => /int|number|float|double|decimal/i.test(t)
+                const sType = sField.type || ''
+                const tType = tField.type || ''
+
+                if ((isString(sType) && isNum(tType)) || (isNum(sType) && isString(tType))) {
+                    hasTypeMismatch = true
+                    ElMessage.warning(`类型警告: ${sField.name}(${sType}) 与 ${tField.name}(${tType}) 不匹配`)
+                }
+            }
+        }
+
+        existingEdge.data.conditions.push({
+            operator1: 'AND',
+            brackets1: '',
+            func: '',
+            leftField: params.sourceHandle,
+            operator: '=',
+            joinFunc: '',
+            rightField: params.targetHandle,
+            brackets2: ''
+        })
+
+        console.log('Added condition to existing edge:', {
+            edgeId: existingEdge.id,
+            totalConditions: existingEdge.data.conditions.length,
+            newCondition: existingEdge.data.conditions[existingEdge.data.conditions.length - 1]
+        })
+
+        // 如果有类型不匹配，更新边的样式
+        if (hasTypeMismatch && !existingEdge.animated) {
+            existingEdge.style = { stroke: '#F56C6C', strokeWidth: 2 }
+            existingEdge.animated = true
+        }
+
+        // 选中现有连接以便用户查看
+        selectedElement.value = existingEdge
+        ElMessage.success(`已添加字段关联条件（共${existingEdge.data.conditions.length}个条件）`)
+        pushHistory()
+        return
+    }
+
+    // 如果不存在连接，或者是表级别的连接，则创建新连接
+    // Edge ID: 对于同一表对，使用固定的ID（不包含handle），确保只有一条边
+    const edgeId = params.sourceHandle && params.targetHandle
+        ? `e-${params.source}-${params.target}` // 同一表对使用相同ID
+        : `e-${params.source}-auto-${Date.now()}-${params.target}` // 表级别连接使用时间戳
 
     // Check for Type Mismatch
-    let edgeStyle = {}
+    let edgeStyle = { stroke: '#b1b1b7', strokeWidth: 1.5 }
     let edgeLabel = undefined
     let edgeAnimated = false
     let joinCondition = ''
+    let joinType = 'LEFT JOIN'
 
-    const sourceNode = elements.value.find(n => n.id === params.source)
-    const targetNode = elements.value.find(n => n.id === params.target)
+    // Check for existing sibling edges (same table pair) to sync Join Type
+    const siblingEdge = elements.value.find(el =>
+        el.source === params.source &&
+        el.target === params.target &&
+        el.id !== edgeId
+    )
+    if (siblingEdge && siblingEdge.data) {
+        joinType = siblingEdge.data.joinType || 'LEFT JOIN'
+    }
 
     // Explicit handle connection (Field to Field)
     if (sourceNode && targetNode && params.sourceHandle && params.targetHandle) {
@@ -520,7 +608,6 @@ onConnect((params) => {
             // Very simple type check: string vs int/number
             const isString = (t: string) => /char|text|string/i.test(t)
             const isNum = (t: string) => /int|number|float|double|decimal/i.test(t)
-
             const sType = sField.type || ''
             const tType = tField.type || ''
 
@@ -530,68 +617,10 @@ onConnect((params) => {
                 edgeAnimated = true
                 ElMessage.warning(`类型警告: ${sField.name}(${sType}) 与 ${tField.name}(${tType}) 不匹配`)
             }
+
+            // Generate condition
+            joinCondition = `${sourceNode.data.label}.${sField.name} = ${targetNode.data.label}.${tField.name}`
         }
-    }
-
-    if (sourceNode && targetNode) {
-        // 策略1: 目标表有 source_id (例如: users.id = orders.user_id)
-        // 从字段列表中查找
-        // 字段存在于 node.data.fields
-        const sFields = sourceNode.data.fields || []
-        const tFields = targetNode.data.fields || []
-
-        // 假设源表主键为 id (常见)
-        const sId = sFields.find((f: any) => f.name.toLowerCase() === 'id')
-        if (sId) {
-            // 找目标表是否有 sourceName_id or sourceNameId
-            const sName = sourceNode.data.tableName || sourceNode.data.label
-            const targetKey = `${sName}_id`.toLowerCase()
-            const tFk = tFields.find((f: any) => f.name.toLowerCase() === targetKey || f.name.toLowerCase() === sName.toLowerCase() + 'id')
-
-            if (tFk) {
-                joinCondition = `${sourceNode.data.label}.${sId.name} = ${targetNode.data.label}.${tFk.name}`
-            }
-        }
-
-        // 策略2: 源表有 target_id (例如: orders.user_id = users.id)
-        if (!joinCondition) {
-            const tId = tFields.find((f: any) => f.name.toLowerCase() === 'id')
-            if (tId) {
-                const tName = targetNode.data.tableName || targetNode.data.label
-                const sourceKey = `${tName}_id`.toLowerCase()
-                const sFk = sFields.find((f: any) => f.name.toLowerCase() === sourceKey || f.name.toLowerCase() === tName.toLowerCase() + 'id')
-
-                if (sFk) {
-                    joinCondition = `${sourceNode.data.label}.${sFk.name} = ${targetNode.data.label}.${tId.name}`
-                }
-            }
-        }
-
-        // 策略3: 同名字段 (除了 id, create* update* 等通用字段)
-        if (!joinCondition) {
-            const common = sFields.filter((s: any) =>
-                !['id', 'created_at', 'updated_at', 'create_by', 'update_by', 'is_deleted'].includes(s.name.toLowerCase()) &&
-                tFields.some((t: any) => t.name === s.name)
-            )
-            if (common.length > 0) {
-                // 取第一个
-                joinCondition = `${sourceNode.data.label}.${common[0].name} = ${targetNode.data.label}.${common[0].name}`
-            }
-            if (!joinCondition && params.sourceHandle && params.targetHandle) {
-                joinCondition = `${sourceNode.data.label}.${params.sourceHandle} = ${targetNode.data.label}.${params.targetHandle}`
-            }
-        }
-    }
-
-    // 提取自动推断出的字段
-    let leftField = ''
-    let rightField = ''
-    const match = (joinCondition || '').match(/([^=<>!]+)\s*(=|!=|<>|>|<|>=|<=)\s*([^=<>!]+)/);
-    if (match) {
-        const leftParts = match[1].trim().split('.');
-        const rightParts = match[3].trim().split('.');
-        leftField = leftParts[leftParts.length - 1];
-        rightField = rightParts[rightParts.length - 1];
     }
 
     const newEdge = {
@@ -603,13 +632,30 @@ onConnect((params) => {
         label: edgeLabel,
         animated: edgeAnimated,
         data: {
-            joinType: 'LEFT JOIN',
-            joinCondition: joinCondition,
+            joinType: joinType,
+            joinCondition: joinCondition, // Legacy
             conditions: [
-                { operator1: 'AND', leftField: leftField || (params.sourceHandle || ''), operator: '=', rightField: rightField || (params.targetHandle || '') }
+                {
+                    operator1: 'AND',
+                    brackets1: '',
+                    func: '',
+                    leftField: params.sourceHandle || '', // Source Handle (Right side of specific row)
+                    operator: '=',
+                    joinFunc: '',
+                    rightField: params.targetHandle || '', // Target Handle (Left side of specific row)
+                    brackets2: ''
+                }
             ]
         }
     }
+
+    console.log('Creating new edge with conditions:', {
+        edgeId,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
+        conditions: newEdge.data.conditions
+    })
+
     addEdges([newEdge])
 
     // 延迟一下确保 Vue Flow 内部状态更新后选中
@@ -617,6 +663,12 @@ onConnect((params) => {
         const edge = elements.value.find(el => el.id === edgeId)
         if (edge) {
             selectedElement.value = edge
+            console.log('Selected edge:', {
+                id: edge.id,
+                source: edge.source,
+                target: edge.target,
+                conditions: edge.data?.conditions
+            })
         }
     }, 50)
     pushHistory()
@@ -1010,64 +1062,82 @@ const validateAndAssemble = () => {
         return null
     }
 
-    // 4. 组装 Joins
+    // 4. 组装 Joins (Master-Detail Structure)
     const joins: any[] = []
-    for (const el of elements.value) {
-        if (el.type === 'edge') {
-            // Source & Target
-            const sourceNode = elements.value.find(n => n.id === el.source)
-            const targetNode = elements.value.find(n => n.id === el.target)
-            if (!sourceNode || !targetNode) continue
+    const join_fields: any[] = []
 
-            // 处理多个关联条件
-            const conditions = el.data.conditions || []
-            if (conditions.length > 0) {
-                conditions.forEach((cond: any, index: number) => {
-                    joins.push({
-                        table_id: sourceNode.id,
-                        table_schema: sourceNode.data.schema,
-                        table_name: sourceNode.data.tableName,
-                        join_table_id: targetNode.id,
-                        join_table_schema: targetNode.data.schema,
-                        join_table_name: targetNode.data.tableName,
-                        join_type: el.data.joinType,
-                        operator1: index === 0 ? 'AND' : (cond.operator1 || 'AND'),
-                        operator2: cond.operator || '=',
-                        column_name: cond.leftField,
-                        join_column_name: cond.rightField,
-                        remark: el.data.joinCondition // 保留以防万一
-                    })
-                })
-            } else {
-                // 如果没有条件，添加一个空的或者尝试解析 legacy joinCondition
-                joins.push({
-                    table_id: sourceNode.id,
-                    table_schema: sourceNode.data.schema,
-                    table_name: sourceNode.data.tableName,
-                    join_table_id: targetNode.id,
-                    join_table_schema: targetNode.data.schema,
-                    join_table_name: targetNode.data.tableName,
-                    join_type: el.data.joinType,
-                    remark: el.data.joinCondition,
-                    column_name: '',
-                    join_column_name: '',
-                    operator2: '='
-                })
+    // Group edges by Source-Target
+    const joinGroups = new Map<string, any[]>()
+    const edgeList = elements.value.filter(el => (el.type === 'default' || el.source) && el.source && el.target)
 
-                const condition = el.data.joinCondition || '';
-                const match = condition.match(/([^=<>!]+)\s*(=|!=|<>|>|<|>=|<=)\s*([^=<>!]+)/);
-                if (match) {
-                    const operator = match[2].trim();
-                    const leftParts = match[1].trim().split('.');
-                    const rightParts = match[3].trim().split('.');
-                    const lastJoin = joins[joins.length - 1];
-                    lastJoin.column_name = leftParts[leftParts.length - 1];
-                    lastJoin.join_column_name = rightParts[rightParts.length - 1];
-                    lastJoin.operator2 = operator;
-                }
-            }
+    edgeList.forEach(el => {
+        const key = `${el.source}-${el.target}`
+        if (!joinGroups.has(key)) {
+            joinGroups.set(key, [])
         }
-    }
+        joinGroups.get(key)?.push(el)
+    })
+
+    joinGroups.forEach((groupEdges) => {
+        // Use the first edge to determine base relationship info
+        const firstEdge = groupEdges[0]
+        const sourceNode = elements.value.find(n => n.id === firstEdge.source)
+        const targetNode = elements.value.find(n => n.id === firstEdge.target)
+
+        if (!sourceNode || !targetNode) return
+
+        // Create Master Record (MdModelJoin)
+        const joinId = `join-${sourceNode.id}-${targetNode.id}`
+        joins.push({
+            id: joinId,
+            join_type: firstEdge.data.joinType || 'LEFT JOIN',
+            join_table_id: sourceNode.id,
+            join_table_schema: sourceNode.data.schema,
+            join_table_name: sourceNode.data.tableName,
+            join_table_title: sourceNode.data.label || sourceNode.data.tableName,
+            remark: firstEdge.data.joinCondition || ''
+        })
+
+        // Collect all conditions from all edges in this group
+        let allConditions: any[] = []
+        groupEdges.forEach(edge => {
+            if (edge.data && edge.data.conditions) {
+                allConditions = allConditions.concat(edge.data.conditions)
+            }
+        })
+
+        // Create Detail Records (MdModelJoinField)
+        if (allConditions.length > 0) {
+            allConditions.forEach((cond: any, index: number) => {
+                join_fields.push({
+                    join_id: joinId,
+                    operator1: index === 0 ? 'AND' : (cond.operator1 || 'AND'),
+                    brackets1: cond.brackets1 || '',
+
+                    // Table Side (Target Node - 主表)
+                    table_id: targetNode.id,
+                    table_schema: targetNode.data.schema,
+                    table_name: targetNode.data.tableName,
+                    table_title: targetNode.data.label || targetNode.data.tableName,
+                    column_name: cond.rightField || '',
+                    column_title: cond.rightField || '',
+                    func: cond.joinFunc || '', // UI Right/Target Function
+
+                    operator2: cond.operator || '=',
+
+                    // Join Table Side (Source Node - 关联表)
+                    join_column_name: cond.leftField || '',
+                    join_column_title: cond.leftField || '',
+                    join_func: cond.func || '', // UI Left/Source Function
+
+                    brackets2: cond.brackets2 || '',
+                    order: index
+                })
+            })
+        }
+    })
+
+
 
     // 5. 组装 Wheres
     const wheres = (modelConfig.wheres || []).map((item: any, index: number) => {
@@ -1170,6 +1240,7 @@ const validateAndAssemble = () => {
         tables,
         fields,
         joins,
+        join_fields,
         wheres,
         orders,
         groups,

@@ -38,6 +38,9 @@ func Migrate(db *gorm.DB) error {
 	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='模型关联JOIN'").AutoMigrate(&model.MdModelJoin{}); err != nil {
 		return err
 	}
+	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='模型关联JOIN字段'").AutoMigrate(&model.MdModelJoinField{}); err != nil {
+		return err
+	}
 	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='模型分页限制'").AutoMigrate(&model.MdModelLimit{}); err != nil {
 		return err
 	}

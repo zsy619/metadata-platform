@@ -50,7 +50,7 @@ const columns = ref<any[]>([])
 const tableData = ref<any[]>([])
 const loading = ref(false)
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
 const total = ref(0)
 const search = ref('')
 

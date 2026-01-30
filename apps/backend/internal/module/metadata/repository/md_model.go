@@ -17,7 +17,7 @@ type MdModelRepository interface {
 	GetModelsByConnID(connID string) ([]model.MdModel, error)
 	GetModels(tenantID string, offset, limit int, search string, modelKind int) ([]model.MdModel, int64, error)
 	GetAllModels(tenantID string) ([]model.MdModel, error)
-	SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error
+	SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, joinFields []model.MdModelJoinField, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error
 }
 
 // mdModelRepository 模型定义仓库实现
@@ -71,6 +71,7 @@ func (r *mdModelRepository) DeleteModel(id string) error {
 			&model.MdModelGroup{},
 			&model.MdModelHaving{},
 			&model.MdModelJoin{},
+			&model.MdModelJoinField{},
 			&model.MdModelLimit{},
 			&model.MdModelOrder{},
 			&model.MdModelRelation{},
@@ -143,8 +144,9 @@ func (r *mdModelRepository) GetAllModels(tenantID string) ([]model.MdModel, erro
 	err := r.db.Where("tenant_id = ? AND is_deleted = ?", tenantID, false).Order("create_at DESC").Find(&models).Error
 	return models, err
 }
+
 // SaveVisualModel 全量事务保存可视化模型相关配置
-func (r *mdModelRepository) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
+func (r *mdModelRepository) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, joinFields []model.MdModelJoinField, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// 1. 保存/更新模型主表
 		if err := tx.Save(md).Error; err != nil {
@@ -156,6 +158,7 @@ func (r *mdModelRepository) SaveVisualModel(md *model.MdModel, tables []model.Md
 			&model.MdModelTable{},
 			&model.MdModelField{},
 			&model.MdModelJoin{},
+			&model.MdModelJoinField{},
 			&model.MdModelWhere{},
 			&model.MdModelOrder{},
 			&model.MdModelGroup{},
@@ -181,6 +184,11 @@ func (r *mdModelRepository) SaveVisualModel(md *model.MdModel, tables []model.Md
 		}
 		if len(joins) > 0 {
 			if err := tx.Create(&joins).Error; err != nil {
+				return err
+			}
+		}
+		if len(joinFields) > 0 {
+			if err := tx.Create(&joinFields).Error; err != nil {
 				return err
 			}
 		}

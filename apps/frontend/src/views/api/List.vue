@@ -135,7 +135,7 @@ const filterState = ref('')
 const apis = ref<API[]>([])
 const total = ref(0)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
 
 // 生命周期钩子
 onMounted(() => {

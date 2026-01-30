@@ -116,13 +116,14 @@ type SaveVisualModelRequest struct {
 	IsPublic     bool                 `json:"is_public"`
 	Remark       string               `json:"remark"`
 	Parameters   string               `json:"parameters"`
-	Tables       []model.MdModelTable `json:"tables"`
-	Fields       []model.MdModelField `json:"fields"`
-	Joins        []model.MdModelJoin  `json:"joins"`
-	Wheres       []model.MdModelWhere `json:"wheres"`
-	Orders       []model.MdModelOrder `json:"orders"`
-	Groups       []model.MdModelGroup `json:"groups"`
-	Havings      []model.MdModelHaving `json:"havings"`
+	Tables       []model.MdModelTable     `json:"tables"`
+	Fields       []model.MdModelField     `json:"fields"`
+	Joins        []model.MdModelJoin      `json:"joins"`
+	JoinFields   []model.MdModelJoinField `json:"join_fields"`
+	Wheres       []model.MdModelWhere     `json:"wheres"`
+	Orders       []model.MdModelOrder     `json:"orders"`
+	Groups       []model.MdModelGroup     `json:"groups"`
+	Havings      []model.MdModelHaving    `json:"havings"`
 }
 
 // UpdateModelFieldRequest 更新模型字段请求
@@ -640,6 +641,7 @@ func (h *MdModelHandler) SaveVisualModel(c context.Context, ctx *app.RequestCont
 		Tables:       req.Tables,
 		Fields:       req.Fields,
 		Joins:        req.Joins,
+		JoinFields:   req.JoinFields,
 		Wheres:       req.Wheres,
 		Orders:       req.Orders,
 		Groups:       req.Groups,

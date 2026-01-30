@@ -163,7 +163,10 @@ func BenchmarkSQLBuilder_BuildFromMetadata(b *testing.B) {
 			{ColumnName: "total_amount", AggFunc: "SUM"},
 		},
 		Joins: []*model.MdModelJoin{
-			{JoinType: "left", JoinTableNameStr: "users", TableNameStr: "orders", ColumnName: "user_id", JoinColumnName: "id"},
+			{ID: "join1", JoinType: "left", JoinTableNameStr: "users", TableNameStr: "orders"},
+		},
+		JoinFields: []*model.MdModelJoinField{
+			{JoinID: "join1", ColumnName: "user_id", JoinColumnName: "id", Operator2: "="},
 		},
 		Wheres: []*model.MdModelWhere{
 			{TableNameStr: "orders", ColumnName: "status", Operator2: "=", Value1: "paid"},

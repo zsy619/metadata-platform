@@ -36,9 +36,10 @@ func (m *MockMdModelRepo) GetModels(tenantID string, offset, limit int, search s
 }
 func (m *MockMdModelRepo) GetAllModels(tenantID string) ([]model.MdModel, error) { return nil, nil }
 
-func (m *MockMdModelRepo) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
-	return m.Called(md, tables, fields, joins, wheres, orders, groups, havings).Error(0)
+func (m *MockMdModelRepo) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, joinFields []model.MdModelJoinField, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
+	return m.Called(md, tables, fields, joins, joinFields, wheres, orders, groups, havings).Error(0)
 }
+
 
 type MockMdConnRepo struct{ mock.Mock }
 

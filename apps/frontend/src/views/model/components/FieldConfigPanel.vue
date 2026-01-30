@@ -179,39 +179,72 @@
                             <span>关联</span>
                         </span>
                     </template>
-                    <div v-if="selectedElement?.type === 'edge' || activeTab === 'joins'" class="tab-content">
+                    <div v-if="(selectedElement?.type === 'default' || selectedElement?.source) || activeTab === 'joins'" class="tab-content">
                         <h4 class="content-title">关联设置 (JOIN)</h4>
-                        <div v-if="selectedElement?.type === 'edge'">
-                            <el-form label-position="top" size="small">
-                                <el-form-item label="关联类型">
-                                    <el-select v-model="selectedElement.data.joinType" style="width: 100%">
-                                        <el-option label="LEFT JOIN" value="LEFT JOIN" />
-                                        <el-option label="INNER JOIN" value="INNER JOIN" />
-                                        <el-option label="RIGHT JOIN" value="RIGHT JOIN" />
+                        <div v-if="(selectedElement?.type === 'default' || selectedElement?.source)">
+                            <!-- 主表信息：表名和关联类型 -->
+                            <div class="join-header">
+                                <div class="join-header-row">
+                                    <div class="join-table-info">
+                                        <label>源表</label>
+                                        <el-input :value="sourceTableName" readonly size="small" />
+                                    </div>
+                                    <div class="join-type-selector">
+                                        <label>关联类型</label>
+                                        <el-select v-model="selectedElement.data.joinType" size="small">
+                                            <el-option label="LEFT JOIN" value="LEFT JOIN" />
+                                            <el-option label="INNER JOIN" value="INNER JOIN" />
+                                            <el-option label="RIGHT JOIN" value="RIGHT JOIN" />
+                                        </el-select>
+                                    </div>
+                                    <div class="join-table-info">
+                                        <label>目标表</label>
+                                        <el-input :value="targetTableName" readonly size="small" />
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 从表：字段关联条件 -->
+                            <div class="join-conditions">
+                                <label class="section-label">关联条件 (ON)</label>
+                                <div v-for="(cond, index) in (selectedElement.data.conditions || [])" :key="index" class="condition-row">
+                                    <el-select v-model="cond.operator1" placeholder="逻辑" size="small" style="width: 70px" v-if="Number(index) > 0">
+                                        <el-option label="AND" value="AND" />
+                                        <el-option label="OR" value="OR" />
                                     </el-select>
-                                </el-form-item>
-                                <el-form-item label="关联条件 (ON)">
-                                    <div v-for="(cond, index) in (selectedElement.data.conditions || [])" :key="index" class="config-item-row mb-2">
-                                        <el-select v-model="cond.operator1" placeholder="逻辑" size="small" style="width: 70px" v-if="Number(index) > 0">
-                                            <el-option label="AND" value="AND" />
-                                            <el-option label="OR" value="OR" />
-                                        </el-select>
-                                        <div v-else style="width: 70px"></div>
-                                        <el-select v-model="cond.leftField" placeholder="源表字段" size="small" style="flex: 1">
-                                            <el-option v-for="f in sourceFields" :key="f.value" :label="f.label" :value="f.value" />
-                                        </el-select>
-                                        <span style="font-size: 12px; margin: 0 4px">=</span>
-                                        <el-select v-model="cond.rightField" placeholder="目标字段" size="small" style="flex: 1">
-                                            <el-option v-for="f in targetFields" :key="f.value" :label="f.label" :value="f.value" />
-                                        </el-select>
-                                        <el-button type="danger" link :icon="Delete" @click="removeJoinCondition(Number(index))" />
-                                    </div>
-                                    <el-button type="primary" link icon="Plus" size="small" @click="addJoinCondition">添加条件</el-button>
-                                    <div class="mt-2">
-                                        <el-input v-model="selectedElement.data.joinCondition" type="textarea" :rows="2" placeholder="或者手动输入 SQL 条件" />
-                                    </div>
-                                </el-form-item>
-                            </el-form>
+                                    <div v-else style="width: 70px"></div>
+                                    <el-select v-model="cond.brackets1" placeholder="(" size="small" style="width: 60px" clearable>
+                                        <el-option label="" value="" />
+                                        <el-option label="(" value="(" />
+                                        <el-option label="((" value="((" />
+                                    </el-select>
+                                    <el-input v-model="cond.func" placeholder="函数" size="small" style="width: 80px" />
+                                    <el-select v-model="cond.leftField" placeholder="源表字段" size="small" style="flex: 1">
+                                        <el-option v-for="f in sourceFields" :key="f.value" :label="f.label" :value="f.value" />
+                                    </el-select>
+                                    <el-select v-model="cond.operator" placeholder="=" size="small" style="width: 80px">
+                                        <el-option label="=" value="=" />
+                                        <el-option label="!=" value="!=" />
+                                        <el-option label=">" value=">" />
+                                        <el-option label="<" value="<" />
+                                        <el-option label=">=" value=">=" />
+                                        <el-option label="<=" value="<=" />
+                                        <el-option label="LIKE" value="LIKE" />
+                                    </el-select>
+                                    <el-input v-model="cond.joinFunc" placeholder="函数" size="small" style="width: 80px" />
+                                    <el-select v-model="cond.rightField" placeholder="目标字段" size="small" style="flex: 1">
+                                        <el-option v-for="f in targetFields" :key="f.value" :label="f.label" :value="f.value" />
+                                    </el-select>
+                                    <el-select v-model="cond.brackets2" placeholder=")" size="small" style="width: 60px" clearable>
+                                        <el-option label="" value="" />
+                                        <el-option label=")" value=")" />
+                                        <el-option label="))" value="))" />
+                                    </el-select>
+                                    <el-button type="danger" link :icon="Delete" @click="removeJoinCondition(Number(index))" />
+                                </div>
+                                <div class="mt-2">
+                                    <el-button class="add-btn-block" icon="Plus" @click="addJoinCondition">添加关联条件</el-button>
+                                </div>
+                            </div>
                         </div>
                         <el-empty v-else description="在画布中选择连线以配置关联" :image-size="40" />
                     </div>
@@ -766,30 +799,56 @@ const removeGroup = (index: number) => {
 }
 
 const sourceFields = computed(() => {
-    if (props.selectedElement?.type !== 'edge') return []
+    if (!props.selectedElement?.source) return []
     const sourceNode = props.elements.find(el => el.id === props.selectedElement.source)
     if (!sourceNode || !sourceNode.data.fields) return []
-    return sourceNode.data.fields.map((f: any) => ({
+    const fields = sourceNode.data.fields.map((f: any) => ({
         label: f.name,
         value: f.name
     }))
+    console.log('sourceFields:', fields, 'from node:', sourceNode.id)
+    return fields
 })
 
 const targetFields = computed(() => {
-    if (props.selectedElement?.type !== 'edge') return []
+    if (!props.selectedElement?.target) return []
     const targetNode = props.elements.find(el => el.id === props.selectedElement.target)
     if (!targetNode || !targetNode.data.fields) return []
-    return targetNode.data.fields.map((f: any) => ({
+    const fields = targetNode.data.fields.map((f: any) => ({
         label: f.name,
         value: f.name
     }))
+    console.log('targetFields:', fields, 'from node:', targetNode.id)
+    return fields
 })
+
+const sourceTableName = computed(() => {
+    if (!props.selectedElement?.source) return ''
+    const sourceNode = props.elements.find(el => el.id === props.selectedElement.source)
+    return sourceNode?.data?.label || sourceNode?.data?.tableName || ''
+})
+
+const targetTableName = computed(() => {
+    if (!props.selectedElement?.target) return ''
+    const targetNode = props.elements.find(el => el.id === props.selectedElement.target)
+    return targetNode?.data?.label || targetNode?.data?.tableName || ''
+})
+
 
 const addJoinCondition = () => {
     if (!props.selectedElement.data.conditions) {
         props.selectedElement.data.conditions = []
     }
-    props.selectedElement.data.conditions.push({ operator1: 'AND', leftField: '', operator: '=', rightField: '' })
+    props.selectedElement.data.conditions.push({
+        operator1: 'AND',
+        brackets1: '',
+        func: '',
+        leftField: '',
+        operator: '=',
+        joinFunc: '',
+        rightField: '',
+        brackets2: ''
+    })
 }
 
 const removeJoinCondition = (index: number) => {
@@ -855,10 +914,12 @@ watch(() => props.selectedElement, (newEl) => {
                 modelTableRef.value.setCurrentRow(row)
             }
         }, 100)
-    } else if (newEl.type === 'edge') {
+    } else if (newEl.source && newEl.target) {
+        // 检查是否有 source 和 target 属性来判断是连接线
         activeTab.value = 'joins'
     }
 }, { immediate: true })
+
 </script>
 <style scoped>
 .field-config-panel {
@@ -969,6 +1030,68 @@ watch(() => props.selectedElement, (newEl) => {
     align-items: center;
     width: 100%;
 }
+
+/* Join Header Styles */
+.join-header {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f5f7fa;
+    border-radius: 4px;
+}
+
+.join-header-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.join-table-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.join-table-info label {
+    font-size: 12px;
+    color: #606266;
+    font-weight: 500;
+}
+
+.join-type-selector {
+    flex: 0 0 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.join-type-selector label {
+    font-size: 12px;
+    color: #606266;
+    font-weight: 500;
+}
+
+/* Join Conditions Styles */
+.join-conditions {
+    margin-top: 8px;
+}
+
+.section-label {
+    display: block;
+    font-size: 12px;
+    color: #606266;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.condition-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+    width: 100%;
+}
+
 
 .content-title {
     margin-top: 0;

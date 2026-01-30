@@ -20,10 +20,11 @@
                         <!-- <span class="field-type">{{ field.type }}</span> -->
                     </div>
                 </el-tooltip>
+                <!-- Field Handles -->
+                <Handle :id="field.name" type="source" :position="Position.Right" :style="{ top: '50%', right: '-6px', width: '10px', height: '10px', background: '#409EFF', border: '2px solid white', borderRadius: '50%', transform: 'translateY(-50%)' }" />
+                <Handle :id="field.name" type="target" :position="Position.Left" :style="{ top: '50%', left: '-6px', width: '10px', height: '10px', background: '#409EFF', border: '2px solid white', borderRadius: '50%', transform: 'translateY(-50%)' }" />
             </div>
         </div>
-        <Handle type="source" :position="Position.Right" />
-        <Handle type="target" :position="Position.Left" />
     </div>
 </template>
 <script setup lang="ts">
@@ -97,6 +98,10 @@ const toggleField = (field: any) => {
     padding: 4px 0;
     max-height: 200px;
     overflow-y: auto;
+}
+
+.field-item-wrapper {
+    position: relative;
 }
 
 .field-item {

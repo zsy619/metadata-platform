@@ -46,9 +46,10 @@ func (m *MockModelRepo) GetAllModels(tenantID string) ([]model.MdModel, error) {
 	return m.Called(tenantID).Get(0).([]model.MdModel), m.Called(tenantID).Error(1)
 }
 
-func (m *MockModelRepo) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
-	return m.Called(md, tables, fields, joins, wheres, orders, groups, havings).Error(0)
+func (m *MockModelRepo) SaveVisualModel(md *model.MdModel, tables []model.MdModelTable, fields []model.MdModelField, joins []model.MdModelJoin, joinFields []model.MdModelJoinField, wheres []model.MdModelWhere, orders []model.MdModelOrder, groups []model.MdModelGroup, havings []model.MdModelHaving) error {
+	return m.Called(md, tables, fields, joins, joinFields, wheres, orders, groups, havings).Error(0)
 }
+
 
 // MockModelSqlRepo
 type MockModelSqlRepo struct {

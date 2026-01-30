@@ -55,6 +55,7 @@ type SaveVisualModelRequest struct {
 	Tables       []model.MdModelTable
 	Fields       []model.MdModelField
 	Joins        []model.MdModelJoin
+	JoinFields   []model.MdModelJoinField
 	Wheres       []model.MdModelWhere
 	Orders       []model.MdModelOrder
 	Groups       []model.MdModelGroup
@@ -722,6 +723,15 @@ func (s *mdModelService) SaveVisualModel(req *SaveVisualModelRequest) (*model.Md
 		req.Joins[i].CreateBy = req.Username
 	}
 
+	for i := range req.JoinFields {
+		if req.JoinFields[i].ID == "" || strings.HasPrefix(req.JoinFields[i].ID, "tmp_") {
+			req.JoinFields[i].ID = s.snowflake.GenerateIDString()
+		}
+		req.JoinFields[i].TenantID = req.TenantID
+		req.JoinFields[i].CreateID = req.UserID
+		req.JoinFields[i].CreateBy = req.Username
+	}
+
 	for i := range req.Wheres {
 		if req.Wheres[i].ID == "" || strings.HasPrefix(req.Wheres[i].ID, "tmp_") {
 			req.Wheres[i].ID = s.snowflake.GenerateIDString()
@@ -763,7 +773,7 @@ func (s *mdModelService) SaveVisualModel(req *SaveVisualModelRequest) (*model.Md
 	}
 
 	// 3. 调用 Repo 执行全量保存
-	if err := s.modelRepo.SaveVisualModel(mdModel, req.Tables, req.Fields, req.Joins, req.Wheres, req.Orders, req.Groups, req.Havings); err != nil {
+	if err := s.modelRepo.SaveVisualModel(mdModel, req.Tables, req.Fields, req.Joins, req.JoinFields, req.Wheres, req.Orders, req.Groups, req.Havings); err != nil {
 		return nil, err
 	}
 
