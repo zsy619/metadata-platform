@@ -81,6 +81,7 @@ const handleConnChange = (val: any) => {
     background-color: #fff;
     transition: all 0.3s ease;
     width: 100%;
+    height: 100%;
 }
 
 .panel-header {
@@ -94,6 +95,7 @@ const handleConnChange = (val: any) => {
     cursor: move;
     /* Indicate draggable */
     user-select: none;
+    flex-shrink: 0;
 }
 
 .header-content {
@@ -110,12 +112,17 @@ const handleConnChange = (val: any) => {
 
 .panel-body {
     padding: 16px;
-    max-height: 500px;
+    flex: 1;
     overflow-y: auto;
+    /* max-height removed to allow filling container */
 }
 
 .is-collapsed .panel-header {
     border-bottom: none;
+}
+
+.is-collapsed {
+    height: auto !important;
 }
 
 :deep(.el-input-group__append) {

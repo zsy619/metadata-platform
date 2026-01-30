@@ -7,10 +7,19 @@
                 <span class="title">可视化模型构建器</span>
             </div>
             <div class="header-actions">
-                <el-button @click="addTable" type="primary" :icon="Plus">添加表</el-button>
-                <el-button @click="handlePreviewSQL" :icon="View">预览 SQL</el-button>
-                <el-button @click="handleFitView" :icon="FullScreen">适应画布</el-button>
-                <el-button @click="handleAutoLayout" :icon="Rank">自动布局</el-button>
+                <el-button @click="addTable" type="primary" :icon="Plus">选择表视图</el-button>
+                <el-dropdown trigger="click">
+                    <el-button>
+                        画布操作<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                            <el-dropdown-item :icon="View" @click="handlePreviewSQL">预览 SQL</el-dropdown-item>
+                            <el-dropdown-item :icon="FullScreen" @click="handleFitView">适应画布</el-dropdown-item>
+                            <el-dropdown-item :icon="Rank" @click="handleAutoLayout">自动布局</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
                 <el-button-group class="ml-2">
                     <el-button @click="undo" :icon="RefreshLeft" title="撤销 (Ctrl+Z)" :disabled="historyIndex <= 0" />
                     <el-button @click="redo" :icon="RefreshRight" title="重做 (Ctrl+Shift+Z)" :disabled="historyIndex >= historyStack.length - 1" />
@@ -18,7 +27,7 @@
                 <el-button @click="handleAutoAlias" type="warning" :icon="Check">智能别名</el-button>
                 <div class="divider"></div>
                 <!-- 节点搜索 -->
-                <el-select v-model="nodeSearchQuery" placeholder="搜索表..." filterable size="small" style="width: 150px" @change="handleNodeSearch" clearable>
+                <el-select v-model="nodeSearchQuery" placeholder="搜索表..." filterable style="width: 150px" @change="handleNodeSearch" clearable>
                     <el-option v-for="node in elements.filter(el => el.type === 'table')" :key="node.id" :label="node.data.label" :value="node.id" />
                 </el-select>
                 <el-button-group class="ml-2">
@@ -35,7 +44,7 @@
                 top: leftPanelPos.y + 'px',
                 left: leftPanelPos.x + 'px',
                 width: leftPanelSize.width + 'px',
-                height: leftCollapsed ? 'auto' : (leftPanelSize.height + 'px')
+                height: leftCollapsed ? 'auto' : ('480px')
             }">
                 <BaseInfoPanel :model="modelForm" :collapsed="leftCollapsed" @toggle-collapse="leftCollapsed = !leftCollapsed" @refresh-code="fetchGeneratedCode" @mousedown="startDrag($event, 'left')" />
                 <!-- 调整大小手柄（右侧） -->
@@ -58,17 +67,27 @@
                 </div>
             </div>
             <!-- 右栏：配置面板 -->
-            <div v-if="rightPanelVisible" class="side-panel right-panel" :style="{
+            <!-- 右栏：配置面板 -->
+            <div v-if="rightPanelVisible" class="side-panel right-panel" :style="rightMaximized ? {
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 200,
+                right: 'auto'
+            } : {
                 top: rightPanelPos.y + 'px',
                 right: rightPanelPos.x + 'px',
                 width: rightPanelSize.width + 'px',
                 height: rightCollapsed ? 'auto' : (rightPanelSize.height + 'px')
             }">
-                <FieldConfigPanel :elements="elements" :selected-element="selectedElement" :model-config="modelConfig" :collapsed="rightCollapsed" @toggle-collapse="rightCollapsed = !rightCollapsed" @mousedown="startDrag($event, 'right')" @remove-table="handleRemoveTable" @remove-field="handleRemoveField" />
+                <FieldConfigPanel :elements="elements" :selected-element="selectedElement" :model-config="modelConfig" :collapsed="rightCollapsed" :maximized="rightMaximized" @toggle-collapse="rightCollapsed = !rightCollapsed" @toggle-maximize="rightMaximized = !rightMaximized" @mousedown="startDrag($event, 'right')" @remove-table="handleRemoveTable" @remove-field="handleRemoveField" @select-node="handleListSelectNode" />
                 <!-- 调整大小手柄（左侧） -->
-                <div v-if="!rightCollapsed" class="panel-resize-handle left" @mousedown="startResize($event, 'right')"></div>
+                <div v-if="!rightCollapsed && !rightMaximized" class="panel-resize-handle left" @mousedown="startResize($event, 'right')">
+                </div>
                 <!-- 底部调整大小手柄 -->
-                <div v-if="!rightCollapsed" class="panel-resize-handle bottom" @mousedown="startResize($event, 'right')"></div>
+                <div v-if="!rightCollapsed && !rightMaximized" class="panel-resize-handle bottom" @mousedown="startResize($event, 'right')">
+                </div>
             </div>
         </div>
         <!-- 表选择弹窗 -->
@@ -113,7 +132,7 @@
 </template>
 <script setup lang="ts">
 import { showConfirm } from '@/utils/confirm'
-import { ArrowLeft, Check, FullScreen, Plus, Rank, RefreshLeft, RefreshRight, Setting, VideoPlay, View } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowLeft, Check, FullScreen, Plus, Rank, RefreshLeft, RefreshRight, Setting, VideoPlay, View } from '@element-plus/icons-vue'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MarkerType, VueFlow, useVueFlow } from '@vue-flow/core'
@@ -188,10 +207,11 @@ const fetchGeneratedCode = async () => {
 // 面板状态
 const leftCollapsed = ref(false)
 const rightCollapsed = ref(false)
+const rightMaximized = ref(false)
 
 const leftPanelPos = reactive({ x: 20, y: 40 })
 const rightPanelPos = reactive({ x: 20, y: 40 })
-const leftPanelSize = reactive({ width: 300, height: 400 })
+const leftPanelSize = reactive({ width: 300, height: 580 })
 const rightPanelSize = reactive({ width: 600, height: 600 })
 const containerRef = ref<HTMLElement | null>(null)
 
@@ -353,6 +373,11 @@ const handleResize = (e: MouseEvent) => {
         if (newWidth > 200 && newWidth < 800) {
             leftPanelSize.width = newWidth
         }
+
+        const newHeight = initialPanelSize.height + dy
+        if (newHeight > 200 && newHeight < 900) {
+            leftPanelSize.height = newHeight
+        }
     } else if (resizingPanel.value === 'right') {
         // 右边面板的手柄在左侧，向左拖拽（dx 为负）应当增加宽度
         const newWidth = initialPanelSize.width - dx
@@ -420,21 +445,39 @@ const handleTableSelect = async (selectedTables: MdTable[]) => {
                 type: f.column_type,
                 comment: f.column_comment,
                 length: f.data_length,
-                selected: false
+                selected: false,
+                alias: f.column_name,
+                showTitle: f.column_comment || f.column_name,
+                showWidth: 100,
+                func: '',
+                aggFunc: ''
             }))
 
             // 判断是否为主表（如果画布为空，则第一张选中的表为主表）
             const isMain = elements.value.length === 0 && newNodes.length === 0
 
+            // 生成唯一的别名
+            let tableAlias = table.table_name
+            let counter = 1
+            const existingAliases = [...elements.value, ...newNodes]
+                .filter(el => el.type === 'table')
+                .map(el => el.data.tableAlias || el.data.tableName)
+
+            while (existingAliases.includes(tableAlias)) {
+                tableAlias = `${table.table_name}_${counter++}`
+            }
+
             const newNode = {
                 id: table.id,
                 type: 'table',
-                label: table.table_name,
+                label: tableAlias, // 画布显示别名
                 position: { x: 100 + elements.value.length * 50 + newNodes.length * 50, y: 100 + elements.value.length * 50 + newNodes.length * 50 },
                 data: {
-                    label: table.table_name,
+                    label: tableAlias,
                     schema: table.table_schema,
                     tableName: table.table_name,
+                    tableTitle: table.table_comment || table.table_name,
+                    tableAlias: tableAlias,
                     isMain: isMain,
                     fields: fields
                 }
@@ -585,6 +628,15 @@ const handleNodeClick = ({ node }: any) => {
     const originalNode = elements.value.find(el => el.id === node.id)
     if (originalNode) {
         selectedElement.value = originalNode
+    }
+}
+
+const handleListSelectNode = (nodeId: string) => {
+    const originalNode = elements.value.find(el => el.id === nodeId)
+    if (originalNode) {
+        selectedElement.value = originalNode
+        // 自动居中显示该节点
+        setCenter(originalNode.position.x, originalNode.position.y, { zoom: 1.2, duration: 800 })
     }
 }
 
@@ -922,7 +974,8 @@ const validateAndAssemble = () => {
             is_main: isMain,
             table_schema: node.data.schema,
             table_name: node.data.tableName,
-            table_alias: node.data.alias || '', // 别名支持?
+            table_title: node.data.tableTitle || node.data.tableName,
+            table_alias: node.data.tableAlias || node.data.tableName,
             conn_id: modelForm.connID?.toString()
         })
 
@@ -935,11 +988,16 @@ const validateAndAssemble = () => {
                         model_id: '', // filled by backend
                         table_schema: node.data.schema,
                         table_name: node.data.tableName,
+                        table_title: node.data.tableTitle || node.data.tableName,
+                        column_id: f.id,
                         column_name: f.name,
                         column_title: f.comment || f.name,
-                        show_title: f.comment || f.name, // 默认展示标题
-                        field_type: f.type, // 需要映射?
-                        // ...
+                        column_alias: f.alias || f.name,
+                        show_title: f.showTitle || f.comment || f.name,
+                        show_width: f.showWidth || 100,
+                        func: f.func || '',
+                        agg_func: f.aggFunc || '',
+                        field_type: f.type
                     })
                 }
             })
@@ -1025,8 +1083,13 @@ const validateAndAssemble = () => {
             column_name: colName,
             column_title: colName,
             operator1: index === 0 ? 'AND' : (item.operator1 || 'AND'),
+            brackets1: item.brackets1,
+            func: item.func,
             operator2: item.operator,
-            value1: item.value
+            value1: item.value,
+            value2: item.value2,
+            param_key: item.param_key,
+            brackets2: item.brackets2
         }
     }).filter(Boolean)
 
@@ -1042,6 +1105,7 @@ const validateAndAssemble = () => {
             table_schema: node.data.schema,
             table_name: node.data.tableName,
             column_name: colName,
+            func: item.func,
             order_type: item.direction
         }
     }).filter(Boolean)
@@ -1057,7 +1121,9 @@ const validateAndAssemble = () => {
             table_id: nodeId,
             table_schema: node.data.schema,
             table_name: node.data.tableName,
-            column_name: colName
+            column_name: colName,
+            func: item.func,
+            agg_func: item.agg_func
         }
     }).filter(Boolean)
 
@@ -1073,10 +1139,15 @@ const validateAndAssemble = () => {
             table_schema: node.data.schema,
             table_name: node.data.tableName,
             column_name: colName === '*' ? '*' : colName,
-            aggregate_func: item.func,
+            func: item.func,
+            agg_func: item.agg_func,
             operator1: index === 0 ? 'AND' : (item.operator1 || 'AND'),
+            brackets1: item.brackets1,
             operator2: item.operator,
-            value1: item.value
+            value1: item.value,
+            value2: item.value2,
+            param_key: item.param_key,
+            brackets2: item.brackets2
         }
     }).filter(Boolean)
 
@@ -1354,12 +1425,22 @@ onUnmounted(() => {
     padding: 0 16px;
     flex-shrink: 0;
     z-index: 200;
+    overflow-x: auto;
+    /* Allow header to scroll horizontally if too narrow */
+}
+
+.builder-header::-webkit-scrollbar {
+    height: 0px;
+    background: transparent;
+    /* Optional: hide scrollbar or make it very subtle */
 }
 
 .header-left {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-shrink: 0;
+    /* Prevent shrinking */
 }
 
 .header-left .title {
@@ -1371,6 +1452,8 @@ onUnmounted(() => {
 .header-actions {
     display: flex;
     gap: 10px;
+    flex-shrink: 0;
+    /* Prevent shrinking */
 }
 
 .builder-container {

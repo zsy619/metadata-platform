@@ -14,6 +14,7 @@ type MdModelField struct {
 	ColumnID        string    `json:"column_id" form:"column_id" gorm:"type:varchar(64);not null;default:'0';comment:列ID"`
 	ColumnName      string    `json:"column_name" form:"column_name" gorm:"size:256;default:'';comment:列名"`
 	ColumnTitle     string    `json:"column_title" form:"column_title" gorm:"size:256;default:'';comment:列标题"`
+	ColumnAlias     string    `json:"column_alias" form:"column_alias" gorm:"size:256;default:'';comment:列别名"`
 	Func            string    `json:"func" form:"func" gorm:"size:256;not null;default:'';comment:字段函数"`
 	AggFunc         string    `json:"agg_func" form:"agg_func" gorm:"size:64;not null;default:'';comment:聚合函数：sum/count/avg/max/min"`
 	ColumnType      string    `json:"column_type" form:"column_type" gorm:"size:64;default:''"`

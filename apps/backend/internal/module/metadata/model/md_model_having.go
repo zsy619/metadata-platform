@@ -18,6 +18,7 @@ type MdModelHaving struct {
 	ColumnName         string    `json:"column_name" form:"column_name" gorm:"size:256;default:'';comment:字段名称"`
 	ColumnTitle        string    `json:"column_title" form:"column_title" gorm:"size:256;default:'';comment:字段标题"`
 	Func               string    `json:"func" form:"func" gorm:"size:256;not null;default:'';comment:字段函数"`
+	AggFunc            string    `json:"agg_func" form:"agg_func" gorm:"size:64;not null;default:'';comment:聚合函数：sum/count/avg/max/min"`
 	Operator2          string    `json:"operator2" form:"operator2" gorm:"size:64;not null;default:'';comment:运算符：=/</>/<=/>=/like/between"`
 	HavingTableSchema  string    `json:"having_table_schema" form:"having_table_schema" gorm:"size:64;default:'';comment:表模式"`
 	HavingTableID      string    `json:"having_table_id" form:"having_table_id" gorm:"type:varchar(64);not null;default:'0';comment:比较表ID"`
@@ -27,10 +28,11 @@ type MdModelHaving struct {
 	HavingColumnName   string    `json:"having_column_name" form:"having_column_name" gorm:"size:256;not null;default:'';comment:比较字段名称"`
 	HavingColumnTitle  string    `json:"having_column_title" form:"having_column_title" gorm:"size:256;not null;default:'';comment:比较字段标题"`
 	HavingFunc         string    `json:"having_func" form:"having_func" gorm:"size:64;not null;default:'';comment:比较字段函数"`
+	HavingAggFunc      string    `json:"having_agg_func" form:"having_agg_func" gorm:"size:64;not null;default:'';comment:聚合函数：sum/count/avg/max/min"`
 	Value1             string    `json:"value1" form:"value1" gorm:"size:128;not null;default:'';comment:值1"`
 	Value2             string    `json:"value2" form:"value2" gorm:"size:128;not null;default:'';comment:值2"`
 	ParamKey           string    `json:"param_key" form:"param_key" gorm:"size:128;not null;default:''"`
-	Remark       string    `json:"remark" form:"remark" gorm:"size:1024;default:'';comment:备注"`
+	Remark             string    `json:"remark" form:"remark" gorm:"size:1024;default:'';comment:备注"`
 	IsDeleted          bool      `json:"is_deleted" form:"is_deleted" gorm:"default:false;comment:是否删除"`
 	CreateID           string    `json:"create_id" form:"create_id" gorm:"size:64;default:'0';comment:创建人ID"`
 	CreateBy           string    `json:"create_by" form:"create_by" gorm:"size:64;default:'';comment:创建人"`

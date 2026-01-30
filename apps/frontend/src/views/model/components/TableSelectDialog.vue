@@ -1,10 +1,10 @@
 <template>
-    <el-dialog v-model="visible" title="选择数据表" width="600px" @closed="handleClosed" append-to-body>
+    <el-dialog v-model="visible" title="选择表与视图" width="600px" @closed="handleClosed" append-to-body>
         <div class="dialog-content">
             <div class="search-bar">
-                <el-input v-model="searchQuery" placeholder="搜索表名或编码" :prefix-icon="Search" clearable @input="handleSearch" />
+                <el-input v-model="searchQuery" placeholder="搜索表名或视图名" :prefix-icon="Search" clearable @input="handleSearch" />
             </div>
-            <el-table ref="tableRef" v-loading="loading" :data="filteredTables" height="400" @selection-change="handleSelectionChange">
+            <el-table ref="tableRef" v-loading="loading" :data="filteredTables" height="400" @selection-change="handleSelectionChange" @row-click="handleRowClick">
                 <el-table-column type="selection" width="55" />
                 <el-table-column prop="table_name" label="表名" />
                 <el-table-column prop="table_comment" label="描述" />
@@ -24,6 +24,7 @@
 import { getTablesByConnId } from '@/api/metadata';
 import type { MdTable } from '@/types/metadata';
 import { Search } from '@element-plus/icons-vue';
+import { ElTable } from 'element-plus';
 import { ref } from 'vue';
 
 const props = defineProps<{
@@ -34,6 +35,7 @@ const emit = defineEmits(['confirm'])
 
 const visible = ref(false)
 const loading = ref(false)
+const tableRef = ref<InstanceType<typeof ElTable>>()
 const tables = ref<MdTable[]>([])
 const filteredTables = ref<MdTable[]>([])
 const selectedTables = ref<MdTable[]>([])
@@ -75,6 +77,10 @@ const handleSearch = () => {
 
 const handleSelectionChange = (val: MdTable[]) => {
     selectedTables.value = val
+}
+
+const handleRowClick = (row: MdTable) => {
+    tableRef.value?.toggleRowSelection(row)
 }
 
 const handleConfirm = () => {

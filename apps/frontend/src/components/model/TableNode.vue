@@ -4,7 +4,7 @@
             <el-icon>
                 <Grid />
             </el-icon>
-            <span class="table-name">{{ data.label }}</span>
+            <span class="table-name">{{ data.tableTitle || data.tableName || data.label }}</span>
             <el-tag v-if="data.isMain" size="small" type="warning" effect="dark">主</el-tag>
         </div>
         <div class="table-fields">
@@ -32,6 +32,9 @@ import { Handle, type NodeProps, Position } from '@vue-flow/core';
 
 interface TableData {
     label: string
+    tableName: string
+    tableTitle: string
+    tableAlias: string
     isMain: boolean
     isSearching?: boolean
     fields: Array<{ id: string; name: string; type: string; selected: boolean; comment?: string }>
@@ -63,8 +66,15 @@ const toggleField = (field: any) => {
 }
 
 @keyframes flash {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0.8; transform: scale(1.05); }
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
 }
 
 .table-header {

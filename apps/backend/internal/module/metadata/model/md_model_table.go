@@ -12,8 +12,9 @@ type MdModelTable struct {
 	TableID      string    `json:"table_id" form:"table_id" gorm:"type:varchar(64);not null;default:'0';comment:表ID"`
 	TableNameStr string    `json:"table_name" form:"table_name" gorm:"column:table_name;size:256;not null;default:'';comment:表名称"`
 	TableTitle   string    `json:"table_title" form:"table_title" gorm:"size:256;default:'';comment:表标题"`
-	IsMain          bool      `json:"is_main" form:"is_main" gorm:"not null;default:false;comment:是否主表"`
-	Remark          string    `json:"remark" form:"remark" gorm:"size:1024;default:'';comment:备注"`
+	TableAlias   string    `json:"table_alias" form:"table_alias" gorm:"size:256;default:'';comment:表别名"`
+	IsMain       bool      `json:"is_main" form:"is_main" gorm:"not null;default:false;comment:是否主表"`
+	Remark       string    `json:"remark" form:"remark" gorm:"size:1024;default:'';comment:备注"`
 	IsDeleted    bool      `json:"is_deleted" form:"is_deleted" gorm:"default:false;comment:是否删除"`
 	CreateID     string    `json:"create_id" form:"create_id" gorm:"size:64;default:'0';comment:创建人ID"`
 	CreateBy     string    `json:"create_by" form:"create_by" gorm:"size:64;default:'';comment:创建人"`

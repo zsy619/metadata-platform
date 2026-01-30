@@ -12,6 +12,7 @@ type MdTableField struct {
 	TableTitle      string    `json:"table_title" form:"table_title" gorm:"size:256;default:'';comment:表标题"`
 	ColumnName      string    `json:"column_name" form:"column_name" gorm:"size:256;default:'';comment:列名"`
 	ColumnTitle     string    `json:"column_title" form:"column_title" gorm:"size:256;default:'';comment:列标题"`
+	ColumnAlias     string    `json:"column_alias" form:"column_alias" gorm:"size:256;default:'';comment:列别名"`
 	ColumnType      string    `json:"column_type" form:"column_type" gorm:"size:64;default:'';comment:数据类型，例如INT、VARCHAR(255)、TIMESTAMP等"`
 	ColumnLength    int       `json:"column_length" form:"column_length" gorm:"default:0;comment:字段长度"`
 	ColumnComment   string    `json:"column_comment" form:"column_comment" gorm:"size:256;default:'';comment:字段描述"`
