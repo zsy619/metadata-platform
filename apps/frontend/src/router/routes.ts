@@ -212,6 +212,74 @@ const routes: RouteRecordRaw[] = [
         ]
     },
     {
+        path: '/sso',
+        component: Layout,
+        meta: { title: 'SSO管理', icon: 'Key' },
+        redirect: '/sso/tenant',
+        children: [
+            {
+                path: 'tenant',
+                name: 'SSOTenant',
+                component: () => import('@/views/sso/Tenant.vue'),
+                meta: { title: '租户管理', icon: 'OfficeBuilding' }
+            },
+            {
+                path: 'app',
+                name: 'SSOApp',
+                component: () => import('@/views/sso/App.vue'),
+                meta: { title: '应用管理', icon: 'App' }
+            },
+            {
+                path: 'organization',
+                name: 'SSOOrganization',
+                component: () => import('@/views/sso/Organization.vue'),
+                meta: { title: '组织管理', icon: 'School' }
+            },
+            {
+                path: 'orgKind',
+                name: 'SSOOrgKind',
+                component: () => import('@/views/sso/OrgKind.vue'),
+                meta: { title: '组织类型', icon: 'Collection' }
+            },
+            {
+                path: 'menu',
+                name: 'SSOMenu',
+                component: () => import('@/views/sso/Menu.vue'),
+                meta: { title: '菜单管理', icon: 'Menu' }
+            },
+            {
+                path: 'position',
+                name: 'SSOPosition',
+                component: () => import('@/views/sso/Position.vue'),
+                meta: { title: '职位管理', icon: 'Briefcase' }
+            },
+            {
+                path: 'role',
+                name: 'SSORole',
+                component: () => import('@/views/sso/Role.vue'),
+                meta: { title: '角色管理', icon: 'UserFilled' }
+            },
+            {
+                path: 'roleGroup',
+                name: 'SSORoleGroup',
+                component: () => import('@/views/sso/RoleGroup.vue'),
+                meta: { title: '角色组', icon: 'Folder' }
+            },
+            {
+                path: 'userGroup',
+                name: 'SSOUserGroup',
+                component: () => import('@/views/sso/UserGroup.vue'),
+                meta: { title: '用户组', icon: 'User' }
+            },
+            {
+                path: 'user',
+                name: 'SSOUser',
+                component: () => import('@/views/sso/User.vue'),
+                meta: { title: '用户管理', icon: 'Avatar' }
+            }
+        ]
+    },
+    {
         path: '/system',
         component: Layout,
         meta: { title: '系统设置', icon: 'Setting' },

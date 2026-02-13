@@ -1,7 +1,7 @@
 /**
  * 用户管理模块API服务
  */
-import type { LoginRequest, LoginResponse, Tenant, User } from '@/types/user'
+import type { LoginRequest, LoginResponse, Tenant, User, App, Menu, Role, Unit, Pos } from '@/types/user'
 import request from '@/utils/request'
 
 // ==================== 用户相关API ====================
@@ -463,4 +463,62 @@ export const deletePos = async (id: string): Promise<void> => {
     url: `/api/pos/${id}`,
     method: 'delete'
   })
+}
+
+// ==================== 组织类型相关API ====================
+
+export const getOrgKinds = async (): Promise<any[]> => {
+  return request({ url: '/api/org-kind', method: 'get' })
+}
+
+export const getOrgKindById = async (id: string): Promise<any> => {
+  return request({ url: `/api/org-kind/${id}`, method: 'get' })
+}
+
+export const createOrgKind = async (data: any): Promise<any> => {
+  return request({ url: '/api/org-kind', method: 'post', data })
+}
+
+export const updateOrgKind = async (id: string, data: any): Promise<any> => {
+  return request({ url: `/api/org-kind/${id}`, method: 'put', data })
+}
+
+export const deleteOrgKind = async (id: string): Promise<void> => {
+  return request({ url: `/api/org-kind/${id}`, method: 'delete' })
+}
+
+// ==================== 角色组相关API ====================
+
+export const getRoleGroups = async (): Promise<any[]> => {
+  return request({ url: '/api/role-group', method: 'get' })
+}
+
+export const createRoleGroup = async (data: any): Promise<any> => {
+  return request({ url: '/api/role-group', method: 'post', data })
+}
+
+export const updateRoleGroup = async (id: string, data: any): Promise<any> => {
+  return request({ url: `/api/role-group/${id}`, method: 'put', data })
+}
+
+export const deleteRoleGroup = async (id: string): Promise<void> => {
+  return request({ url: `/api/role-group/${id}`, method: 'delete' })
+}
+
+// ==================== 用户组相关API ====================
+
+export const getUserGroups = async (): Promise<any[]> => {
+  return request({ url: '/api/user-group', method: 'get' })
+}
+
+export const createUserGroup = async (data: any): Promise<any> => {
+  return request({ url: '/api/user-group', method: 'post', data })
+}
+
+export const updateUserGroup = async (id: string, data: any): Promise<any> => {
+  return request({ url: `/api/user-group/${id}`, method: 'put', data })
+}
+
+export const deleteUserGroup = async (id: string): Promise<void> => {
+  return request({ url: `/api/user-group/${id}`, method: 'delete' })
 }
