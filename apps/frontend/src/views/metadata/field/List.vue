@@ -69,7 +69,7 @@
         </el-card>
         <!-- 编辑备注对话框 -->
         <el-dialog v-model="editDialogVisible" title="编辑字段备注" width="500px">
-            <el-form :model="editForm" label-width="80px">
+            <el-form :model="editForm" label-width="120px" label-position="right">
                 <el-form-item label="字段名称">
                     <el-input v-model="editForm.column_name" disabled />
                 </el-form-item>

@@ -224,12 +224,6 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: '租户管理', icon: 'OfficeBuilding' }
             },
             {
-                path: 'app',
-                name: 'SSOApp',
-                component: () => import('@/views/sso/App.vue'),
-                meta: { title: '应用管理', icon: 'App' }
-            },
-            {
                 path: 'organization',
                 name: 'SSOOrganization',
                 component: () => import('@/views/sso/Organization.vue'),
@@ -280,6 +274,20 @@ const routes: RouteRecordRaw[] = [
         ]
     },
     {
+        path: '/sso-app',
+        component: Layout,
+        redirect: '/sso-app/list',
+        meta: { title: '应用管理', icon: 'Monitor' },
+        children: [
+            {
+                path: 'list',
+                name: 'SSOAppList',
+                component: () => import('@/views/sso/App.vue'),
+                meta: { title: '应用列表', icon: 'List' }
+            }
+        ]
+    },
+    {
         path: '/system',
         component: Layout,
         meta: { title: '系统设置', icon: 'Setting' },
@@ -295,7 +303,7 @@ const routes: RouteRecordRaw[] = [
                 path: 'audit',
                 component: RouterView,
                 redirect: '/system/audit/login',
-                meta: { title: '审计日志', icon: 'Document' },
+                meta: { title: '审计日志', icon: 'Clock' },
                 children: [
                     {
                         path: 'login',
@@ -314,6 +322,12 @@ const routes: RouteRecordRaw[] = [
                         name: 'AuditDataChangeLog',
                         component: () => import('@/views/system/audit/DataChangeLog.vue'),
                         meta: { title: '数据变更', icon: 'Edit' }
+                    },
+                    {
+                        path: 'access',
+                        name: 'AuditAccessLog',
+                        component: () => import('@/views/system/audit/AccessLog.vue'),
+                        meta: { title: '访问日志', icon: 'Monitor' }
                     }
                 ]
             }

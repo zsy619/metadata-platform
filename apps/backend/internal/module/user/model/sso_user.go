@@ -6,7 +6,7 @@ import "time"
 type SsoUser struct {
 	ID              string     `json:"id" form:"id" gorm:"primary_key;type:varchar(64);column:id;comment:主键ID"`
 	AccountID       string     `json:"account_id" form:"account_id" gorm:"type:varchar(64);column:account_id;comment:账号ID"`
-	ApplicationCode string     `json:"application_code" form:"application_code" gorm:"size:64;column:application_code;comment:应用编码"`
+	AppCode         string     `json:"app_code" form:"app_code" gorm:"size:64;column:app_code;comment:应用编码"`
 	Account         string     `json:"account" form:"account" gorm:"size:128;uniqueIndex;column:account;comment:账号"`
 	Password        string     `json:"password" form:"password" gorm:"size:64;column:password;comment:密码"`
 	Salt            string     `json:"salt" form:"salt" gorm:"size:64;column:salt;comment:盐值"` // Keep 64 for security upgrade, SQL said 32
@@ -17,8 +17,8 @@ type SsoUser struct {
 	Mobile          string     `json:"mobile" form:"mobile" gorm:"size:32;column:mobile;comment:手机号"`
 	Email           string     `json:"email" form:"email" gorm:"size:128;column:email;comment:电子邮箱"`
 	Avatar          string     `json:"avatar" form:"avatar" gorm:"size:128;column:avatar;comment:头像"`
-	OrganizationID  string     `json:"organization_id" form:"organization_id" gorm:"type:varchar(64);column:organization_id;comment:所属组织ID"`
-	State           int        `json:"state" form:"state" gorm:"not null;default:1;column:state;comment:状态"`
+	OrgID           string     `json:"org_id" form:"org_id" gorm:"type:varchar(64);column:org_id;comment:所属组织ID"`
+	Status          int        `json:"status" form:"status" gorm:"not null;default:1;column:status;comment:状态"`
 	EndTime         *time.Time `json:"end_time" form:"end_time" gorm:"type:datetime;column:end_time;comment:账号截止日期"`
 	Kind            int        `json:"kind" form:"kind" gorm:"default:2;column:kind;comment:账号类型(1:管理员, 2:普通用户)"`
 	Remark          string     `json:"remark" form:"remark" gorm:"size:512;column:remark;comment:备注"`
@@ -37,9 +37,9 @@ type SsoUser struct {
 	UpdateAt        time.Time  `json:"update_at" form:"update_at" gorm:"column:update_at;autoUpdateTime;comment:更新时间"`
 
 	// 关联数据 (不存入 sso_user 表)
-	Roles         []SsoRole         `json:"roles" gorm:"many2many:sso_user_role;joinForeignKey:UserID;joinReferences:RoleID"`
-	Positions     []SsoPosition     `json:"positions" gorm:"many2many:sso_user_position;joinForeignKey:UserID;joinReferences:PositionID"`
-	Organizations []SsoOrganization `json:"organizations" gorm:"many2many:sso_organization_user;joinForeignKey:UserID;joinReferences:OrganizationID"`
+	Roles         []SsoRole    `json:"roles" gorm:"many2many:sso_user_role;joinForeignKey:UserID;joinReferences:RoleID"`
+	Positions     []SsoPos     `json:"positions" gorm:"many2many:sso_user_pos;joinForeignKey:UserID;joinReferences:PosID"`
+	Organizations []SsoOrgUser `json:"organizations" gorm:"many2many:sso_organization_user;joinForeignKey:UserID;joinReferences:OrgID"`
 }
 
 // TableName 指定表名

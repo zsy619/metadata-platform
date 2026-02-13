@@ -37,7 +37,7 @@ func (r *DynamicRouter) LoadAndRegisterAll() error {
 	}
 
 	for _, a := range apis {
-		if a.State == 1 { // 仅注册启用状态的接口
+		if a.Status == 1 { // 仅注册启用状态的接口
 			r.RegisterAPI(a.Method, a.Path, a.Code)
 		}
 	}

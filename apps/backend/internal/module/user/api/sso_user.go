@@ -26,7 +26,7 @@ type SsoCreateUserRequest struct {
 	Mobile   string `json:"mobile" form:"mobile"`
 	Email    string `json:"email" form:"email"`
 	Kind     int    `json:"kind" form:"kind"`
-	State    int    `json:"state" form:"state"`
+	Status   int    `json:"status" form:"status"`
 	Remark   string `json:"remark" form:"remark"`
 }
 
@@ -38,7 +38,7 @@ type SsoUpdateUserRequest struct {
 	Mobile   string `json:"mobile" form:"mobile"`
 	Email    string `json:"email" form:"email"`
 	Kind     int    `json:"kind" form:"kind"`
-	State    int    `json:"state" form:"state"`
+	Status   int    `json:"status" form:"status"`
 	Remark   string `json:"remark" form:"remark"`
 }
 
@@ -58,7 +58,7 @@ func (h *SsoUserHandler) CreateUser(c context.Context, ctx *app.RequestContext) 
 		Mobile:   req.Mobile,
 		Email:    req.Email,
 		Kind:     req.Kind,
-		State:    req.State,
+		Status:    req.Status,
 		Remark:   req.Remark,
 	}
 
@@ -126,8 +126,8 @@ func (h *SsoUserHandler) UpdateUser(c context.Context, ctx *app.RequestContext) 
 	if req.Kind != 0 {
 		user.Kind = req.Kind
 	}
-	if req.State != 0 {
-		user.State = req.State
+	if req.Status != 0 {
+		user.Status = req.Status
 	}
 	if req.Remark != "" {
 		user.Remark = req.Remark

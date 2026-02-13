@@ -2,9 +2,9 @@ package service
 
 import (
 	"errors"
-
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/utils"
 )
 
 // ssoRoleService 角色服务实现
@@ -24,6 +24,17 @@ func (s *ssoRoleService) CreateRole(role *model.SsoRole) error {
 	if err == nil && existingRole != nil {
 		return errors.New("角色编码已存在")
 	}
+
+	// 检查父角色是否存在（如果有）
+	if role.ParentID != "" {
+		_, err := s.roleRepo.GetRoleByID(role.ParentID)
+		if err != nil {
+			return errors.New("父角色不存在")
+		}
+	}
+
+	// 使用全局雪花算法生成ID
+	role.ID = utils.GetSnowflake().GenerateIDString()
 
 	// 创建角色
 	return s.roleRepo.CreateRole(role)

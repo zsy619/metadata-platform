@@ -112,7 +112,7 @@
                 </el-tab-pane>
                 <el-tab-pane label="测试" name="test">
                     <div class="test-panel">
-                        <el-form label-width="100px">
+                        <el-form label-width="120px" label-position="right">
                             <el-form-item label="选择字段">
                                 <el-select v-model="testField" placeholder="选择字段" size="small">
                                     <el-option v-for="field in fieldsWithValidation" :key="field.name" :label="field.name" :value="field.name" />

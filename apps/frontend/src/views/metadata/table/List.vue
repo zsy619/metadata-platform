@@ -101,7 +101,7 @@
         </el-dialog>
         <!-- 修改表信息对话框 -->
         <el-dialog v-model="editDialogVisible" title="修改表信息" width="600px" class="custom-dialog">
-            <el-form :model="editForm" label-width="100px">
+            <el-form :model="editForm" label-width="120px" label-position="right">
                 <el-form-item label="表标题">
                     <el-input v-model="editForm.table_title" placeholder="请输入表标题" clearable />
                 </el-form-item>

@@ -20,40 +20,40 @@ func NewSsoMenuHandler(menuService service.SsoMenuService) *SsoMenuHandler {
 
 // SsoCreateMenuRequest 创建菜单请求结构
 type SsoCreateMenuRequest struct {
-	ParentID        string `json:"parent_id" form:"parent_id"`
-	ApplicationCode string `json:"application_code" form:"application_code"`
-	MenuName        string `json:"menu_name" form:"menu_name" binding:"required"`
-	MenuCode        string `json:"menu_code" form:"menu_code" binding:"required"`
-	State           int    `json:"state" form:"state"`
-	DataScope       string `json:"data_scope" form:"data_scope"`
-	Visible         int    `json:"visible" form:"visible"`
-	MenuType        string `json:"menu_type" form:"menu_type"`
-	Icon            string `json:"icon" form:"icon"`
-	URL             string `json:"url" form:"url"`
-	Method          string `json:"method" form:"method"`
-	Target          string `json:"target" form:"target"`
-	Remark          string `json:"remark" form:"remark"`
-	Sort            int    `json:"sort" form:"sort"`
-	Tier            int    `json:"tier" form:"tier"`
+	ParentID  string `json:"parent_id" form:"parent_id"`
+	AppCode   string `json:"application_code" form:"application_code"`
+	MenuName  string `json:"menu_name" form:"menu_name" binding:"required"`
+	MenuCode  string `json:"menu_code" form:"menu_code" binding:"required"`
+	Status    int    `json:"state" form:"state"`
+	DataScope string `json:"data_scope" form:"data_scope"`
+	Visible   int    `json:"visible" form:"visible"`
+	MenuType  string `json:"menu_type" form:"menu_type"`
+	Icon      string `json:"icon" form:"icon"`
+	URL       string `json:"url" form:"url"`
+	Method    string `json:"method" form:"method"`
+	Target    string `json:"target" form:"target"`
+	Remark    string `json:"remark" form:"remark"`
+	Sort      int    `json:"sort" form:"sort"`
+	Tier      int    `json:"tier" form:"tier"`
 }
 
 // SsoUpdateMenuRequest 更新菜单请求结构
 type SsoUpdateMenuRequest struct {
-	ParentID        string `json:"parent_id" form:"parent_id"`
-	ApplicationCode string `json:"application_code" form:"application_code"`
-	MenuName        string `json:"menu_name" form:"menu_name"`
-	MenuCode        string `json:"menu_code" form:"menu_code"`
-	State           int    `json:"state" form:"state"`
-	DataScope       string `json:"data_scope" form:"data_scope"`
-	Visible         int    `json:"visible" form:"visible"`
-	MenuType        string `json:"menu_type" form:"menu_type"`
-	Icon            string `json:"icon" form:"icon"`
-	URL             string `json:"url" form:"url"`
-	Method          string `json:"method" form:"method"`
-	Target          string `json:"target" form:"target"`
-	Remark          string `json:"remark" form:"remark"`
-	Sort            int    `json:"sort" form:"sort"`
-	Tier            int    `json:"tier" form:"tier"`
+	ParentID  string `json:"parent_id" form:"parent_id"`
+	AppCode   string `json:"application_code" form:"application_code"`
+	MenuName  string `json:"menu_name" form:"menu_name"`
+	MenuCode  string `json:"menu_code" form:"menu_code"`
+	Status    int    `json:"state" form:"state"`
+	DataScope string `json:"data_scope" form:"data_scope"`
+	Visible   int    `json:"visible" form:"visible"`
+	MenuType  string `json:"menu_type" form:"menu_type"`
+	Icon      string `json:"icon" form:"icon"`
+	URL       string `json:"url" form:"url"`
+	Method    string `json:"method" form:"method"`
+	Target    string `json:"target" form:"target"`
+	Remark    string `json:"remark" form:"remark"`
+	Sort      int    `json:"sort" form:"sort"`
+	Tier      int    `json:"tier" form:"tier"`
 }
 
 // CreateMenu 创建菜单
@@ -66,21 +66,21 @@ func (h *SsoMenuHandler) CreateMenu(c context.Context, ctx *app.RequestContext) 
 
 	// 创建菜单模型
 	menu := &model.SsoMenu{
-		ParentID:        req.ParentID,
-		ApplicationCode: req.ApplicationCode,
-		MenuName:        req.MenuName,
-		MenuCode:        req.MenuCode,
-		State:           req.State,
-		DataScope:       req.DataScope,
-		Visible:         req.Visible,
-		MenuType:        req.MenuType,
-		Icon:            req.Icon,
-		URL:             req.URL,
-		Method:          req.Method,
-		Target:          req.Target,
-		Remark:          req.Remark,
-		Sort:            req.Sort,
-		Tier:            req.Tier,
+		ParentID:  req.ParentID,
+		AppCode:   req.AppCode,
+		MenuName:  req.MenuName,
+		MenuCode:  req.MenuCode,
+		Status:    req.Status,
+		DataScope: req.DataScope,
+		Visible:   req.Visible,
+		MenuType:  req.MenuType,
+		Icon:      req.Icon,
+		URL:       req.URL,
+		Method:    req.Method,
+		Target:    req.Target,
+		Remark:    req.Remark,
+		Sort:      req.Sort,
+		Tier:      req.Tier,
 	}
 
 	// 调用服务层创建菜单
@@ -126,8 +126,8 @@ func (h *SsoMenuHandler) UpdateMenu(c context.Context, ctx *app.RequestContext) 
 	if req.ParentID != "" {
 		menu.ParentID = req.ParentID
 	}
-	if req.ApplicationCode != "" {
-		menu.ApplicationCode = req.ApplicationCode
+	if req.AppCode != "" {
+		menu.AppCode = req.AppCode
 	}
 	if req.MenuName != "" {
 		menu.MenuName = req.MenuName
@@ -135,8 +135,8 @@ func (h *SsoMenuHandler) UpdateMenu(c context.Context, ctx *app.RequestContext) 
 	if req.MenuCode != "" {
 		menu.MenuCode = req.MenuCode
 	}
-	if req.State != 0 {
-		menu.State = req.State
+	if req.Status != 0 {
+		menu.Status = req.Status
 	}
 	if req.DataScope != "" {
 		menu.DataScope = req.DataScope

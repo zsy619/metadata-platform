@@ -16,7 +16,7 @@ type MdConn struct {
 	ConnPassword string    `json:"conn_password" form:"conn_password" gorm:"size:128;default:'';comment:密码"`
 	ConnDatabase string    `json:"conn_database" form:"conn_database" gorm:"size:128;default:'';comment:数据库"`
 	ConnConn     string    `json:"conn_conn" form:"conn_conn" gorm:"size:1024;default:'';comment:链接地址：自动生成"`
-	State        int       `json:"state" form:"state" gorm:"not null;default:0;comment:连接状态: 0=未检测, 1=有效, 2=连接失败"`
+	Status       int       `json:"status" form:"status" gorm:"not null;default:0;comment:连接状态: 0=未检测, 1=有效, 2=连接失败"`
 	Remark       string    `json:"remark" form:"remark" gorm:"size:512;default:'';comment:备注"`
 	IsDeleted    bool      `json:"is_deleted" form:"is_deleted" gorm:"default:false;comment:是否删除"`
 	CreateID     string    `json:"create_id" form:"create_id" gorm:"size:64;default:'0';comment:创建人ID"`

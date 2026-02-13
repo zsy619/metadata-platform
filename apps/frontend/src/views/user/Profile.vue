@@ -29,8 +29,8 @@
                         <div class="bio-item">
                             <div class="label">账号状态:</div>
                             <div class="value">
-                                <el-tag :type="userInfo.state === 1 ? 'success' : 'danger'" size="small">
-                                    {{ userInfo.state === 1 ? '启用' : '禁用' }}
+                                <el-tag :type="userInfo.status === 1 ? 'success' : 'danger'" size="small">
+                                    {{ userInfo.status === 1 ? '启用' : '禁用' }}
                                 </el-tag>
                             </div>
                         </div>
@@ -86,7 +86,7 @@
                         </el-tab-pane>
                         <!-- 修改密码 -->
                         <el-tab-pane label="修改密码" name="password">
-                            <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px">
+                            <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="120px" label-position="right">
                                 <el-form-item label="原密码" prop="oldPassword">
                                     <el-input v-model="passwordForm.oldPassword" type="password" show-password placeholder="请输入原密码" />
                                 </el-form-item>
@@ -130,7 +130,7 @@ const userInfo = reactive<User>({
     account: '',
     name: '',
     kind: 99,
-    state: 1,
+    status: 1,
     code: '',
     sex: '',
     mobile: '',
@@ -253,7 +253,7 @@ const fetchUserInfo = async () => {
         userInfo.account = data.account
         userInfo.name = data.name
         userInfo.kind = data.kind
-        userInfo.state = data.state
+        userInfo.status = data.status
 
         // 详细信息
         userInfo.code = data.code

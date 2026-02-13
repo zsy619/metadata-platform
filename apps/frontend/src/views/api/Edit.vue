@@ -10,7 +10,7 @@
             <el-tabs v-model:active-name="activeTab" type="border-card">
                 <!-- 基本信息 -->
                 <el-tab-pane label="基本信息" name="basic">
-                    <el-form ref="apiFormRef" :model="apiForm" :rules="formRules" label-width="120px" class="edit-form">
+                    <el-form ref="apiFormRef" :model="apiForm" :rules="formRules" label-width="120px" label-position="right" class="edit-form">
                         <el-row :gutter="20">
                             <el-col :span="12">
                                 <el-form-item label="接口名称" prop="apiName">

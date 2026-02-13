@@ -24,7 +24,7 @@
                                 <span>模板配置</span>
                             </div>
                         </template>
-                        <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
+                        <el-form ref="formRef" :model="formData" :rules="formRules" label-width="140px" label-position="right">
                             <el-form-item label="模板名称" prop="templateName">
                                 <el-input v-model="formData.templateName" placeholder="请输入模板名称" />
                             </el-form-item>

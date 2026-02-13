@@ -29,14 +29,14 @@ type SsoTenantRepository interface {
 	GetAllTenants() ([]model.SsoTenant, error)
 }
 
-// SsoApplicationRepository 应用仓库接口
-type SsoApplicationRepository interface {
-	CreateApplication(app *model.SsoApplication) error
-	GetApplicationByID(id string) (*model.SsoApplication, error)
-	GetApplicationByCode(code string) (*model.SsoApplication, error)
-	UpdateApplication(app *model.SsoApplication) error
-	DeleteApplication(id string) error
-	GetAllApplications() ([]model.SsoApplication, error)
+// SsoAppRepository 应用仓库接口
+type SsoAppRepository interface {
+	CreateApp(app *model.SsoApp) error
+	GetAppByID(id string) (*model.SsoApp, error)
+	GetAppByCode(code string) (*model.SsoApp, error)
+	UpdateApp(app *model.SsoApp) error
+	DeleteApp(id string) error
+	GetAllApps() ([]model.SsoApp, error)
 }
 
 // SsoMenuRepository 菜单仓库接口
@@ -59,24 +59,24 @@ type SsoRoleRepository interface {
 	GetAllRoles() ([]model.SsoRole, error)
 }
 
-// SsoOrganizationRepository 组织仓库接口
-type SsoOrganizationRepository interface {
-	CreateOrganization(unit *model.SsoOrganization) error
-	GetOrganizationByID(id string) (*model.SsoOrganization, error)
-	GetOrganizationByCode(code string) (*model.SsoOrganization, error)
-	UpdateOrganization(unit *model.SsoOrganization) error
-	DeleteOrganization(id string) error
-	GetAllOrganizations() ([]model.SsoOrganization, error)
+// SsoOrgRepository 组织仓库接口
+type SsoOrgRepository interface {
+	CreateOrg(org *model.SsoOrg) error
+	GetOrgByID(id string) (*model.SsoOrg, error)
+	GetOrgByCode(code string) (*model.SsoOrg, error)
+	UpdateOrg(org *model.SsoOrg) error
+	DeleteOrg(id string) error
+	GetAllOrgs() ([]model.SsoOrg, error)
 }
 
-// SsoPositionRepository 职位仓库接口
-type SsoPositionRepository interface {
-	CreatePosition(pos *model.SsoPosition) error
-	GetPositionByID(id string) (*model.SsoPosition, error)
-	GetPositionByCode(code string) (*model.SsoPosition, error)
-	UpdatePosition(pos *model.SsoPosition) error
-	DeletePosition(id string) error
-	GetAllPositions() ([]model.SsoPosition, error)
+// SsoPosRepository 职位仓库接口
+type SsoPosRepository interface {
+	CreatePos(pos *model.SsoPos) error
+	GetPosByID(id string) (*model.SsoPos, error)
+	GetPosByCode(code string) (*model.SsoPos, error)
+	UpdatePos(pos *model.SsoPos) error
+	DeletePos(id string) error
+	GetAllPoss() ([]model.SsoPos, error)
 }
 
 // SsoUserRoleRepository 用户角色仓库接口
@@ -92,14 +92,14 @@ type SsoUserRoleRepository interface {
 }
 
 // SsoUserPositionRepository 用户职位仓库接口
-type SsoUserPositionRepository interface {
-	CreateUserPosition(userPos *model.SsoUserPosition) error
-	GetUserPositionByID(id string) (*model.SsoUserPosition, error)
-	GetUserPositionsByUserID(userID string) ([]model.SsoUserPosition, error)
-	GetUserPositionsByPosID(posID string) ([]model.SsoUserPosition, error)
-	DeleteUserPosition(id string) error
-	DeleteUserPositionsByUserID(userID string) error
-	DeleteUserPositionsByPosID(posID string) error
+type SsoUserPosRepository interface {
+	CreateUserPos(userPos *model.SsoUserPos) error
+	GetUserPosByID(id string) (*model.SsoUserPos, error)
+	GetUserPosByUserID(userID string) ([]model.SsoUserPos, error)
+	GetUserPosByPosID(posID string) ([]model.SsoUserPos, error)
+	DeleteUserPos(id string) error
+	DeleteUserPosByUserID(userID string) error
+	DeleteUserPosByPosID(posID string) error
 }
 
 // SsoRoleMenuRepository 角色菜单仓库接口
@@ -115,44 +115,44 @@ type SsoRoleMenuRepository interface {
 }
 
 // SsoPositionRoleRepository 职位角色仓库接口
-type SsoPositionRoleRepository interface {
-	CreatePositionRole(posRole *model.SsoPositionRole) error
-	GetPositionRoleByID(id string) (*model.SsoPositionRole, error)
-	GetPositionRolesByPosID(posID string) ([]model.SsoPositionRole, error)
-	GetPositionRolesByRoleID(roleID string) ([]model.SsoPositionRole, error)
-	DeletePositionRole(id string) error
-	DeletePositionRolesByPosID(posID string) error
-	DeletePositionRolesByRoleID(roleID string) error
+type SsoPosRoleRepository interface {
+	CreatePosRole(posRole *model.SsoPosRole) error
+	GetPosRoleByID(id string) (*model.SsoPosRole, error)
+	GetPosRolesByPosID(posID string) ([]model.SsoPosRole, error)
+	GetPosRolesByRoleID(roleID string) ([]model.SsoPosRole, error)
+	DeletePosRole(id string) error
+	DeletePosRolesByPosID(posID string) error
+	DeletePosRolesByRoleID(roleID string) error
 }
 
 // Repositories 用户模块仓库集合
 type Repositories struct {
-	User         SsoUserRepository
-	Tenant       SsoTenantRepository
-	Application  SsoApplicationRepository
-	Menu         SsoMenuRepository
-	Role         SsoRoleRepository
-	Organization SsoOrganizationRepository
-	Position     SsoPositionRepository
-	UserRole     SsoUserRoleRepository
-	UserPosition SsoUserPositionRepository
-	RoleMenu     SsoRoleMenuRepository
-	PositionRole SsoPositionRoleRepository
+	User     SsoUserRepository
+	Tenant   SsoTenantRepository
+	App      SsoAppRepository
+	Menu     SsoMenuRepository
+	Role     SsoRoleRepository
+	Org      SsoOrgRepository
+	Pos      SsoPosRepository
+	UserRole SsoUserRoleRepository
+	UserPos  SsoUserPosRepository
+	RoleMenu SsoRoleMenuRepository
+	PosRole  SsoPosRoleRepository
 }
 
 // NewRepositories 创建用户模块仓库集合
 func NewRepositories(db *gorm.DB) *Repositories {
 	return &Repositories{
-		User:         NewSsoUserRepository(db),
-		Tenant:       NewSsoTenantRepository(db),
-		Application:  NewSsoApplicationRepository(db),
-		Menu:         NewSsoMenuRepository(db),
-		Role:         NewSsoRoleRepository(db),
-		Organization: NewSsoOrganizationRepository(db),
-		Position:     NewSsoPositionRepository(db),
-		UserRole:     NewSsoUserRoleRepository(db),
-		UserPosition: NewSsoUserPositionRepository(db),
-		RoleMenu:     NewSsoRoleMenuRepository(db),
-		PositionRole: NewSsoPositionRoleRepository(db),
+		User:     NewSsoUserRepository(db),
+		Tenant:   NewSsoTenantRepository(db),
+		App:      NewSsoAppRepository(db),
+		Menu:     NewSsoMenuRepository(db),
+		Role:     NewSsoRoleRepository(db),
+		Org:      NewSsoOrgRepository(db),
+		Pos:      NewSsoPosRepository(db),
+		UserRole: NewSsoUserRoleRepository(db),
+		UserPos:  NewSsoUserPosRepository(db),
+		RoleMenu: NewSsoRoleMenuRepository(db),
+		PosRole:  NewSsoPosRoleRepository(db),
 	}
 }

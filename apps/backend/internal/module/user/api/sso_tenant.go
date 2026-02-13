@@ -22,10 +22,7 @@ func NewSsoTenantHandler(tenantService service.SsoTenantService) *SsoTenantHandl
 type SsoCreateTenantRequest struct {
 	TenantName string `json:"tenant_name" form:"tenant_name" binding:"required"`
 	TenantCode string `json:"tenant_code" form:"tenant_code" binding:"required"`
-	Linkman    string `json:"linkman" form:"linkman"`
-	Contact    string `json:"contact" form:"contact"`
-	Address    string `json:"address" form:"address"`
-	State      int    `json:"state" form:"state"`
+	Status     int    `json:"status" form:"status"`
 	Remark     string `json:"remark" form:"remark"`
 }
 
@@ -36,7 +33,7 @@ type SsoUpdateTenantRequest struct {
 	Linkman    string `json:"linkman" form:"linkman"`
 	Contact    string `json:"contact" form:"contact"`
 	Address    string `json:"address" form:"address"`
-	State      int    `json:"state" form:"state"`
+	Status     int    `json:"status" form:"status"`
 	Remark     string `json:"remark" form:"remark"`
 }
 
@@ -52,10 +49,7 @@ func (h *SsoTenantHandler) CreateTenant(c context.Context, ctx *app.RequestConte
 	tenant := &model.SsoTenant{
 		TenantName: req.TenantName,
 		TenantCode: req.TenantCode,
-		Linkman:    req.Linkman,
-		Contact:    req.Contact,
-		Address:    req.Address,
-		State:      req.State,
+		Status:     req.Status,
 		Remark:     req.Remark,
 	}
 
@@ -105,18 +99,7 @@ func (h *SsoTenantHandler) UpdateTenant(c context.Context, ctx *app.RequestConte
 	if req.TenantCode != "" {
 		tenant.TenantCode = req.TenantCode
 	}
-	if req.Linkman != "" {
-		tenant.Linkman = req.Linkman
-	}
-	if req.Contact != "" {
-		tenant.Contact = req.Contact
-	}
-	if req.Address != "" {
-		tenant.Address = req.Address
-	}
-	if req.State != 0 {
-		tenant.State = req.State
-	}
+	tenant.Status = req.Status
 	if req.Remark != "" {
 		tenant.Remark = req.Remark
 	}

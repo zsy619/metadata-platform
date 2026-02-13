@@ -14,7 +14,9 @@ import (
 func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditQueue *queue.AuditLogQueue) {
 	// 初始化服务
 	svc := service.NewAuditService(db, auditQueue)
+	accessLogSvc := service.NewAccessLogService(db, auditQueue)
 	handler := api.NewAuditHandler(svc)
+	accessLogHandler := api.NewAccessLogHandler(accessLogSvc)
 
 	// 路由组
 	g := r.Group("/api/audit")
@@ -31,4 +33,10 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditQueue *queue.AuditLogQueu
 	// Data Change Logs
 	g.GET("/data", handler.GetDataChangeLogs)
 	g.GET("/data/export", handler.ExportDataChangeLogs)
+
+	// Access Logs
+	g.GET("/access", accessLogHandler.GetAccessLogs)
+	g.GET("/access/export", accessLogHandler.ExportAccessLogs)
+	g.GET("/access/statistics", accessLogHandler.GetAccessStatistics)
+	g.GET("/access/abnormal", accessLogHandler.GetAbnormalAccess)
 }

@@ -2,9 +2,9 @@ package service
 
 import (
 	"errors"
-
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/utils"
 )
 
 // ssoMenuService 菜单服务实现
@@ -24,6 +24,17 @@ func (s *ssoMenuService) CreateMenu(menu *model.SsoMenu) error {
 	if err == nil && existingMenu != nil {
 		return errors.New("菜单编码已存在")
 	}
+
+	// 检查父菜单是否存在（如果有）
+	if menu.ParentID != "" {
+		_, err := s.menuRepo.GetMenuByID(menu.ParentID)
+		if err != nil {
+			return errors.New("父菜单不存在")
+		}
+	}
+
+	// 创建ID
+	menu.ID = utils.GetSnowflake().GenerateIDString()
 
 	// 创建菜单
 	return s.menuRepo.CreateMenu(menu)

@@ -16,13 +16,19 @@
         <el-button @click="handleReset" :icon="RefreshLeft">重置</el-button>
       </div>
       <div class="table-area">
-        <el-table v-loading="loading" :data="displayData" border stripe>
-          <el-table-column prop="application_name" label="应用名称" width="180" show-overflow-tooltip />
-          <el-table-column prop="application_code" label="应用编码" width="150" />
+        <el-table v-loading="loading" :element-loading-text="loadingText" :data="filteredData" border stripe style="width: 100%; height: 100%;" @selection-change="handleSelectionChange">
+          <template #empty>
+            <el-empty :description="searchQuery ? '未搜索到相关应用' : '暂无应用'">
+              <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增应用</el-button>
+            </el-empty>
+          </template>
+          <el-table-column type="selection" width="55" />
+          <el-table-column prop="app_name" label="应用名称" width="180" show-overflow-tooltip />
+          <el-table-column prop="app_code" label="应用编码" width="150" />
           <el-table-column prop="host" label="域名/IP" show-overflow-tooltip />
-          <el-table-column prop="state" label="状态" width="80">
+          <el-table-column prop="status" label="状态" width="80">
             <template #default="scope">
-              <el-tag v-if="scope.row.state === 1" type="success">启用</el-tag>
+              <el-tag v-if="scope.row.status === 1" type="success">启用</el-tag>
               <el-tag v-else type="danger">禁用</el-tag>
             </template>
           </el-table-column>
@@ -30,32 +36,29 @@
           <el-table-column prop="create_at" label="创建时间" width="170">
             <template #default="scope">{{ formatDateTime(scope.row.create_at) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="150" fixed="right">
+          <el-table-column label="操作" width="180" fixed="right">
             <template #default="scope">
-              <el-button type="primary" link @click="handleEdit(scope.row)">编辑</el-button>
-              <el-button type="danger" link @click="handleDelete(scope.row)">删除</el-button>
+              <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
+              <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
             </template>
           </el-table-column>
         </el-table>
-        <div class="pagination-wrapper">
-          <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
-        </div>
       </div>
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
-        <el-form-item label="应用名称" prop="application_name">
-          <el-input v-model="formData.application_name" placeholder="请输入应用名称" />
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" label-position="right">
+        <el-form-item label="应用名称" prop="app_name">
+          <el-input v-model="formData.app_name" placeholder="请输入应用名称" />
         </el-form-item>
-        <el-form-item label="应用编码" prop="application_code">
-          <el-input v-model="formData.application_code" placeholder="请输入应用编码" />
+        <el-form-item label="应用编码" prop="app_code">
+          <el-input v-model="formData.app_code" placeholder="请输入应用编码" />
         </el-form-item>
         <el-form-item label="域名/IP" prop="host">
           <el-input v-model="formData.host" placeholder="请输入域名或IP地址" />
         </el-form-item>
-        <el-form-item label="状态" prop="state">
-          <el-switch v-model="formData.state" :active-value="1" :inactive-value="0" />
+        <el-form-item label="状态" prop="status">
+          <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" />
@@ -73,26 +76,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Plus, Search, RefreshLeft, Monitor } from '@element-plus/icons-vue'
+import { Delete, Edit, Monitor, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { computed, onMounted, ref } from 'vue'
 import { getApps, createApp, updateApp, deleteApp } from '@/api/user'
 
-const searchQuery = ref('')
 const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
+const loadingText = ref('加载中...')
+const searchQuery = ref('')
+const selectedRows = ref<any[]>([])
+
 const allData = ref<any[]>([])
-const displayData = computed(() => {
+
+const filteredData = computed(() => {
   let data = allData.value
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    data = data.filter(item => (item.application_name || '').toLowerCase().includes(query))
+    data = data.filter(item => (item.app_name || '').toLowerCase().includes(query))
   }
-  total.value = data.length
-  return data.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value)
+  return data
 })
 
 const dialogVisible = ref(false)
@@ -100,30 +103,58 @@ const dialogTitle = ref('')
 const formRef = ref<FormInstance>()
 const formData = ref<any>({})
 const submitLoading = ref(false)
+
 const formRules: FormRules = {
-  application_name: [{ required: true, message: '请输入应用名称', trigger: 'blur' }],
-  application_code: [{ required: true, message: '请输入应用编码', trigger: 'blur' }]
+  app_name: [{ required: true, message: '请输入应用名称', trigger: 'blur' }],
+  app_code: [{ required: true, message: '请输入应用编码', trigger: 'blur' }]
 }
 
-const formatDateTime = (dateStr: string) => dateStr ? new Date(dateStr).toLocaleString('zh-CN') : '-'
+const formatDateTime = (dateStr: string) => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  return isNaN(date.getTime()) ? '-' : date.toLocaleString('zh-CN')
+}
 
-const loadData = async () => {
+const fetchData = async () => {
+  loadingText.value = '加载中...'
   loading.value = true
-  try { allData.value = await getApps() } catch (error: any) { ElMessage.error(error.message) }
-  finally { loading.value = false }
+  try {
+    const res: any = await getApps()
+    allData.value = res.data || res
+  } catch (error) {
+    console.error('加载应用列表失败:', error)
+    ElMessage.error('加载列表失败')
+  } finally {
+    loading.value = false
+  }
 }
 
-const handleSearch = () => { currentPage.value = 1 }
-const handleDebouncedSearch = () => handleSearch()
-const handleReset = () => { searchQuery.value = ''; handleSearch() }
-const handleSizeChange = () => { currentPage.value = 1 }
-const handleCurrentChange = () => {}
+const handleSearch = () => {}
+const handleDebouncedSearch = () => {}
+const handleReset = () => { searchQuery.value = '' }
+const handleSelectionChange = (val: any[]) => { selectedRows.value = val }
 
-const handleCreate = () => { dialogTitle.value = '新增应用'; formData.value = { state: 1, sort: 0 }; dialogVisible.value = true }
-const handleEdit = (row: any) => { dialogTitle.value = '编辑应用'; formData.value = { ...row }; dialogVisible.value = true }
-const handleDelete = async (row: any) => {
-  try { await ElMessageBox.confirm('确定要删除该应用吗？', '提示', { type: 'warning' }); await deleteApp(row.id); ElMessage.success('删除成功'); loadData() }
-  catch (error: any) { if (error !== 'cancel') ElMessage.error(error.message) }
+const handleCreate = () => {
+  dialogTitle.value = '新增应用'
+  formData.value = { status: 1, sort: 0 }
+  dialogVisible.value = true
+}
+
+const handleEdit = (row: any) => {
+  dialogTitle.value = '编辑应用'
+  formData.value = { ...row }
+  dialogVisible.value = true
+}
+
+const handleDelete = (row: any) => {
+  ElMessageBox.confirm(`确定要删除应用 "${row.app_name}" 吗？`, '提示', { type: 'warning' })
+    .then(async () => {
+      try {
+        await deleteApp(row.id)
+        ElMessage.success('删除成功')
+        fetchData()
+      } catch (error: any) { ElMessage.error(error.message || '删除失败') }
+    }).catch(() => {})
 }
 
 const handleSubmit = async () => {
@@ -132,27 +163,32 @@ const handleSubmit = async () => {
     if (valid) {
       submitLoading.value = true
       try {
-        formData.value.id ? await updateApp(formData.value.id, formData.value) : await createApp(formData.value)
-        ElMessage.success(formData.value.id ? '更新成功' : '创建成功')
-        dialogVisible.value = false; loadData()
-      } catch (error: any) { ElMessage.error(error.message) }
+        if (formData.value.id) {
+          await updateApp(formData.value.id, formData.value)
+          ElMessage.success('更新成功')
+        } else {
+          await createApp(formData.value)
+          ElMessage.success('创建成功')
+        }
+        dialogVisible.value = false
+        fetchData()
+      } catch (error: any) { ElMessage.error(error.message || '操作失败') }
       finally { submitLoading.value = false }
     }
   })
 }
 
-onMounted(() => loadData())
+onMounted(() => { fetchData() })
 </script>
 
 <style scoped>
 .sso-page { height: 100%; display: flex; flex-direction: column; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.page-title { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-.title-icon { font-size: 24px; }
+.main-card { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+:deep(.el-card__body) { height: 100%; display: flex; flex-direction: column; padding: 20px; overflow: hidden; box-sizing: border-box; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+.page-title { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 600; }
+.title-icon { font-size: 24px; color: var(--el-color-primary); }
 .header-actions { display: flex; gap: 10px; }
-.main-card { flex: 1; display: flex; flex-direction: column; }
-.search-area { display: flex; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-.table-area { flex: 1; }
-.pagination-wrapper { display: flex; justify-content: flex-end; margin-top: 20px; }
-.text-primary { color: var(--el-text-color-primary); }
+.search-area { flex-shrink: 0; margin-bottom: 20px; }
+.table-area { flex: 1; overflow: hidden; }
 </style>

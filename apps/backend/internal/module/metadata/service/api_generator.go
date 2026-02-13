@@ -75,7 +75,7 @@ func (g *apiGenerator) BatchGenerate(modelID string, userID string, tenantID str
 			Path:      basePath + t.Suffix,
 			Method:    t.Method,
 			IsPublic:  false,
-			State:     1,
+			Status:     1,
 			Remark:    t.Remark,
 		}
 

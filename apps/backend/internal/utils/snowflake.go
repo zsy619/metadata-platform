@@ -6,6 +6,21 @@ import (
 	"time"
 )
 
+// 全局雪花算法生成器实例
+var (
+	globalSnowflake     *Snowflake
+	globalSnowflakeOnce sync.Once
+)
+
+// GetSnowflake 获取全局雪花算法生成器实例（单例）
+func GetSnowflake() *Snowflake {
+	globalSnowflakeOnce.Do(func() {
+		// 默认使用 datacenterID=1, machineID=1
+		globalSnowflake = NewSnowflake(1, 1)
+	})
+	return globalSnowflake
+}
+
 // Snowflake 雪花算法生成器
 type Snowflake struct {
 	mutex        sync.Mutex

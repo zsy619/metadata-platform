@@ -21,7 +21,7 @@ func SeedData(db *gorm.DB) {
 		TenantID:   "0",
 		TenantName: "系统管理组",
 		TenantCode: "system",
-		State:      1,
+		Status:     1,
 		CreateBy:   "system",
 		CreateAt:   now,
 		UpdateBy:   "system",
@@ -47,7 +47,7 @@ func SeedData(db *gorm.DB) {
 		Password: utils.EncryptPasswordSM3("admin@123", salt),
 		Salt:     salt,
 		Name:     "系统管理员",
-		State:    1,
+		Status:   1,
 		Kind:     1, // 1: 系统管理员
 		CreateBy: "system",
 		CreateAt: now,
@@ -65,38 +65,38 @@ func SeedData(db *gorm.DB) {
 	}
 
 	// 3. 初始化默认应用
-	apps := []model.SsoApplication{
+	apps := []model.SsoPos{
 		{
-			ID:              "1",
-			ApplicationName: "元数据管理",
-			ApplicationCode: "metadata",
-			State:           1,
-			Remark:          "元数据管理",
-			CreateBy:        "system",
-			CreateAt:        now,
-			UpdateBy:        "system",
-			UpdateAt:        now,
+			ID:       "1",
+			PosName:  "元数据管理",
+			PosCode:  "metadata",
+			Status:   1,
+			Remark:   "元数据管理",
+			CreateBy: "system",
+			CreateAt: now,
+			UpdateBy: "system",
+			UpdateAt: now,
 		},
 		{
-			ID:              "2",
-			ApplicationName: "用户管理",
-			ApplicationCode: "sso",
-			State:           1,
-			Remark:          "账号认证与权限管理系统",
-			CreateBy:        "system",
-			CreateAt:        now,
-			UpdateBy:        "system",
-			UpdateAt:        now,
+			ID:       "2",
+			PosName:  "用户管理",
+			PosCode:  "sso",
+			Status:   1,
+			Remark:   "账号认证与权限管理系统",
+			CreateBy: "system",
+			CreateAt: now,
+			UpdateBy: "system",
+			UpdateAt: now,
 		},
 	}
 
 	for _, app := range apps {
-		db.Model(&model.SsoApplication{}).Where("application_code = ?", app.ApplicationCode).Count(&count)
+		db.Model(&model.SsoPos{}).Where("pos_code = ?", app.PosCode).Count(&count)
 		if count == 0 {
 			if err := db.Create(&app).Error; err != nil {
-				utils.SugarLogger.Errorf("Failed to seed application %s: %v", app.ApplicationName, err)
+				utils.SugarLogger.Errorf("Failed to seed position %s: %v", app.PosName, err)
 			} else {
-				utils.SugarLogger.Infof("Seeded application: %s", app.ApplicationName)
+				utils.SugarLogger.Infof("Seeded position: %s", app.PosName)
 			}
 		}
 	}
@@ -108,7 +108,7 @@ func SeedData(db *gorm.DB) {
 			TenantID:  "1",
 			RoleName:  "超级管理员",
 			RoleCode:  "super_role",
-			State:     1,
+			Status:    1,
 			DataScope: "1", // 1: 全部数据权限
 			Remark:    "系统最高权限管理员",
 			CreateBy:  "system",

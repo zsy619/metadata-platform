@@ -20,30 +20,30 @@ func NewSsoRoleHandler(roleService service.SsoRoleService) *SsoRoleHandler {
 
 // SsoCreateRoleRequest 创建角色请求结构
 type SsoCreateRoleRequest struct {
-	ParentID        string `json:"parent_id" form:"parent_id"`
-	ApplicationCode string `json:"application_code" form:"application_code"`
-	OrganizationID  string `json:"organization_id" form:"organization_id"`
-	KindCode        string `json:"kind_code" form:"kind_code" binding:"required"`
-	RoleName        string `json:"role_name" form:"role_name" binding:"required"`
-	RoleCode        string `json:"role_code" form:"role_code" binding:"required"`
-	State           int    `json:"state" form:"state"`
-	DataScope       string `json:"data_scope" form:"data_scope"`
-	Remark          string `json:"remark" form:"remark"`
-	Sort            int    `json:"sort" form:"sort"`
+	ParentID  string `json:"parent_id" form:"parent_id"`
+	AppCode   string `json:"app_code" form:"application_code"`
+	OrgID     string `json:"org_id" form:"org_id"`
+	KindCode  string `json:"kind_code" form:"kind_code" binding:"required"`
+	RoleName  string `json:"role_name" form:"role_name" binding:"required"`
+	RoleCode  string `json:"role_code" form:"role_code" binding:"required"`
+	Status    int    `json:"status" form:"status"`
+	DataScope string `json:"data_scope" form:"data_scope"`
+	Remark    string `json:"remark" form:"remark"`
+	Sort      int    `json:"sort" form:"sort"`
 }
 
 // SsoUpdateRoleRequest 更新角色请求结构
 type SsoUpdateRoleRequest struct {
-	ParentID        string `json:"parent_id" form:"parent_id"`
-	ApplicationCode string `json:"application_code" form:"application_code"`
-	OrganizationID  string `json:"organization_id" form:"organization_id"`
-	KindCode        string `json:"kind_code" form:"kind_code"`
-	RoleName        string `json:"role_name" form:"role_name"`
-	RoleCode        string `json:"role_code" form:"role_code"`
-	State           int    `json:"state" form:"state"`
-	DataScope       string `json:"data_scope" form:"data_scope"`
-	Remark          string `json:"remark" form:"remark"`
-	Sort            int    `json:"sort" form:"sort"`
+	ParentID  string `json:"parent_id" form:"parent_id"`
+	AppCode   string `json:"app_code" form:"application_code"`
+	OrgID     string `json:"org_id" form:"org_id"`
+	KindCode  string `json:"kind_code" form:"kind_code"`
+	RoleName  string `json:"role_name" form:"role_name"`
+	RoleCode  string `json:"role_code" form:"role_code"`
+	Status    int    `json:"status" form:"status"`
+	DataScope string `json:"data_scope" form:"data_scope"`
+	Remark    string `json:"remark" form:"remark"`
+	Sort      int    `json:"sort" form:"sort"`
 }
 
 // CreateRole 创建角色
@@ -56,16 +56,16 @@ func (h *SsoRoleHandler) CreateRole(c context.Context, ctx *app.RequestContext) 
 
 	// 创建角色模型
 	role := &model.SsoRole{
-		ParentID:        req.ParentID,
-		ApplicationCode: req.ApplicationCode,
-		OrganizationID:  req.OrganizationID,
-		KindCode:        req.KindCode,
-		RoleName:        req.RoleName,
-		RoleCode:        req.RoleCode,
-		State:           req.State,
-		DataScope:       req.DataScope,
-		Remark:          req.Remark,
-		Sort:            req.Sort,
+		ParentID:  req.ParentID,
+		AppCode:   req.AppCode,
+		OrgID:     req.OrgID,
+		KindCode:  req.KindCode,
+		RoleName:  req.RoleName,
+		RoleCode:  req.RoleCode,
+		Status:    req.Status,
+		DataScope: req.DataScope,
+		Remark:    req.Remark,
+		Sort:      req.Sort,
 	}
 
 	// 调用服务层创建角色
@@ -111,11 +111,11 @@ func (h *SsoRoleHandler) UpdateRole(c context.Context, ctx *app.RequestContext) 
 	if req.ParentID != "" {
 		role.ParentID = req.ParentID
 	}
-	if req.ApplicationCode != "" {
-		role.ApplicationCode = req.ApplicationCode
+	if req.AppCode != "" {
+		role.AppCode = req.AppCode
 	}
-	if req.OrganizationID != "" {
-		role.OrganizationID = req.OrganizationID
+	if req.OrgID != "" {
+		role.OrgID = req.OrgID
 	}
 	if req.KindCode != "" {
 		role.KindCode = req.KindCode
@@ -126,8 +126,8 @@ func (h *SsoRoleHandler) UpdateRole(c context.Context, ctx *app.RequestContext) 
 	if req.RoleCode != "" {
 		role.RoleCode = req.RoleCode
 	}
-	if req.State != 0 {
-		role.State = req.State
+	if req.Status != 0 {
+		role.Status = req.Status
 	}
 	if req.DataScope != "" {
 		role.DataScope = req.DataScope

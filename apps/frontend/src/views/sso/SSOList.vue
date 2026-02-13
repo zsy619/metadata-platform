@@ -24,7 +24,7 @@
           @input="handleDebouncedSearch"
         />
         <el-select
-          v-model="filterState"
+          v-model="filterStatus"
           placeholder="筛选状态"
           style="width: 150px; margin-left: 10px"
           clearable
@@ -101,7 +101,7 @@
       width="600px"
       destroy-on-close
     >
-      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px">
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="140px" label-position="right">
         <el-form-item
           v-for="field in formFields"
           :key="field.prop"
@@ -190,7 +190,7 @@ const props = defineProps<{
 const emit = defineEmits(['refresh', 'create', 'edit', 'delete'])
 
 const searchQuery = ref('')
-const filterState = ref<number | ''>('')
+const filterStatus = ref<number | ''>('')
 const loading = ref(false)
 const loadingText = ref('加载中...')
 const currentPage = ref(1)
@@ -209,8 +209,8 @@ const displayData = computed(() => {
       )
     )
   }
-  if (filterState.value !== '') {
-    data = data.filter(item => item.state === filterState.value)
+  if (filterStatus.value !== '') {
+    data = data.filter(item => item.state === filterStatus.value)
   }
   total.value = data.length
   const start = (currentPage.value - 1) * pageSize.value
@@ -247,7 +247,7 @@ const handleDebouncedSearch = () => {
 
 const handleReset = () => {
   searchQuery.value = ''
-  filterState.value = ''
+  filterStatus.value = ''
   handleSearch()
 }
 

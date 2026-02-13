@@ -2,12 +2,12 @@ package model
 
 import "time"
 
-// SsoPositionRole 职位角色表模型
-type SsoPositionRole struct {
-	ID        string    `json:"id" form:"id" gorm:"primary_key;type:varchar(64);column:id"`
-	PosID     string    `json:"pos_id" form:"pos_id" gorm:"type:varchar(64);default:'0';uniqueIndex:idx_pos_role;column:pos_id;comment:职位ID"`
-	RoleID    string    `json:"role_id" form:"role_id" gorm:"type:varchar(64);default:'0';uniqueIndex:idx_pos_role;column:role_id;comment:角色ID"`
-	Remark       string    `json:"remark" gorm:"size:1024;default:'';column:remark;comment:备注"`
+// SsoUserPos 用户职位表模型
+type SsoUserPos struct {
+	ID        string    `json:"id" form:"id" gorm:"primary_key;type:varchar(64);column:id;comment:主键ID"`
+	UserID    string    `json:"user_id" form:"user_id" gorm:"type:varchar(64);default:'';uniqueIndex:idx_user_pos;column:user_id;comment:用户ID"`
+	PosID     string    `json:"pos_id" form:"pos_id" gorm:"type:varchar(64);default:'';uniqueIndex:idx_user_pos;column:pos_id;comment:职位ID"`
+	Remark    string    `json:"remark" gorm:"size:1024;default:'';column:remark;comment:备注"`
 	IsDeleted bool      `json:"is_deleted" form:"is_deleted" gorm:"type:tinyint(1);default:0;column:is_deleted;comment:是否删除"`
 	TenantID  string    `json:"tenant_id" form:"tenant_id" gorm:"index;type:varchar(64);not null;default:'0';column:tenant_id;comment:租户ID"`
 	CreateID  string    `json:"create_id" form:"create_id" gorm:"size:64;default:'0';column:create_id;comment:创建人ID"`
@@ -19,6 +19,6 @@ type SsoPositionRole struct {
 }
 
 // TableName 指定表名
-func (SsoPositionRole) TableName() string {
-	return "sso_position_role"
+func (SsoUserPos) TableName() string {
+	return "sso_user_pos"
 }

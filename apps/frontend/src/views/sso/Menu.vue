@@ -45,7 +45,7 @@
           </el-table-column>
           <el-table-column prop="state" label="状态" width="60">
             <template #default="scope">
-              <el-tag v-if="scope.row.state === 1" type="success">启用</el-tag>
+              <el-tag v-if="scope.row.status === 1" type="success">启用</el-tag>
               <el-tag v-else type="danger">禁用</el-tag>
             </template>
           </el-table-column>
@@ -60,7 +60,7 @@
       </div>
     </el-card>
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="550px" destroy-on-close>
-      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" label-position="right">
         <el-form-item label="上级菜单" prop="parent_id">
           <el-tree-select v-model="formData.parent_id" :data="menuTreeData" check-strictly :render-after-expand="false" placeholder="请选择上级菜单" style="width: 100%" />
         </el-form-item>
@@ -84,7 +84,7 @@
           <el-switch v-model="formData.visible" :active-value="1" :inactive-value="0" />
         </el-form-item>
         <el-form-item label="状态" prop="state">
-          <el-switch v-model="formData.state" :active-value="1" :inactive-value="0" />
+          <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" />

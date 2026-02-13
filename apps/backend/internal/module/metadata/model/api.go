@@ -12,7 +12,7 @@ type API struct {
 	Method    string     `json:"method" form:"method" gorm:"size:16;not null;comment:请求方法"`
 	IsPublic  bool       `json:"is_public" form:"is_public" gorm:"default:false;comment:是否公开"`
 	IsDeleted bool       `json:"is_deleted" form:"is_deleted" gorm:"default:false;comment:是否删除"`
-	State     int        `json:"state" form:"state" gorm:"default:1;comment:状态"`
+	Status     int        `json:"status" form:"status" gorm:"default:1;comment:状态"`
 	Remark    string     `json:"remark" form:"remark" gorm:"size:512;comment:备注"`
 	Sort      int        `json:"sort" form:"sort" gorm:"default:0;comment:排序"`
 	CreatedAt time.Time  `json:"created_at" form:"created_at" gorm:"autoCreateTime;comment:创建时间"`

@@ -85,3 +85,48 @@ export function exportDataChangeLogs(params: Partial<AuditLogParams>) {
         responseType: 'blob'
     })
 }
+
+export function getAccessLogs(params: AuditLogParams) {
+    const { pageSize, ...rest } = params
+    return request({
+        url: '/api/audit/access',
+        method: 'get',
+        params: {
+            ...rest,
+            page_size: pageSize
+        }
+    })
+}
+
+export function exportAccessLogs(params: Partial<AuditLogParams>) {
+    const { pageSize, ...rest } = params
+    return request({
+        url: '/api/audit/access/export',
+        method: 'get',
+        params: {
+            ...rest,
+            page_size: pageSize
+        },
+        responseType: 'blob'
+    })
+}
+
+export function getAccessStatistics(params: Partial<AuditLogParams>) {
+    return request({
+        url: '/api/audit/access/statistics',
+        method: 'get',
+        params
+    })
+}
+
+export function getAbnormalAccess(params: AuditLogParams) {
+    const { pageSize, ...rest } = params
+    return request({
+        url: '/api/audit/access/abnormal',
+        method: 'get',
+        params: {
+            ...rest,
+            page_size: pageSize
+        }
+    })
+}

@@ -1,0 +1,62 @@
+package repository
+
+import (
+	"metadata-platform/internal/module/user/model"
+
+	"gorm.io/gorm"
+)
+
+// ssoPosRepository 职位仓库实现
+type ssoPosRepository struct {
+	db *gorm.DB
+}
+
+// NewSsoPosRepository 创建职位仓库实例
+func NewSsoPosRepository(db *gorm.DB) SsoPosRepository {
+	return &ssoPosRepository{db: db}
+}
+
+// CreatePos 创建职位
+func (r *ssoPosRepository) CreatePos(pos *model.SsoPos) error {
+	return r.db.Create(pos).Error
+}
+
+// GetPosByID 根据ID获取职位
+func (r *ssoPosRepository) GetPosByID(id string) (*model.SsoPos, error) {
+	var pos model.SsoPos
+	result := r.db.Where("id = ?", id).First(&pos)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &pos, nil
+}
+
+// GetPosByCode 根据编码获取职位
+func (r *ssoPosRepository) GetPosByCode(code string) (*model.SsoPos, error) {
+	var pos model.SsoPos
+	result := r.db.Where("pos_code = ?", code).First(&pos)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &pos, nil
+}
+
+// UpdatePos 更新职位
+func (r *ssoPosRepository) UpdatePos(pos *model.SsoPos) error {
+	return r.db.Save(pos).Error
+}
+
+// DeletePosition 删除职位
+func (r *ssoPosRepository) DeletePos(id string) error {
+	return r.db.Model(&model.SsoPos{}).Where("id = ?", id).Update("is_deleted", true).Error
+}
+
+// GetAllPoss 获取所有职位
+func (r *ssoPosRepository) GetAllPoss() ([]model.SsoPos, error) {
+	var positions []model.SsoPos
+	result := r.db.Find(&positions)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return positions, nil
+}

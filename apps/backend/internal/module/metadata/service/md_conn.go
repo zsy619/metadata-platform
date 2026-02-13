@@ -200,7 +200,7 @@ func (s *mdConnService) TestConnection(conn *model.MdConn) error {
 	extractor, err := s.getExtractor(conn)
 	if err != nil {
 		// 获取提取器失败，更新状态为 2 (连接失败)
-		conn.State = 2
+		conn.Status = 2
 		s.connRepo.UpdateConn(conn)
 		return err
 	}
@@ -209,7 +209,7 @@ func (s *mdConnService) TestConnection(conn *model.MdConn) error {
 	// 测试连接
 	if err := extractor.TestConnection(); err != nil {
 		// 测试失败，更新状态为 2 (连接失败)
-		conn.State = 2
+		conn.Status = 2
 		if updateErr := s.connRepo.UpdateConn(conn); updateErr != nil {
 			fmt.Printf("Warning: Failed to update connection state to error: %v\n", updateErr)
 		}
@@ -217,7 +217,7 @@ func (s *mdConnService) TestConnection(conn *model.MdConn) error {
 	}
 
 	// 测试成功后，更新数据库中的状态为 1 (有效)
-	conn.State = 1
+	conn.Status = 1
 	if updateErr := s.connRepo.UpdateConn(conn); updateErr != nil {
 		// 记录错误但不影响测试结果
 		fmt.Printf("Warning: Failed to update connection state: %v\n", updateErr)

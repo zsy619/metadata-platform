@@ -18,7 +18,7 @@
                 </el-steps>
                 <!-- 步骤 1: 基础信息 -->
                 <div v-show="activeStep === 0" class="step-content">
-                    <el-form ref="baseFormRef" :model="baseForm" :rules="baseRules" label-width="100px" class="max-w-800">
+                    <el-form ref="baseFormRef" :model="baseForm" :rules="baseRules" label-width="140px" label-position="right" class="max-w-800">
                         <el-form-item label="数&#8194;据&#8194;源" prop="connID">
                             <el-select v-model="baseForm.connID" placeholder="请选择数据源" class="w-full" :disabled="isEdit">
                                 <el-option v-for="item in dataSources" :key="item.id" :label="item.conn_name" :value="item.id" />
@@ -108,7 +108,7 @@
                 </div>
                 <!-- 步骤 5: 权限配置 -->
                 <div v-show="activeStep === 4" class="step-content">
-                    <el-form label-width="120px" class="max-w-800">
+                    <el-form label-width="140px" label-position="right" class="max-w-800">
                         <el-form-item label="公开模型">
                             <el-switch v-model="permissions.isPublic" />
                             <span class="ml-2 text-gray-400 text-sm">开启后所有用户可见</span>

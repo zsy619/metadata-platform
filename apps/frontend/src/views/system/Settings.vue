@@ -6,7 +6,7 @@
         <el-card class="settings-card">
             <el-tabs v-model="activeTab">
                 <el-tab-pane label="基本设置" name="basic">
-                    <el-form :model="basicSettings" label-width="120px">
+                    <el-form :model="basicSettings" label-width="140px" label-position="right">
                         <el-form-item label="系统名称">
                             <el-input v-model="basicSettings.systemName" placeholder="请输入系统名称" />
                         </el-form-item>
@@ -19,7 +19,7 @@
                     </el-form>
                 </el-tab-pane>
                 <el-tab-pane label="安全设置" name="security">
-                    <el-form :model="securitySettings" label-width="120px">
+                    <el-form :model="securitySettings" label-width="140px" label-position="right">
                         <el-form-item label="会话超时">
                             <el-input-number v-model="securitySettings.sessionTimeout" :min="5" :max="1440" />
                             <span style="margin-left: 10px">分钟</span>
@@ -37,7 +37,7 @@
                     </el-form>
                 </el-tab-pane>
                 <el-tab-pane label="通知设置" name="notification">
-                    <el-form :model="notificationSettings" label-width="120px">
+                    <el-form :model="notificationSettings" label-width="140px" label-position="right">
                         <el-form-item label="邮件通知">
                             <el-switch v-model="notificationSettings.emailEnabled" />
                         </el-form-item>

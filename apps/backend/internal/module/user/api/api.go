@@ -9,32 +9,33 @@ import (
 
 // SsoHandler 用户模块处理器集合
 type SsoHandler struct {
-	UserHandler         *SsoUserHandler
-	TenantHandler       *SsoTenantHandler
-	ApplicationHandler  *SsoApplicationHandler
-	MenuHandler         *SsoMenuHandler
-	RoleHandler         *SsoRoleHandler
-	OrganizationHandler *SsoOrganizationHandler
-	PositionHandler     *SsoPositionHandler
-	AuthHandler         *SsoAuthHandler
+	TenantHandler  *SsoTenantHandler
+	AppHandler     *SsoAppHandler
+	MenuHandler    *SsoMenuHandler
+	RoleHandler    *SsoRoleHandler
+	OrgHandler     *SsoOrgHandler
+	UserHandler    *SsoUserHandler
+	PosHandler     *SsoPosHandler
+	AuthHandler    *SsoAuthHandler
+	OrgKindHandler *service.OrgKindHandler
 }
 
 // NewSsoHandler 创建用户模块处理器集合
 func NewSsoHandler(services *service.Services) *SsoHandler {
 	return &SsoHandler{
-		UserHandler:         NewSsoUserHandler(services.User),
-		TenantHandler:       NewSsoTenantHandler(services.Tenant),
-		ApplicationHandler:  NewSsoApplicationHandler(services.Application),
-		MenuHandler:         NewSsoMenuHandler(services.Menu),
-		RoleHandler:         NewSsoRoleHandler(services.Role),
-		OrganizationHandler: NewSsoOrganizationHandler(services.Organization),
-		PositionHandler:     NewSsoPositionHandler(services.Position),
-		AuthHandler:         NewSsoAuthHandler(services.Auth),
+		UserHandler:   NewSsoUserHandler(services.User),
+		TenantHandler: NewSsoTenantHandler(services.Tenant),
+		AppHandler:    NewSsoAppHandler(services.App),
+		MenuHandler:   NewSsoMenuHandler(services.Menu),
+		RoleHandler:   NewSsoRoleHandler(services.Role),
+		OrgHandler:    NewSsoOrgHandler(services.Org),
+		PosHandler:    NewSsoPosHandler(services.Pos),
+		AuthHandler:   NewSsoAuthHandler(services.Auth),
 	}
 }
 
 // RegisterRoutes 注册路由
-func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
+func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *service.OrgKindHandler) {
 	// 用户相关路由
 	userRouter := router.Group("/api/user")
 	{
@@ -69,11 +70,11 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 	// 应用相关路由
 	applicationRouter := router.Group("/api/app")
 	{
-		applicationRouter.POST("", h.ApplicationHandler.CreateApplication)
-		applicationRouter.GET("/:id", h.ApplicationHandler.GetApplicationByID)
-		applicationRouter.PUT("/:id", h.ApplicationHandler.UpdateApplication)
-		applicationRouter.DELETE("/:id", h.ApplicationHandler.DeleteApplication)
-		applicationRouter.GET("", h.ApplicationHandler.GetAllApplications)
+		applicationRouter.POST("", h.AppHandler.CreateApp)
+		applicationRouter.GET("/:id", h.AppHandler.GetAppByID)
+		applicationRouter.PUT("/:id", h.AppHandler.UpdateApp)
+		applicationRouter.DELETE("/:id", h.AppHandler.DeleteApp)
+		applicationRouter.GET("", h.AppHandler.GetAllApps)
 	}
 
 	// 菜单相关路由
@@ -99,20 +100,30 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 	// 组织相关路由
 	organizationRouter := router.Group("/api/unit")
 	{
-		organizationRouter.POST("", h.OrganizationHandler.CreateOrganization)
-		organizationRouter.GET("/:id", h.OrganizationHandler.GetOrganizationByID)
-		organizationRouter.PUT("/:id", h.OrganizationHandler.UpdateOrganization)
-		organizationRouter.DELETE("/:id", h.OrganizationHandler.DeleteOrganization)
-		organizationRouter.GET("", h.OrganizationHandler.GetAllOrganizations)
+		organizationRouter.POST("", h.OrgHandler.CreateOrg)
+		organizationRouter.GET("/:id", h.OrgHandler.GetOrgByID)
+		organizationRouter.PUT("/:id", h.OrgHandler.UpdateOrg)
+		organizationRouter.DELETE("/:id", h.OrgHandler.DeleteOrg)
+		organizationRouter.GET("", h.OrgHandler.GetAllOrgs)
 	}
 
 	// 职位相关路由
 	positionRouter := router.Group("/api/pos")
 	{
-		positionRouter.POST("", h.PositionHandler.CreatePosition)
-		positionRouter.GET("/:id", h.PositionHandler.GetPositionByID)
-		positionRouter.PUT("/:id", h.PositionHandler.UpdatePosition)
-		positionRouter.DELETE("/:id", h.PositionHandler.DeletePosition)
-		positionRouter.GET("", h.PositionHandler.GetAllPositions)
+		positionRouter.POST("", h.PosHandler.CreatePos)
+		positionRouter.GET("/:id", h.PosHandler.GetPosByID)
+		positionRouter.PUT("/:id", h.PosHandler.UpdatePos)
+		positionRouter.DELETE("/:id", h.PosHandler.DeletePos)
+		positionRouter.GET("", h.PosHandler.GetAllPoss)
+	}
+
+	// 组织类型相关路由
+	orgKindRouter := router.Group("/api/org-kind")
+	{
+		orgKindRouter.POST("", orgKindHandler.CreateOrgKind)
+		orgKindRouter.GET("/:id", orgKindHandler.GetOrgKindByID)
+		orgKindRouter.PUT("/:id", orgKindHandler.UpdateOrgKind)
+		orgKindRouter.DELETE("/:id", orgKindHandler.DeleteOrgKind)
+		orgKindRouter.GET("", orgKindHandler.GetAllOrgKinds)
 	}
 }

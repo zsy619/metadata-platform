@@ -86,7 +86,7 @@ func (s *ssoAuthService) Login(account string, password string, tenantID uint, c
 	}
 
 	// 校验状态
-	if user.State != 1 {
+	if user.Status != 1 {
 		loginStatus = 0
 		errMsg = "账号已被禁用"
 		return "", "", errors.New("账号已被禁用")

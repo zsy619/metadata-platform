@@ -70,7 +70,7 @@ func TestMdConnService_CreateConn(t *testing.T) {
 			ConnUser:     "root",
 			ConnPassword: "password",
 			ConnDatabase: "test_db",
-			State:        0, // 初始状态为未检测
+			Status:       0, // 初始状态为未检测
 		}
 
 		mockRepo.On("GetConnByName", "Test MySQL").Return(nil, errors.New("not found"))
@@ -78,8 +78,8 @@ func TestMdConnService_CreateConn(t *testing.T) {
 
 		err := svc.CreateConn(conn)
 		assert.NoError(t, err)
-		assert.NotEmpty(t, conn.ID)    // 确保ID已生成
-		assert.Equal(t, 0, conn.State) // 确保初始状态为0
+		assert.NotEmpty(t, conn.ID)     // 确保ID已生成
+		assert.Equal(t, 0, conn.Status) // 确保初始状态为0
 
 		mockRepo.AssertExpectations(t)
 	})
@@ -113,13 +113,13 @@ func TestMdConnService_UpdateConn(t *testing.T) {
 		existingConn := &model.MdConn{
 			ID:       "conn123",
 			ConnName: "Old Name",
-			State:    0,
+			Status:   0,
 		}
 
 		updatedConn := &model.MdConn{
 			ID:       "conn123",
 			ConnName: "New Name",
-			State:    1, // 状态已更新
+			Status:   1, // 状态已更新
 		}
 
 		mockRepo.On("GetConnByID", "conn123").Return(existingConn, nil)
@@ -156,7 +156,7 @@ func TestMdConnService_TestConnection(t *testing.T) {
 		// 注意：这个测试需要实际的数据库连接，或者需要mock adapter
 		// 这里我们假设测试会成功，并验证状态是否更新
 		mockRepo.On("UpdateConn", mock.MatchedBy(func(c *model.MdConn) bool {
-			return c.ID == "conn123" && c.State == 1
+			return c.ID == "conn123" && c.Status == 1
 		})).Return(nil)
 
 		// 实际测试需要真实数据库或mock extractor
@@ -204,8 +204,8 @@ func TestMdConnService_DeleteConn(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		conn := &model.MdConn{
-			ID:    "conn123",
-			State: 1,
+			ID:     "conn123",
+			Status: 1,
 		}
 
 		mockRepo.On("GetConnByID", "conn123").Return(conn, nil)
@@ -235,8 +235,8 @@ func TestMdConnService_GetAllConns(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		expectedConns := []model.MdConn{
-			{ID: "conn1", ConnName: "MySQL", State: 1},
-			{ID: "conn2", ConnName: "PostgreSQL", State: 0},
+			{ID: "conn1", ConnName: "MySQL", Status: 1},
+			{ID: "conn2", ConnName: "PostgreSQL", Status: 0},
 		}
 
 		mockRepo.On("GetAllConns", "tenant1").Return(expectedConns, nil)
@@ -244,8 +244,8 @@ func TestMdConnService_GetAllConns(t *testing.T) {
 		conns, err := svc.GetAllConns("tenant1")
 		assert.NoError(t, err)
 		assert.Len(t, conns, 2)
-		assert.Equal(t, 1, conns[0].State) // 验证状态字段
-		assert.Equal(t, 0, conns[1].State)
+		assert.Equal(t, 1, conns[0].Status) // 验证状态字段
+		assert.Equal(t, 0, conns[1].Status)
 
 		mockRepo.AssertExpectations(t)
 	})

@@ -7,7 +7,7 @@
             </el-button>
         </div>
         <el-card>
-            <el-form ref="apiFormRef" :model="apiForm" :rules="formRules" label-width="120px" class="create-form">
+            <el-form ref="apiFormRef" :model="apiForm" :rules="formRules" label-width="120px" label-position="right" class="create-form">
                 <h3>基本信息</h3>
                 <el-divider />
                 <el-row :gutter="20">

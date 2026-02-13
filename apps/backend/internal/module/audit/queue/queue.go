@@ -16,6 +16,7 @@ const (
 	LogTypeOperation LogType = iota
 	LogTypeDataChange
 	LogTypeLogin
+	LogTypeAccess
 )
 
 // LogEntry 日志条目包装器
@@ -24,6 +25,7 @@ type LogEntry struct {
 	Operation  *model.SysOperationLog
 	DataChange *model.SysDataChangeLog
 	Login      *model.SysLoginLog
+	Access     *model.SysAccessLog
 }
 
 // AuditLogQueue 审计日志队列
@@ -97,6 +99,8 @@ func (q *AuditLogQueue) processLog(entry LogEntry) {
 		err = q.db.Create(entry.DataChange).Error
 	case LogTypeLogin:
 		err = q.db.Create(entry.Login).Error
+	case LogTypeAccess:
+		err = q.db.Create(entry.Access).Error
 	}
 
 	if err != nil {
@@ -128,5 +132,14 @@ func (q *AuditLogQueue) PushLogin(log *model.SysLoginLog) {
 	case q.logChan <- LogEntry{Type: LogTypeLogin, Login: log}:
 	default:
 		utils.SugarLogger.Warn("Audit log queue full, dropping login log")
+	}
+}
+
+// PushAccess 推送访问日志
+func (q *AuditLogQueue) PushAccess(log *model.SysAccessLog) {
+	select {
+	case q.logChan <- LogEntry{Type: LogTypeAccess, Access: log}:
+	default:
+		utils.SugarLogger.Warn("Audit log queue full, dropping access log")
 	}
 }

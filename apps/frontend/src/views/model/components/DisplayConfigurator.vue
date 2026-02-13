@@ -99,7 +99,7 @@
             </div>
         </div>
         <el-dialog v-model="configDialogVisible" title="字段详细配置" width="500px">
-            <el-form v-if="currentField" label-width="100px">
+            <el-form v-if="currentField" label-width="120px" label-position="right">
                 <el-form-item label="占位符">
                     <el-input v-model="currentField.placeholder" placeholder="占位符文本" />
                 </el-form-item>

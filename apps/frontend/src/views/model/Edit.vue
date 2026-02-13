@@ -10,7 +10,7 @@
             <el-tabs v-model:active-name="activeTab" type="border-card">
                 <!-- 基本信息 -->
                 <el-tab-pane label="基本信息" name="basic">
-                    <el-form ref="modelFormRef" :model="modelForm" :rules="formRules" label-width="120px" class="edit-form">
+                    <el-form ref="modelFormRef" :model="modelForm" :rules="formRules" label-width="140px" label-position="right" class="edit-form">
                         <el-row :gutter="20">
                             <el-col :span="12">
                                 <el-form-item label="模型名称" prop="modelName">
@@ -116,7 +116,7 @@
                 <!-- 树形配置 -->
                 <el-tab-pane label="树形配置" name="tree">
                     <div class="tree-config">
-                        <el-form :model="modelForm" label-width="140px" :disabled="modelForm.isLocked">
+                        <el-form :model="modelForm" label-width="140px" label-position="right" :disabled="modelForm.isLocked">
                             <el-form-item label="启用树形结构">
                                 <el-switch v-model="modelForm.isTree" />
                             </el-form-item>
@@ -178,7 +178,7 @@
                 </el-tab-pane>
                 <!-- 高级配置 -->
                 <el-tab-pane label="高级配置" name="advanced">
-                    <el-form :model="advancedConfig" label-width="140px">
+                    <el-form :model="advancedConfig" label-width="140px" label-position="right">
                         <el-form-item label="启用审计">
                             <el-switch v-model="advancedConfig.enableAudit" />
                         </el-form-item>
@@ -191,7 +191,7 @@
         </el-card>
         <!-- 增强配置对话框 -->
         <el-dialog v-model="enhancementVisible" title="字段增强配置" width="600px" class="custom-dialog">
-            <el-form :model="currentField" label-width="120px">
+            <el-form :model="currentField" label-width="140px" label-position="right">
                 <el-form-item label="允许为空"><el-switch v-model="currentField.isNullable" /></el-form-item>
                 <el-form-item label="主键"><el-switch v-model="currentField.isPrimaryKey" /></el-form-item>
                 <el-form-item label="正则校验"><el-input v-model="currentField.fieldRegex" /></el-form-item>

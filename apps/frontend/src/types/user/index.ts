@@ -53,7 +53,7 @@ export interface User extends BaseEntity {
     /** 班级 */
     class: string;
     /** 是否可用:1 可用 0 禁用 */
-    state: number;
+    status: number;
     /** 结束时间 */
     endTime: string;
     /** 分类（1：超级管理员 2：子管理员 3：教师 4：学生 99：其他） */
@@ -96,7 +96,7 @@ export interface Tenant extends BaseEntity {
     /** 联系地址 */
     address: string;
     /** 状态: 1 有效 0 无效 */
-    state: number;
+    status: number;
     /** 备注 */
     remark: string;
     /** 创建人 */
@@ -116,7 +116,7 @@ export interface App extends BaseEntity {
     /** 子系统编码（比如：zuul） */
     svcCode: string;
     /** 是否可用:1 可用 0 禁用 */
-    state: number;
+    status: number;
     /** 系统运行机器的域名或ip */
     host: string;
     /** 系统logo */
@@ -144,7 +144,7 @@ export interface Menu extends BaseEntity {
     /** 标识权限 */
     menuCode: string;
     /** 是否可用（1 可用 0 禁用） */
-    state: number;
+    status: number;
     /** 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限） */
     dataScope: string;
     /** 菜单状态（1 显示 0 隐藏） */
@@ -188,7 +188,7 @@ export interface Role extends BaseEntity {
     /** 角色代码 */
     role_code: string;
     /** 是否可用:1 可用 0 禁用 */
-    state: number;
+    status: number;
     /** 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限） */
     data_scope: string;
     /** 描述 */
@@ -236,7 +236,7 @@ export interface Unit extends BaseEntity {
     /** 邮编 */
     postcode: string;
     /** 是否可用:1 可用 0 禁用 */
-    state: number;
+    status: number;
     /** 描述信息 */
     remark: string;
     /** 排序 */
@@ -264,7 +264,7 @@ export interface Pos extends BaseEntity {
     /** 职位编码 */
     pos_code: string;
     /** 是否可用:1 可用 0 禁用 */
-    state: number;
+    status: number;
     /** 描述信息 */
     remark: string;
     /** 排序 */

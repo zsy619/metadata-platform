@@ -28,6 +28,9 @@ func getFilters(c *app.RequestContext) map[string]interface{} {
 	if v := c.Query("client_ip"); v != "" {
 		filters["client_ip"] = v
 	}
+	if v := c.Query("path"); v != "" {
+		filters["path"] = v
+	}
 	if v := c.Query("module"); v != "" {
 		// Frontend uses module, backend model uses source
 		filters["source"] = v

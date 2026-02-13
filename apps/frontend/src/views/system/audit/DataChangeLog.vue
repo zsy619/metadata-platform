@@ -58,7 +58,7 @@
             </div>
         </el-card>
         <!-- 详情对话框 -->
-        <el-dialog v-model="detailsVisible" title="数据变更详情" width="900px" destroy-on-close append-to-body>
+        <el-dialog v-model="detailsVisible" title="数据变更详情" width="1000px" destroy-on-close append-to-body>
             <el-descriptions :column="2" border v-if="currentLog">
                 <el-descriptions-item label="追踪ID" :span="2">
                     <el-link type="primary" @click="goOperationLog(currentLog.trace_id)">{{ currentLog.trace_id }}</el-link>
@@ -70,19 +70,50 @@
                 </el-descriptions-item>
                 <el-descriptions-item label="操作人">{{ currentLog.create_by }}</el-descriptions-item>
                 <el-descriptions-item label="变更时间" :span="2">{{ formatDate(currentLog.create_at) }}</el-descriptions-item>
-                <el-descriptions-item label="变更前数据" :span="2">
-                    <div class="json-container" v-if="currentLog.before_data">
-                        <pre>{{ formatJson(currentLog.before_data) }}</pre>
-                    </div>
-                    <span v-else>无 (新增操作)</span>
-                </el-descriptions-item>
-                <el-descriptions-item label="变更后数据" :span="2">
-                    <div class="json-container" v-if="currentLog.after_data">
-                        <pre>{{ formatJson(currentLog.after_data) }}</pre>
-                    </div>
-                    <span v-else>无 (删除操作)</span>
-                </el-descriptions-item>
             </el-descriptions>
+            <!-- 变更对比区域 -->
+            <div class="diff-section" v-if="currentLog.before_data || currentLog.after_data">
+                <div class="diff-header">
+                    <span>数据变更对比</span>
+                    <el-switch v-model="showDiff" active-text="显示差异" inactive-text="完整数据" />
+                </div>
+                <div class="diff-container">
+                    <div class="diff-panel">
+                        <div class="diff-title">变更前数据</div>
+                        <div class="diff-content">
+                            <template v-if="showDiff">
+                                <div v-for="(value, key) in parseJson(currentLog.before_data)" :key="'before-'+key" 
+                                     :class="['diff-item', isChanged(key) ? 'changed' : '']">
+                                    <span class="diff-key">{{ key }}</span>
+                                    <span class="diff-value" v-if="isChanged(key)" style="color: #67c23a;">{{ value }}</span>
+                                    <span class="diff-value" v-else>{{ value }}</span>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <pre>{{ formatJson(currentLog.before_data) }}</pre>
+                            </template>
+                            <span v-if="!currentLog.before_data" class="no-data">无 (新增操作)</span>
+                        </div>
+                    </div>
+                    <div class="diff-panel">
+                        <div class="diff-title">变更后数据</div>
+                        <div class="diff-content">
+                            <template v-if="showDiff">
+                                <div v-for="(value, key) in parseJson(currentLog.after_data)" :key="'after-'+key"
+                                     :class="['diff-item', isChanged(key) ? 'changed' : '']">
+                                    <span class="diff-key">{{ key }}</span>
+                                    <span class="diff-value" v-if="isChanged(key)" style="color: #f56c6c;">{{ value }}</span>
+                                    <span class="diff-value" v-else>{{ value }}</span>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <pre>{{ formatJson(currentLog.after_data) }}</pre>
+                            </template>
+                            <span v-if="!currentLog.after_data" class="no-data">无 (删除操作)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </el-dialog>
     </div>
 </template>
@@ -101,6 +132,8 @@ const tableData = ref([])
 const dateRange = ref([])
 const detailsVisible = ref(false)
 const currentLog = ref<any>(null)
+const showDiff = ref(true) // 是否显示差异模式
+const changedFields = ref<Set<string>>(new Set()) // 变更的字段集合
 
 const queryParams = reactive({
     page: 1,
@@ -133,6 +166,37 @@ const formatJson = (jsonStr: string) => {
     } catch (e) {
         return jsonStr
     }
+}
+
+// 解析JSON为对象
+const parseJson = (jsonStr: string): Record<string, any> => {
+    if (!jsonStr) return {}
+    try {
+        return JSON.parse(jsonStr)
+    } catch (e) {
+        return {}
+    }
+}
+
+// 判断字段是否变更
+const isChanged = (key: string) => {
+    return changedFields.value.has(key)
+}
+
+// 计算变更字段
+const calculateChangedFields = () => {
+    changedFields.value.clear()
+    if (!currentLog.value?.before_data || !currentLog.value?.after_data) return
+    
+    const before = parseJson(currentLog.value.before_data)
+    const after = parseJson(currentLog.value.after_data)
+    
+    const allKeys = new Set([...Object.keys(before), ...Object.keys(after)])
+    allKeys.forEach(key => {
+        if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) {
+            changedFields.value.add(key)
+        }
+    })
 }
 
 const getList = async () => {
@@ -185,6 +249,8 @@ const handleCurrentChange = (val: number) => {
 const viewDetails = (log: any) => {
     currentLog.value = log
     detailsVisible.value = true
+    // 计算变更字段
+    calculateChangedFields()
 }
 
 const goOperationLog = (traceId: string) => {
@@ -299,5 +365,89 @@ onMounted(() => {
 :deep(.el-descriptions__label) {
     width: 120px;
     font-weight: bold;
+}
+
+/* 变更对比区域样式 */
+.diff-section {
+    margin-top: 20px;
+    border: 1px solid #ebeef5;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.diff-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: #f5f7fa;
+    border-bottom: 1px solid #ebeef5;
+    font-weight: 600;
+}
+
+.diff-container {
+    display: flex;
+    min-height: 300px;
+}
+
+.diff-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #ebeef5;
+}
+
+.diff-panel:last-child {
+    border-right: none;
+}
+
+.diff-title {
+    padding: 10px 15px;
+    background-color: #fafafa;
+    border-bottom: 1px solid #ebeef5;
+    font-weight: 600;
+    text-align: center;
+}
+
+.diff-content {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.diff-content pre {
+    margin: 0;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.diff-item {
+    display: flex;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.diff-item.changed {
+    background-color: #f0f9eb;
+}
+
+.diff-key {
+    min-width: 120px;
+    font-weight: 500;
+    color: #606266;
+    flex-shrink: 0;
+}
+
+.diff-value {
+    color: #303133;
+    word-break: break-all;
+}
+
+.no-data {
+    color: #909399;
+    font-style: italic;
 }
 </style>

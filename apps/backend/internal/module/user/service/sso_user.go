@@ -10,11 +10,12 @@ import (
 // ssoUserService 用户服务实现
 type ssoUserService struct {
 	userRepo repository.SsoUserRepository
+	orgRepo  repository.SsoOrgRepository
 }
 
 // NewSsoUserService 创建用户服务实例
-func NewSsoUserService(userRepo repository.SsoUserRepository) SsoUserService {
-	return &ssoUserService{userRepo: userRepo}
+func NewSsoUserService(userRepo repository.SsoUserRepository, orgRepo repository.SsoOrgRepository) SsoUserService {
+	return &ssoUserService{userRepo: userRepo, orgRepo: orgRepo}
 }
 
 // CreateUser 创建用户
@@ -32,6 +33,13 @@ func (s *ssoUserService) CreateUser(user *model.SsoUser) error {
 	}
 	user.Password = hashedPassword
 	user.Salt = salt
+
+	if user.OrgID != "" {
+		_, err := s.orgRepo.GetOrgByID(user.OrgID)
+		if err != nil {
+			return errors.New("组织不存在")
+		}
+	}
 
 	// 创建用户
 	return s.userRepo.CreateUser(user)

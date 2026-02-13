@@ -20,5 +20,8 @@ func Migrate(db *gorm.DB) error {
 	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='系统登录日志'").AutoMigrate(&model.SysLoginLog{}); err != nil {
 		return err
 	}
+	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='系统访问日志'").AutoMigrate(&model.SysAccessLog{}); err != nil {
+		return err
+	}
 	return nil
 }

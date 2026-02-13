@@ -16,7 +16,7 @@
             <!-- 第一步：基础配置 -->
             <div v-if="activeStep === 0" class="step-content">
                 <h3>选择数据源与模型类型</h3>
-                <el-form :model="modelForm" label-width="120px">
+                <el-form :model="modelForm" label-width="140px" label-position="right">
                     <el-form-item label="数&#8194;据&#8194;源" prop="connID">
                         <el-select v-model="modelForm.connID" placeholder="请选择数据源" style="width: 100%" @change="handleDataSourceChange">
                             <el-option v-for="conn in dataSources" :key="conn.id" :label="conn.connName" :value="conn.id">
@@ -100,7 +100,7 @@
             <!-- 第三步：配置模型信息 -->
             <div v-if="activeStep === 2" class="step-content">
                 <h3>配置模型信息</h3>
-                <el-form ref="modelFormRef" :model="modelForm" :rules="formRules" label-width="120px" class="create-form">
+                <el-form ref="modelFormRef" :model="modelForm" :rules="formRules" label-width="140px" label-position="right" class="create-form">
                     <el-row :gutter="20">
                         <el-col :span="12">
                             <el-form-item label="模型名称" prop="modelName">

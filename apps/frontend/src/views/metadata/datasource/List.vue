@@ -67,8 +67,8 @@
                     <el-table-column prop="conn_database" label="数据库" width="150" show-overflow-tooltip />
                     <el-table-column prop="state" label="状态" width="100">
                         <template #default="scope">
-                            <el-tag v-if="scope.row.state === 1" type="success">有效</el-tag>
-                            <el-tag v-else-if="scope.row.state === 2" type="danger">连接错误</el-tag>
+                            <el-tag v-if="scope.row.status === 1" type="success">有效</el-tag>
+                            <el-tag v-else-if="scope.row.status === 2" type="danger">连接错误</el-tag>
                             <el-tag v-else type="info">未检测</el-tag>
                         </template>
                     </el-table-column>
@@ -79,7 +79,7 @@
                     </el-table-column>
                     <el-table-column label="操作" width="320" fixed="right">
                         <template #default="scope">
-                            <el-button type="success" size="small" :icon="Connection" @click="handleTestConnection(scope.row)" :disabled="scope.row.state === 1" plain>
+                            <el-button type="success" size="small" :icon="Connection" @click="handleTestConnection(scope.row)" :disabled="scope.row.status === 1" plain>
                                 测试
                             </el-button>
                             <el-button type="warning" size="small" :icon="Folder" @click="handleBrowse(scope.row)" plain>

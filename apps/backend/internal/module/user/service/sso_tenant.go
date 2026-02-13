@@ -2,9 +2,9 @@ package service
 
 import (
 	"errors"
-
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/utils"
 )
 
 // ssoTenantService 租户服务实现
@@ -24,6 +24,17 @@ func (s *ssoTenantService) CreateTenant(tenant *model.SsoTenant) error {
 	if err == nil && existingTenant != nil {
 		return errors.New("租户编码已存在")
 	}
+
+	// 检查父租户是否存在（如果有）
+	if tenant.ParentID != "" {
+		_, err := s.tenantRepo.GetTenantByID(tenant.ParentID)
+		if err != nil {
+			return errors.New("父租户不存在")
+		}
+	}
+
+	// 使用全局雪花算法生成ID
+	tenant.ID = utils.GetSnowflake().GenerateIDString()
 
 	// 创建租户
 	return s.tenantRepo.CreateTenant(tenant)

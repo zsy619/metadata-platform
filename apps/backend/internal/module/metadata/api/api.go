@@ -27,7 +27,7 @@ type CreateAPIRequest struct {
 	Path     string `json:"path" binding:"required"`
 	Method   string `json:"method" binding:"required"`
 	IsPublic bool   `json:"is_public"`
-	State    int    `json:"state"`
+	Status   int    `json:"status"`
 	Remark   string `json:"remark"`
 	Sort     int    `json:"sort"`
 }
@@ -39,7 +39,7 @@ type UpdateAPIRequest struct {
 	Path     string `json:"path"`
 	Method   string `json:"method"`
 	IsPublic bool   `json:"is_public"`
-	State    int    `json:"state"`
+	Status   int    `json:"status"`
 	Remark   string `json:"remark"`
 	Sort     int    `json:"sort"`
 }
@@ -59,7 +59,7 @@ func (h *APIHandler) CreateAPI(c context.Context, ctx *app.RequestContext) {
 		Path:     req.Path,
 		Method:   req.Method,
 		IsPublic: req.IsPublic,
-		State:    req.State,
+		Status:   req.Status,
 		Remark:   req.Remark,
 		Sort:     req.Sort,
 	}
@@ -117,8 +117,8 @@ func (h *APIHandler) UpdateAPI(c context.Context, ctx *app.RequestContext) {
 		api.Method = req.Method
 	}
 	api.IsPublic = req.IsPublic
-	if req.State != 0 {
-		api.State = req.State
+	if req.Status != 0 {
+		api.Status = req.Status
 	}
 	if req.Remark != "" {
 		api.Remark = req.Remark
@@ -173,10 +173,10 @@ func (h *APIHandler) EnableAPI(c context.Context, ctx *app.RequestContext) {
 	}
 
 	// 切换状态: 1=启用, 0=禁用
-	if api.State == 1 {
-		api.State = 0
+	if api.Status == 1 {
+		api.Status = 0
 	} else {
-		api.State = 1
+		api.Status = 1
 	}
 
 	// 更新API
@@ -187,9 +187,9 @@ func (h *APIHandler) EnableAPI(c context.Context, ctx *app.RequestContext) {
 
 	utils.SuccessResponse(ctx, map[string]interface{}{
 		"id":    api.ID,
-		"state": api.State,
+		"state": api.Status,
 		"message": func() string {
-			if api.State == 1 {
+			if api.Status == 1 {
 				return "API已启用"
 			}
 			return "API已禁用"
@@ -217,7 +217,7 @@ func (h *APIHandler) TestAPI(c context.Context, ctx *app.RequestContext) {
 			"method": api.Method,
 			"path":   api.Path,
 			"state": func() string {
-				if api.State == 1 {
+				if api.Status == 1 {
 					return "enabled"
 				} else {
 					return "disabled"
