@@ -50,8 +50,10 @@ export const useAppStore = defineStore('app', () => {
         storage.set('theme', t)
         if (t === 'dark') {
             document.documentElement.classList.add('dark')
+            document.documentElement.style.colorScheme = 'dark'
         } else {
             document.documentElement.classList.remove('dark')
+            document.documentElement.style.colorScheme = 'light'
         }
     }
 

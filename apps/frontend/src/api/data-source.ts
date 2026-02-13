@@ -1,7 +1,7 @@
 /**
  * 数据源API服务
  */
-import type { DataSource, DataSourceQueryParams, DataSourceResponse } from '@/types/metadata/datasource'
+import type { DataSource, DataSourceQueryParams, DataSourceResponse, TableInfo, ViewInfo, TableStructure, ColumnInfo } from '@/types/metadata/datasource'
 import request from '@/utils/request'
 
 /**
@@ -90,5 +90,96 @@ export const syncDataSourceMetadata = async (id: number): Promise<void> => {
     return request({
         url: `/api/data-sources/${id}/sync`,
         method: 'post'
+    })
+}
+
+/**
+ * 获取数据源下的所有表
+ * @param id 数据源ID
+ * @returns 表列表
+ */
+export const getDataSourceTables = async (id: number): Promise<TableInfo[]> => {
+    return request({
+        url: `/api/data-sources/${id}/tables`,
+        method: 'get'
+    })
+}
+
+/**
+ * 获取数据源下的所有视图
+ * @param id 数据源ID
+ * @returns 视图列表
+ */
+export const getDataSourceViews = async (id: number): Promise<ViewInfo[]> => {
+    return request({
+        url: `/api/data-sources/${id}/views`,
+        method: 'get'
+    })
+}
+
+/**
+ * 获取数据源下的表和视图
+ * @param id 数据源ID
+ * @returns 表和视图列表
+ */
+export const getDataSourceTablesAndViews = async (id: number): Promise<{ tables: TableInfo[]; views: ViewInfo[] }> => {
+    return request({
+        url: `/api/data-sources/${id}/objects`,
+        method: 'get'
+    })
+}
+
+/**
+ * 获取表结构信息
+ * @param id 数据源ID
+ * @param tableName 表名
+ * @returns 表结构信息
+ */
+export const getTableStructure = async (id: number, tableName: string): Promise<TableStructure> => {
+    return request({
+        url: `/api/data-sources/${id}/tables/${tableName}/structure`,
+        method: 'get'
+    })
+}
+
+/**
+ * 获取表字段列表
+ * @param id 数据源ID
+ * @param tableName 表名
+ * @returns 字段列表
+ */
+export const getTableColumns = async (id: number, tableName: string): Promise<ColumnInfo[]> => {
+    return request({
+        url: `/api/data-sources/${id}/tables/${tableName}/columns`,
+        method: 'get'
+    })
+}
+
+/**
+ * 预览表数据
+ * @param id 数据源ID
+ * @param tableName 表名
+ * @param params 查询参数（page, pageSize, orderBy）
+ * @returns 预览数据
+ */
+export const previewTableData = async (id: number, tableName: string, params?: { page?: number; pageSize?: number; orderBy?: string }): Promise<{ data: any[]; total: number }> => {
+    return request({
+        url: `/api/data-sources/${id}/tables/${tableName}/preview`,
+        method: 'get',
+        params
+    })
+}
+
+/**
+ * 执行SQL查询
+ * @param id 数据源ID
+ * @param data SQL查询参数
+ * @returns 查询结果
+ */
+export const executeSQL = async (id: number, data: { sql: string; limit?: number }): Promise<{ data: any[]; columns: string[]; rows: number; executionTime: number }> => {
+    return request({
+        url: `/api/data-sources/${id}/query`,
+        method: 'post',
+        data
     })
 }

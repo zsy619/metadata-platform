@@ -10,11 +10,11 @@
         <div class="right-menu">
             <div class="right-menu-item">
                 <el-dropdown trigger="click" @command="handleLangCommand">
-                    <span class="el-dropdown-link">
+                    <span class="el-dropdown-link language-dropdown">
                         <el-icon class="right-icon">
-                            <i class="fas fa-language"></i> <!-- Or just Text -->
-                            <span style="font-size: 14px; margin-left: 4px">{{ currentLang === 'zh-CN' ? '中文' : 'En' }}</span>
+                            <ChatDotRound />
                         </el-icon>
+                        <span class="lang-text">{{ currentLang === 'zh-CN' ? '中文' : 'En' }}</span>
                     </span>
                     <template #dropdown>
                         <el-dropdown-menu>
@@ -67,7 +67,7 @@
 <script setup lang="ts">
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
-import { CaretBottom, Expand, Fold, FullScreen, Moon, Sunny } from '@element-plus/icons-vue'
+import { CaretBottom, ChatDotRound, Expand, Fold, FullScreen, Moon, Sunny } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -82,6 +82,16 @@ const avatar = computed(() => userStore.avatar)
 const userName = computed(() => userStore.userName)
 const isDark = computed(() => appStore.theme === 'dark')
 const currentLang = computed(() => appStore.language)
+
+// 初始化主题
+const initTheme = () => {
+    const savedTheme = appStore.theme
+    if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark')
+        document.documentElement.style.colorScheme = 'dark'
+    }
+}
+initTheme()
 
 const toggleSideBar = () => {
     appStore.toggleSidebar()
@@ -100,6 +110,11 @@ const toggleFullScreen = () => {
 const toggleTheme = () => {
     const newTheme = isDark.value ? 'light' : 'dark'
     appStore.setTheme(newTheme)
+    if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark')
+    } else {
+        document.documentElement.classList.remove('dark')
+    }
 }
 
 const handleLangCommand = (lang: string) => {
@@ -201,12 +216,12 @@ const logout = async () => {
 }
 
 .right-menu-item {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 0 8px;
     height: 100%;
     font-size: 18px;
     color: #5a5e66;
-    vertical-align: text-bottom;
     cursor: pointer;
     transition: background .3s;
 }
@@ -218,5 +233,22 @@ const logout = async () => {
 .right-icon {
     font-size: 20px;
     vertical-align: middle;
+}
+
+.language-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lang-text {
+    font-size: 14px;
+    color: #5a5e66;
+}
+
+.el-dropdown-link {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
 }
 </style>
