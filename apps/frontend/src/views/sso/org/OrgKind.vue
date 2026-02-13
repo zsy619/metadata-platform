@@ -1,30 +1,29 @@
 <template>
-  <div class="sso-page container-padding">
+  <div class="container-padding">
     <div class="page-header">
       <h1 class="text-primary page-title">
-        <el-icon class="title-icon"><Briefcase /></el-icon>
-        职位管理
+        <el-icon class="title-icon"><Collection /></el-icon>
+        组织类型管理
       </h1>
       <div class="header-actions">
-        <el-button type="primary" @click="handleCreate" :icon="Plus">新增职位</el-button>
+        <el-button type="primary" @click="handleCreate" :icon="Plus">新增类型</el-button>
       </div>
     </div>
     <el-card class="main-card">
       <div class="search-area">
-        <el-input v-model="searchQuery" placeholder="请输入职位名称搜索" clearable :prefix-icon="Search" style="width: 300px" @input="handleDebouncedSearch" />
+        <el-input v-model="searchQuery" placeholder="请输入类型名称搜索" clearable :prefix-icon="Search" style="width: 300px" @input="handleDebouncedSearch" />
         <el-button type="primary" @click="handleSearch" :icon="Search" style="margin-left: 10px">搜索</el-button>
         <el-button @click="handleReset" :icon="RefreshLeft">重置</el-button>
       </div>
       <div class="table-area">
         <el-table v-loading="loading" :element-loading-text="loadingText" :data="filteredData" border stripe style="width: 100%; height: 100%;">
           <template #empty>
-            <el-empty :description="searchQuery ? '未搜索到相关职位' : '暂无职位'">
-              <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增职位</el-button>
+            <el-empty :description="searchQuery ? '未搜索到相关类型' : '暂无类型'">
+              <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增类型</el-button>
             </el-empty>
           </template>
-          <el-table-column prop="pos_name" label="职位名称" width="180" />
-          <el-table-column prop="pos_code" label="职位编码" width="150" />
-          <el-table-column prop="org_id" label="所属组织" width="150" />
+          <el-table-column prop="name" label="类型名称" width="200" />
+          <el-table-column prop="code" label="类型编码" width="150" />
           <el-table-column prop="status" label="状态" width="80">
             <template #default="scope">
               <el-tag v-if="scope.row.status === 1" type="success">有效</el-tag>
@@ -42,18 +41,21 @@
       </div>
     </el-card>
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="formData" label-width="120px" label-position="right">
-        <el-form-item label="职位名称" prop="pos_name">
-          <el-input v-model="formData.pos_name" placeholder="请输入职位名称" />
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" label-position="right">
+        <el-form-item label="类型名称" prop="name">
+          <el-input v-model="formData.name" placeholder="请输入类型名称" />
         </el-form-item>
-        <el-form-item label="职位编码" prop="pos_code">
-          <el-input v-model="formData.pos_code" placeholder="请输入职位编码" />
+        <el-form-item label="类型编码" prop="code">
+          <el-input v-model="formData.code" placeholder="请输入类型编码" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" />
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -65,11 +67,11 @@
 </template>
 
 <script setup lang="ts">
-import { Delete, Edit, Plus, RefreshLeft, Search, Briefcase } from '@element-plus/icons-vue'
+import { createOrgKind, deleteOrgKind, getOrgKinds, updateOrgKind } from '@/api/user'
+import { Collection, Delete, Edit, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
+import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
-import { getPos, createPos, updatePos, deletePos } from '@/api/user'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
@@ -81,7 +83,7 @@ const filteredData = computed(() => {
   let data = allData.value
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    data = data.filter(item => (item.pos_name || '').toLowerCase().includes(query))
+    data = data.filter(item => (item.name || '').toLowerCase().includes(query))
   }
   return data
 })
@@ -91,15 +93,19 @@ const dialogTitle = ref('')
 const formRef = ref<FormInstance>()
 const formData = ref<any>({})
 const submitLoading = ref(false)
+const formRules: FormRules = {
+  name: [{ required: true, message: '请输入类型名称', trigger: 'blur' }],
+  code: [{ required: true, message: '请输入类型编码', trigger: 'blur' }]
+}
 
 const loadData = async () => {
   loadingText.value = '加载中...'
   loading.value = true
   try {
-    const res: any = await getPos()
+    const res: any = await getOrgKinds()
     allData.value = res.data || res
   } catch (error) {
-    console.error('加载职位列表失败:', error)
+    console.error('加载组织类型列表失败:', error)
     ElMessage.error('加载列表失败')
   } finally {
     loading.value = false
@@ -111,35 +117,40 @@ const handleDebouncedSearch = () => {}
 const handleReset = () => { searchQuery.value = '' }
 
 const handleCreate = () => {
-  dialogTitle.value = '新增职位'
+  dialogTitle.value = '新增类型'
   formData.value = { status: 1, sort: 0 }
   dialogVisible.value = true
 }
 
-const handleEdit = (row: any) => {
-  dialogTitle.value = '编辑职位'
-  formData.value = { ...row }
+const handleEdit = (_row: any) => {
+  dialogTitle.value = '编辑类型'
+  formData.value = { ..._row }
   dialogVisible.value = true
 }
 
-const handleDelete = async (row: any) => {
+const handleDelete = async (_row: any) => {
   try {
-    await ElMessageBox.confirm(`确定要删除职位 "${row.pos_name}" 吗？`, '提示', { type: 'warning' })
-    await deletePos(row.id)
+    await ElMessageBox.confirm(`确定要删除类型 "${_row.name}" 吗？`, '提示', { type: 'warning' })
+    await deleteOrgKind(_row.id)
     ElMessage.success('删除成功')
     loadData()
   } catch (error: any) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') }
 }
 
 const handleSubmit = async () => {
-  submitLoading.value = true
-  try {
-    formData.value.id ? await updatePos(formData.value.id, formData.value) : await createPos(formData.value)
-    ElMessage.success(formData.value.id ? '更新成功' : '创建成功')
-    dialogVisible.value = false
-    loadData()
-  } catch (error: any) { ElMessage.error(error.message || '操作失败') }
-  finally { submitLoading.value = false }
+  if (!formRef.value) return
+  await formRef.value.validate(async (valid) => {
+    if (valid) {
+      submitLoading.value = true
+      try {
+        formData.value.id ? await updateOrgKind(formData.value.id, formData.value) : await createOrgKind(formData.value)
+        ElMessage.success(formData.value.id ? '更新成功' : '创建成功')
+        dialogVisible.value = false
+        loadData()
+      } catch (error: any) { ElMessage.error(error.message || '操作失败') }
+      finally { submitLoading.value = false }
+    }
+  })
 }
 
 onMounted(() => loadData())

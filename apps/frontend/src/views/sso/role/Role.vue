@@ -1,17 +1,17 @@
 <template>
-  <div class="sso-page container-padding">
+  <div class="container-padding">
     <div class="page-header">
       <h1 class="text-primary page-title">
-        <el-icon class="title-icon"><Avatar /></el-icon>
-        用户管理
+        <el-icon class="title-icon"><UserFilled /></el-icon>
+        角色管理
       </h1>
       <div class="header-actions">
-        <el-button type="primary" @click="handleCreate" :icon="Plus">新增用户</el-button>
+        <el-button type="primary" @click="handleCreate" :icon="Plus">新增角色</el-button>
       </div>
     </div>
     <el-card class="main-card">
       <div class="search-area">
-        <el-input v-model="searchQuery" placeholder="请输入用户名搜索" clearable :prefix-icon="Search" style="width: 300px" @input="handleDebouncedSearch" />
+        <el-input v-model="searchQuery" placeholder="请输入角色名称搜索" clearable :prefix-icon="Search" style="width: 300px" @input="handleDebouncedSearch" />
         <el-select v-model="filterStatus" placeholder="筛选状态" style="width: 150px; margin-left: 10px" clearable @change="handleSearch">
           <el-option label="全部" value="" />
           <el-option label="有效" :value="1" />
@@ -23,23 +23,28 @@
       <div class="table-area">
         <el-table v-loading="loading" :element-loading-text="loadingText" :data="filteredData" border stripe style="width: 100%; height: 100%;">
           <template #empty>
-            <el-empty :description="searchQuery ? '未搜索到相关用户' : '暂无用户'">
-              <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增用户</el-button>
+            <el-empty :description="searchQuery ? '未搜索到相关角色' : '暂无角色'">
+              <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增角色</el-button>
             </el-empty>
           </template>
-          <el-table-column prop="name" label="姓名" width="120" />
-          <el-table-column prop="account" label="账号" width="150" />
-          <el-table-column prop="mobile" label="手机号" width="130" />
-          <el-table-column prop="email" label="邮箱" width="180" show-overflow-tooltip />
+          <el-table-column prop="role_name" label="角色名称" width="180" show-overflow-tooltip />
+          <el-table-column prop="role_code" label="角色编码" width="150" />
+          <el-table-column prop="data_scope" label="数据范围" width="100">
+            <template #default="scope">
+              <el-tag v-if="scope.row.data_scope === '1'" type="success">全部</el-tag>
+              <el-tag v-else-if="scope.row.data_scope === '2'" type="warning">自定义</el-tag>
+              <el-tag v-else-if="scope.row.data_scope === '3'" type="info">本部门</el-tag>
+              <el-tag v-else type="info">本部门及以下</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column prop="status" label="状态" width="80">
             <template #default="scope">
               <el-tag v-if="scope.row.status === 1" type="success">有效</el-tag>
               <el-tag v-else type="danger">禁用</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="create_at" label="创建时间" width="170">
-            <template #default="scope">{{ formatDateTime(scope.row.create_at) }}</template>
-          </el-table-column>
+          <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+          <el-table-column prop="sort" label="排序" width="80" />
           <el-table-column label="操作" width="180" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
@@ -50,25 +55,27 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="550px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" label-position="right">
-        <el-form-item label="账号" prop="account">
-          <el-input v-model="formData.account" placeholder="请输入账号" />
+        <el-form-item label="角色名称" prop="role_name">
+          <el-input v-model="formData.role_name" placeholder="请输入角色名称" />
         </el-form-item>
-        <el-form-item v-if="!formData.id" label="密码" prop="password">
-          <el-input v-model="formData.password" type="password" show-password placeholder="请输入密码" />
+        <el-form-item label="角色编码" prop="role_code">
+          <el-input v-model="formData.role_code" placeholder="请输入角色编码" />
         </el-form-item>
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="formData.name" placeholder="请输入姓名" />
-        </el-form-item>
-        <el-form-item label="手机号" prop="mobile">
-          <el-input v-model="formData.mobile" placeholder="请输入手机号" />
-        </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="formData.email" placeholder="请输入邮箱" />
+        <el-form-item label="数据范围" prop="data_scope">
+          <el-select v-model="formData.data_scope" style="width: 100%">
+            <el-option label="全部数据权限" value="1" />
+            <el-option label="自定数据权限" value="2" />
+            <el-option label="本部门数据权限" value="3" />
+            <el-option label="本部门及以下" value="4" />
+          </el-select>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+        <el-form-item label="排序" prop="sort">
+          <el-input-number v-model="formData.sort" :min="0" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
@@ -83,11 +90,11 @@
 </template>
 
 <script setup lang="ts">
-import { Avatar, Delete, Edit, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { createRole, deleteRole, getRoles, updateRole } from '@/api/user'
+import { Delete, Edit, Plus, RefreshLeft, Search, UserFilled } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
-import { getUsers, createUser, updateUser, deleteUser } from '@/api/user'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
@@ -100,7 +107,7 @@ const filteredData = computed(() => {
   let data = allData.value
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    data = data.filter(item => (item.name || '').toLowerCase().includes(query) || (item.account || '').toLowerCase().includes(query))
+    data = data.filter(item => (item.role_name || '').toLowerCase().includes(query))
   }
   if (filterStatus.value !== '') data = data.filter(item => item.status === filterStatus.value)
   return data
@@ -112,24 +119,18 @@ const formRef = ref<FormInstance>()
 const formData = ref<any>({})
 const submitLoading = ref(false)
 const formRules: FormRules = {
-  account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
-}
-
-const formatDateTime = (dateStr: string) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return isNaN(date.getTime()) ? '-' : date.toLocaleString('zh-CN')
+  role_name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
+  role_code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }]
 }
 
 const loadData = async () => {
   loadingText.value = '加载中...'
   loading.value = true
   try {
-    const res: any = await getUsers()
+    const res: any = await getRoles()
     allData.value = res.data || res
   } catch (error) {
-    console.error('加载用户列表失败:', error)
+    console.error('加载角色列表失败:', error)
     ElMessage.error('加载列表失败')
   } finally {
     loading.value = false
@@ -141,21 +142,21 @@ const handleDebouncedSearch = () => {}
 const handleReset = () => { searchQuery.value = ''; filterStatus.value = '' }
 
 const handleCreate = () => {
-  dialogTitle.value = '新增用户'
-  formData.value = { status: 1 }
+  dialogTitle.value = '新增角色'
+  formData.value = { status: 1, sort: 0, data_scope: '1' }
   dialogVisible.value = true
 }
 
 const handleEdit = (row: any) => {
-  dialogTitle.value = '编辑用户'
+  dialogTitle.value = '编辑角色'
   formData.value = { ...row }
   dialogVisible.value = true
 }
 
 const handleDelete = async (row: any) => {
   try {
-    await ElMessageBox.confirm(`确定要删除用户 "${row.name}" 吗？`, '提示', { type: 'warning' })
-    await deleteUser(row.id)
+    await ElMessageBox.confirm(`确定要删除角色 "${row.role_name}" 吗？`, '提示', { type: 'warning' })
+    await deleteRole(row.id)
     ElMessage.success('删除成功')
     loadData()
   } catch (error: any) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') }
@@ -167,7 +168,7 @@ const handleSubmit = async () => {
     if (valid) {
       submitLoading.value = true
       try {
-        formData.value.id ? await updateUser(formData.value.id, formData.value) : await createUser(formData.value)
+        formData.value.id ? await updateRole(formData.value.id, formData.value) : await createRole(formData.value)
         ElMessage.success(formData.value.id ? '更新成功' : '创建成功')
         dialogVisible.value = false
         loadData()

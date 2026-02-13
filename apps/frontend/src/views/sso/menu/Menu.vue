@@ -1,5 +1,5 @@
 <template>
-  <div class="sso-page container-padding">
+  <div class="container-padding">
     <div class="page-header">
       <h1 class="text-primary page-title">
         <el-icon class="title-icon"><Menu /></el-icon>
@@ -99,11 +99,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Plus, Search, Menu } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { createMenu, deleteMenu, getMenus, updateMenu } from '@/api/user'
+import { Menu, Plus, Search } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getMenus, createMenu, updateMenu, deleteMenu } from '@/api/user'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, onMounted, ref } from 'vue'
 
 const searchQuery = ref('')
 const filterType = ref('')

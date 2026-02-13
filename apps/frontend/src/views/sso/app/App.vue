@@ -1,5 +1,5 @@
 <template>
-  <div class="sso-page container-padding">
+  <div class="container-padding">
     <div class="page-header">
       <h1 class="text-primary page-title">
         <el-icon class="title-icon"><Monitor /></el-icon>
@@ -76,11 +76,11 @@
 </template>
 
 <script setup lang="ts">
+import { createApp, deleteApp, getApps, updateApp } from '@/api/user'
 import { Delete, Edit, Monitor, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
-import { getApps, createApp, updateApp, deleteApp } from '@/api/user'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')

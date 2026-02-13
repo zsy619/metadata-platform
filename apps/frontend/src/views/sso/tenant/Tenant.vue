@@ -1,5 +1,5 @@
 <template>
-  <div class="tenant-list container-padding">
+  <div class="container-padding">
     <div class="page-header">
       <h1 class="text-primary page-title">
         <el-icon class="title-icon">
@@ -90,11 +90,11 @@
 </template>
 
 <script setup lang="ts">
+import { createTenant, deleteTenant, getTenants, updateTenant } from '@/api/user'
 import { Delete, Edit, OfficeBuilding, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
-import { getTenants, createTenant, updateTenant, deleteTenant } from '@/api/user'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
@@ -241,6 +241,7 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .main-card {
@@ -248,13 +249,14 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 :deep(.el-card__body) {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 15px;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -285,13 +287,7 @@ onMounted(() => {
   gap: 10px;
 }
 
-.search-area {
-  flex-shrink: 0;
-  margin-bottom: 20px;
-}
-
-.table-area {
-  flex: 1;
-  overflow: hidden;
-}
+.search-area { flex-shrink: 0; margin-bottom: 15px; }
+.table-area { flex: 1; overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
+.table-area :deep(.el-table) { flex: 1; }
 </style>

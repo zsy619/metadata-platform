@@ -220,55 +220,55 @@ const routes: RouteRecordRaw[] = [
             {
                 path: 'tenant',
                 name: 'SSOTenant',
-                component: () => import('@/views/sso/Tenant.vue'),
+                component: () => import('@/views/sso/tenant/Tenant.vue'),
                 meta: { title: '租户管理', icon: 'OfficeBuilding' }
             },
             {
-                path: 'organization',
-                name: 'SSOOrganization',
-                component: () => import('@/views/sso/Organization.vue'),
+                path: 'org',
+                name: 'SSOOrg',
+                component: () => import('@/views/sso/org/Org.vue'),
                 meta: { title: '组织管理', icon: 'School' }
             },
             {
                 path: 'orgKind',
                 name: 'SSOOrgKind',
-                component: () => import('@/views/sso/OrgKind.vue'),
+                component: () => import('@/views/sso/org/OrgKind.vue'),
                 meta: { title: '组织类型', icon: 'Collection' }
             },
             {
                 path: 'menu',
                 name: 'SSOMenu',
-                component: () => import('@/views/sso/Menu.vue'),
+                component: () => import('@/views/sso/menu/Menu.vue'),
                 meta: { title: '菜单管理', icon: 'Menu' }
             },
             {
-                path: 'position',
-                name: 'SSOPosition',
-                component: () => import('@/views/sso/Position.vue'),
+                path: 'pos',
+                name: 'SSOPos',
+                component: () => import('@/views/sso/pos/Pos.vue'),
                 meta: { title: '职位管理', icon: 'Briefcase' }
             },
             {
                 path: 'role',
                 name: 'SSORole',
-                component: () => import('@/views/sso/Role.vue'),
+                component: () => import('@/views/sso/role/Role.vue'),
                 meta: { title: '角色管理', icon: 'UserFilled' }
             },
             {
                 path: 'roleGroup',
                 name: 'SSORoleGroup',
-                component: () => import('@/views/sso/RoleGroup.vue'),
+                component: () => import('@/views/sso/role/RoleGroup.vue'),
                 meta: { title: '角色组', icon: 'Folder' }
             },
             {
                 path: 'userGroup',
                 name: 'SSOUserGroup',
-                component: () => import('@/views/sso/UserGroup.vue'),
+                component: () => import('@/views/sso/user/UserGroup.vue'),
                 meta: { title: '用户组', icon: 'User' }
             },
             {
                 path: 'user',
                 name: 'SSOUser',
-                component: () => import('@/views/sso/User.vue'),
+                component: () => import('@/views/sso/user/User.vue'),
                 meta: { title: '用户管理', icon: 'Avatar' }
             }
         ]
@@ -282,7 +282,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: 'list',
                 name: 'SSOAppList',
-                component: () => import('@/views/sso/App.vue'),
+                component: () => import('@/views/sso/app/App.vue'),
                 meta: { title: '应用列表', icon: 'List' }
             }
         ]
