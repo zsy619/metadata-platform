@@ -224,6 +224,12 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: '租户管理', icon: 'OfficeBuilding' }
             },
             {
+                path: 'app',
+                name: 'SSOApp',
+                component: () => import('@/views/sso/app/App.vue'),
+                meta: { title: '应用列表', icon: 'Monitor' }
+            },
+            {
                 path: 'org',
                 name: 'SSOOrg',
                 component: () => import('@/views/sso/org/Org.vue'),
@@ -270,20 +276,6 @@ const routes: RouteRecordRaw[] = [
                 name: 'SSOUser',
                 component: () => import('@/views/sso/user/User.vue'),
                 meta: { title: '用户管理', icon: 'Avatar' }
-            }
-        ]
-    },
-    {
-        path: '/sso-app',
-        component: Layout,
-        redirect: '/sso-app/list',
-        meta: { title: '应用管理', icon: 'Monitor' },
-        children: [
-            {
-                path: 'list',
-                name: 'SSOAppList',
-                component: () => import('@/views/sso/app/App.vue'),
-                meta: { title: '应用列表', icon: 'List' }
             }
         ]
     },

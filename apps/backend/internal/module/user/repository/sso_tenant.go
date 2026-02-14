@@ -54,7 +54,7 @@ func (r *ssoTenantRepository) DeleteTenant(id string) error {
 // GetAllTenants 获取所有租户
 func (r *ssoTenantRepository) GetAllTenants() ([]model.SsoTenant, error) {
 	var tenants []model.SsoTenant
-	result := r.db.Find(&tenants)
+	result := r.db.Unscoped().Where("is_deleted = ?", false).Find(&tenants)
 	if result.Error != nil {
 		return nil, result.Error
 	}

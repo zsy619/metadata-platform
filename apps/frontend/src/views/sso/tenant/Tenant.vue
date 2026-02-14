@@ -180,14 +180,18 @@ const handleEdit = (row: any) => {
 }
 
 const handleDelete = (row: any) => {
+  console.log('删除租户:', row)
   ElMessageBox.confirm(`确定要删除租户 "${row.tenant_name}" 吗？`, '提示', {
     type: 'warning'
   }).then(async () => {
     try {
-      await deleteTenant(row.id)
+      console.log('调用删除API, id:', row.id)
+      const res = await deleteTenant(row.id)
+      console.log('删除结果:', res)
       ElMessage.success('删除成功')
       fetchData()
     } catch (error: any) {
+      console.error('删除失败:', error)
       ElMessage.error(error.message || '删除失败')
     }
   }).catch(() => {})
