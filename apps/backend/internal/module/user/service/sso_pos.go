@@ -36,6 +36,14 @@ func (s *ssoPosService) CreatePos(pos *model.SsoPos) error {
 	// 使用全局雪花算法生成ID
 	pos.ID = utils.GetSnowflake().GenerateIDString()
 
+	// 自动获取 Sort 最大值并加1
+	if pos.Sort == 0 {
+		maxSort, err := s.posRepo.GetMaxSort()
+		if err == nil {
+			pos.Sort = maxSort + 1
+		}
+	}
+
 	// 创建职位CreatePos
 	return s.posRepo.CreatePos(pos)
 }
@@ -57,6 +65,17 @@ func (s *ssoPosService) UpdatePos(pos *model.SsoPos) error {
 
 // DeletePos 删除职位
 func (s *ssoPosService) DeletePos(id string) error {
+	// 检查职位是否存在
+	pos, err := s.posRepo.GetPosByID(id)
+	if err != nil {
+		return errors.New("职位不存在")
+	}
+
+	// 检查是否为系统内置职位
+	if pos.IsSystem {
+		return errors.New("系统内置职位不允许删除")
+	}
+
 	return s.posRepo.DeletePos(id)
 }
 

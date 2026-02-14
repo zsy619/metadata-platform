@@ -24,7 +24,14 @@
           </template>
           <el-table-column prop="pos_name" label="职位名称" width="180" />
           <el-table-column prop="pos_code" label="职位编码" width="150" />
-          <el-table-column prop="org_id" label="所属组织" width="150" />
+          <el-table-column prop="data_range" label="数据范围" width="100">
+            <template #default="scope">
+              <el-tag v-if="scope.row.data_range === DATA_RANGE.ALL" type="success">{{ DATA_RANGE_LABELS[DATA_RANGE.ALL] }}</el-tag>
+              <el-tag v-else-if="scope.row.data_range === DATA_RANGE.CUSTOM" type="warning">{{ DATA_RANGE_LABELS[DATA_RANGE.CUSTOM] }}</el-tag>
+              <el-tag v-else-if="scope.row.data_range === DATA_RANGE.DEPARTMENT" type="info">{{ DATA_RANGE_LABELS[DATA_RANGE.DEPARTMENT] }}</el-tag>
+              <el-tag v-else type="info">{{ DATA_RANGE_LABELS[DATA_RANGE.DEPT_AND_BELOW] }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column prop="status" label="状态" width="80">
             <template #default="scope">
               <el-tag v-if="scope.row.status === 1" type="success">有效</el-tag>
@@ -41,35 +48,17 @@
         </el-table>
       </div>
     </el-card>
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="formData" label-width="120px" label-position="right">
-        <el-form-item label="职位名称" prop="pos_name">
-          <el-input v-model="formData.pos_name" placeholder="请输入职位名称" />
-        </el-form-item>
-        <el-form-item label="职位编码" prop="pos_code">
-          <el-input v-model="formData.pos_code" placeholder="请输入职位编码" />
-        </el-form-item>
-        <el-form-item label="状&#12288;&#12288;态" prop="status">
-          <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
-        </el-form-item>
-        <el-form-item label="排&#12288;&#12288;序" prop="sort">
-          <el-input-number v-model="formData.sort" :min="0" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
-      </template>
-    </el-dialog>
+    <PosForm v-model="dialogVisible" :data="formData" @success="loadData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { createPos, deletePos, getPos, updatePos } from '@/api/user'
+import { deletePos, getPos } from '@/api/user'
+import { DATA_RANGE, DATA_RANGE_LABELS } from '@/utils/constants'
 import { Briefcase, Delete, Edit, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
-import type { FormInstance } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
+import PosForm from './PosForm.vue'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
@@ -87,10 +76,7 @@ const filteredData = computed(() => {
 })
 
 const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const formRef = ref<FormInstance>()
 const formData = ref<any>({})
-const submitLoading = ref(false)
 
 const loadData = async () => {
   loadingText.value = '加载中...'
@@ -111,13 +97,11 @@ const handleDebouncedSearch = () => {}
 const handleReset = () => { searchQuery.value = '' }
 
 const handleCreate = () => {
-  dialogTitle.value = '新增职位'
-  formData.value = { status: 1, sort: 0 }
+  formData.value = { status: 1, sort: 0, data_range: DATA_RANGE.ALL }
   dialogVisible.value = true
 }
 
 const handleEdit = (row: any) => {
-  dialogTitle.value = '编辑职位'
   formData.value = { ...row }
   dialogVisible.value = true
 }
@@ -129,17 +113,6 @@ const handleDelete = async (row: any) => {
     ElMessage.success('删除成功')
     loadData()
   } catch (error: any) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') }
-}
-
-const handleSubmit = async () => {
-  submitLoading.value = true
-  try {
-    formData.value.id ? await updatePos(formData.value.id, formData.value) : await createPos(formData.value)
-    ElMessage.success(formData.value.id ? '更新成功' : '创建成功')
-    dialogVisible.value = false
-    loadData()
-  } catch (error: any) { ElMessage.error(error.message || '操作失败') }
-  finally { submitLoading.value = false }
 }
 
 onMounted(() => loadData())

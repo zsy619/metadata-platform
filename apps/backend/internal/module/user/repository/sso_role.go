@@ -60,3 +60,13 @@ func (r *ssoRoleRepository) GetAllRoles() ([]model.SsoRole, error) {
 	}
 	return roles, nil
 }
+
+// GetMaxSort 获取最大排序值
+func (r *ssoRoleRepository) GetMaxSort() (int, error) {
+	var maxSort int
+	result := r.db.Model(&model.SsoRole{}).Select("COALESCE(MAX(sort), 0)").Scan(&maxSort)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return maxSort, nil
+}

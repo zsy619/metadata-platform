@@ -25,6 +25,7 @@ type SsoCreateMenuRequest struct {
 	MenuName  string `json:"menu_name" form:"menu_name" binding:"required"`
 	MenuCode  string `json:"menu_code" form:"menu_code" binding:"required"`
 	Status    int    `json:"state" form:"state"`
+	DataRange string `json:"data_range" form:"data_range"`
 	DataScope string `json:"data_scope" form:"data_scope"`
 	Visible   int    `json:"visible" form:"visible"`
 	MenuType  string `json:"menu_type" form:"menu_type"`
@@ -44,6 +45,7 @@ type SsoUpdateMenuRequest struct {
 	MenuName  string `json:"menu_name" form:"menu_name"`
 	MenuCode  string `json:"menu_code" form:"menu_code"`
 	Status    int    `json:"state" form:"state"`
+	DataRange string `json:"data_range" form:"data_range"`
 	DataScope string `json:"data_scope" form:"data_scope"`
 	Visible   int    `json:"visible" form:"visible"`
 	MenuType  string `json:"menu_type" form:"menu_type"`
@@ -71,6 +73,7 @@ func (h *SsoMenuHandler) CreateMenu(c context.Context, ctx *app.RequestContext) 
 		MenuName:  req.MenuName,
 		MenuCode:  req.MenuCode,
 		Status:    req.Status,
+		DataRange: req.DataRange,
 		DataScope: req.DataScope,
 		Visible:   req.Visible,
 		MenuType:  req.MenuType,
@@ -137,6 +140,9 @@ func (h *SsoMenuHandler) UpdateMenu(c context.Context, ctx *app.RequestContext) 
 	}
 	if req.Status != 0 {
 		menu.Status = req.Status
+	}
+	if req.DataRange != "" {
+		menu.DataRange = req.DataRange
 	}
 	if req.DataScope != "" {
 		menu.DataScope = req.DataScope

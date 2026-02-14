@@ -36,6 +36,14 @@ func (s *ssoRoleService) CreateRole(role *model.SsoRole) error {
 	// 使用全局雪花算法生成ID
 	role.ID = utils.GetSnowflake().GenerateIDString()
 
+	// 自动获取 Sort 最大值并加1
+	if role.Sort == 0 {
+		maxSort, err := s.roleRepo.GetMaxSort()
+		if err == nil {
+			role.Sort = maxSort + 1
+		}
+	}
+
 	// 创建角色
 	return s.roleRepo.CreateRole(role)
 }
@@ -73,9 +81,14 @@ func (s *ssoRoleService) UpdateRole(role *model.SsoRole) error {
 // DeleteRole 删除角色
 func (s *ssoRoleService) DeleteRole(id string) error {
 	// 检查角色是否存在
-	_, err := s.roleRepo.GetRoleByID(id)
+	role, err := s.roleRepo.GetRoleByID(id)
 	if err != nil {
 		return errors.New("角色不存在")
+	}
+
+	// 检查是否为系统内置角色
+	if role.IsSystem {
+		return errors.New("系统内置角色不允许删除")
 	}
 
 	// 删除角色

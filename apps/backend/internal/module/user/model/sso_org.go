@@ -5,6 +5,7 @@ import "time"
 // SsoOrg 组织表
 type SsoOrg struct {
 	ID         string    `json:"id" form:"id" gorm:"primary_key;type:varchar(64);column:id;comment:主键ID"`
+	IsSystem   bool      `json:"is_system" gorm:"type:tinyint(1);default:0;comment:是否系统内置"`
 	TenantID   string    `json:"tenant_id" form:"tenant_id" gorm:"index;type:varchar(64);not null;default:'0';column:tenant_id;comment:租户ID"`
 	ParentID   string    `json:"parent_id" form:"parent_id" gorm:"type:varchar(64);default:'0';column:parent_id;comment:父ID"`
 	FromID     string    `json:"from_id" form:"from_id" gorm:"size:64;column:from_id"`
@@ -23,7 +24,7 @@ type SsoOrg struct {
 	Postcode   string    `json:"postcode" form:"postcode" gorm:"size:16;column:postcode"`
 	Status     int       `json:"status" form:"status" gorm:"default:1;column:status;comment:状态"`
 	Remark     string    `json:"remark" form:"remark" gorm:"size:512;column:remark;comment:备注"`
-	Sort       int       `json:"sort" form:"sort" gorm:"default:0;column:sort;comment:排序"`
+	Sort       int       `json:"sort" form:"sort" gorm:"default:0;column:sort;comment:序号"`
 	IsDeleted  bool      `json:"is_deleted" form:"is_deleted" gorm:"type:tinyint(1);default:0;column:is_deleted;comment:是否删除"`
 	CreateID   string    `json:"create_id" form:"create_id" gorm:"size:64;default:'0';column:create_id;comment:创建人ID"`
 	CreateBy   string    `json:"create_by" form:"create_by" gorm:"size:64;column:create_by;comment:创建人"`

@@ -36,6 +36,14 @@ func (s *ssoOrgService) CreateOrg(unit *model.SsoOrg) error {
 	// 使用全局雪花算法生成ID
 	unit.ID = utils.GetSnowflake().GenerateIDString()
 
+	// 自动获取 Sort 最大值并加1
+	if unit.Sort == 0 {
+		maxSort, err := s.orgRepo.GetMaxSort()
+		if err == nil {
+			unit.Sort = maxSort + 1
+		}
+	}
+
 	// 创建组织
 	return s.orgRepo.CreateOrg(unit)
 }
@@ -57,6 +65,17 @@ func (s *ssoOrgService) UpdateOrg(org *model.SsoOrg) error {
 
 // DeleteOrg 删除组织
 func (s *ssoOrgService) DeleteOrg(id string) error {
+	// 检查组织是否存在
+	org, err := s.orgRepo.GetOrgByID(id)
+	if err != nil {
+		return errors.New("组织不存在")
+	}
+
+	// 检查是否为系统内置组织
+	if org.IsSystem {
+		return errors.New("系统内置组织不允许删除")
+	}
+
 	return s.orgRepo.DeleteOrg(id)
 }
 

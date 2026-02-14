@@ -145,7 +145,9 @@ export interface Menu extends BaseEntity {
     menuCode: string;
     /** 是否可用（1 可用 0 禁用） */
     status: number;
-    /** 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限） */
+    /** 数据权限范围（1：全部 2：自定义 3：本部门 4：本部门及以下） */
+    dataRange: string;
+    /** 自定义数据范围（组织ID组合） */
     dataScope: string;
     /** 菜单状态（1 显示 0 隐藏） */
     visible: number;
@@ -189,7 +191,9 @@ export interface Role extends BaseEntity {
     role_code: string;
     /** 是否可用:1 可用 0 禁用 */
     status: number;
-    /** 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限） */
+    /** 数据权限范围（1：全部 2：自定义 3：本部门 4：本部门及以下） */
+    data_range: string;
+    /** 自定义数据范围（组织ID组合） */
     data_scope: string;
     /** 描述 */
     remark: string;

@@ -27,6 +27,7 @@ type SsoCreateRoleRequest struct {
 	RoleName  string `json:"role_name" form:"role_name" binding:"required"`
 	RoleCode  string `json:"role_code" form:"role_code" binding:"required"`
 	Status    int    `json:"status" form:"status"`
+	DataRange string `json:"data_range" form:"data_range"`
 	DataScope string `json:"data_scope" form:"data_scope"`
 	Remark    string `json:"remark" form:"remark"`
 	Sort      int    `json:"sort" form:"sort"`
@@ -41,6 +42,7 @@ type SsoUpdateRoleRequest struct {
 	RoleName  string `json:"role_name" form:"role_name"`
 	RoleCode  string `json:"role_code" form:"role_code"`
 	Status    int    `json:"status" form:"status"`
+	DataRange string `json:"data_range" form:"data_range"`
 	DataScope string `json:"data_scope" form:"data_scope"`
 	Remark    string `json:"remark" form:"remark"`
 	Sort      int    `json:"sort" form:"sort"`
@@ -63,6 +65,7 @@ func (h *SsoRoleHandler) CreateRole(c context.Context, ctx *app.RequestContext) 
 		RoleName:  req.RoleName,
 		RoleCode:  req.RoleCode,
 		Status:    req.Status,
+		DataRange: req.DataRange,
 		DataScope: req.DataScope,
 		Remark:    req.Remark,
 		Sort:      req.Sort,
@@ -128,6 +131,9 @@ func (h *SsoRoleHandler) UpdateRole(c context.Context, ctx *app.RequestContext) 
 	}
 	if req.Status != 0 {
 		role.Status = req.Status
+	}
+	if req.DataRange != "" {
+		role.DataRange = req.DataRange
 	}
 	if req.DataScope != "" {
 		role.DataScope = req.DataScope

@@ -66,33 +66,14 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" label-position="right">
-        <el-form-item label="租户名称" prop="tenant_name">
-          <el-input v-model="formData.tenant_name" placeholder="请输入租户名称" />
-        </el-form-item>
-        <el-form-item label="租户编码" prop="tenant_code">
-          <el-input v-model="formData.tenant_code" placeholder="请输入租户编码" />
-        </el-form-item>
-        <el-form-item label="状&#12288;&#12288;态" prop="status">
-          <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
-        </el-form-item>
-        <el-form-item label="备&#12288;&#12288;注" prop="remark">
-          <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
-      </template>
-    </el-dialog>
+    <TenantForm v-model="dialogVisible" :data="formData" @success="fetchData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { createTenant, deleteTenant, getTenants, updateTenant } from '@/api/user'
+import { deleteTenant, getTenants } from '@/api/user'
+import TenantForm from './TenantForm.vue'
 import { Delete, Edit, OfficeBuilding, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
 
@@ -120,15 +101,7 @@ const filteredData = computed(() => {
 })
 
 const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const formRef = ref<FormInstance>()
 const formData = ref<any>({})
-const submitLoading = ref(false)
-
-const formRules: FormRules = {
-  tenant_name: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
-  tenant_code: [{ required: true, message: '请输入租户编码', trigger: 'blur' }]
-}
 
 const formatDateTime = (dateStr: string) => {
   if (!dateStr) return '-'
@@ -150,31 +123,17 @@ const fetchData = async () => {
   }
 }
 
-const handleSearch = () => {
-  // Computed property handles filtering
-}
-
-const handleDebouncedSearch = () => {
-  // Debounced search handled by @input
-}
-
-const handleReset = () => {
-  searchQuery.value = ''
-  filterStatus.value = ''
-}
-
-const handleSelectionChange = (val: any[]) => {
-  selectedRows.value = val
-}
+const handleSearch = () => {}
+const handleDebouncedSearch = () => {}
+const handleReset = () => { searchQuery.value = ''; filterStatus.value = '' }
+const handleSelectionChange = (val: any[]) => { selectedRows.value = val }
 
 const handleCreate = () => {
-  dialogTitle.value = '新增租户'
   formData.value = { status: 1 }
   dialogVisible.value = true
 }
 
 const handleEdit = (row: any) => {
-  dialogTitle.value = '编辑租户'
   formData.value = { ...row }
   dialogVisible.value = true
 }
@@ -211,33 +170,7 @@ const handleBatchDelete = () => {
   }).catch(() => {})
 }
 
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        if (formData.value.id) {
-          await updateTenant(formData.value.id, formData.value)
-          ElMessage.success('更新成功')
-        } else {
-          await createTenant(formData.value)
-          ElMessage.success('创建成功')
-        }
-        dialogVisible.value = false
-        fetchData()
-      } catch (error: any) {
-        ElMessage.error(error.message || '操作失败')
-      } finally {
-        submitLoading.value = false
-      }
-    }
-  })
-}
-
-onMounted(() => {
-  fetchData()
-})
+onMounted(() => { fetchData() })
 </script>
 
 <style scoped>

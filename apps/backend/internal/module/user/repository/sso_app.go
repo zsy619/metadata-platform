@@ -60,3 +60,13 @@ func (r *ssoAppRepository) GetAllApps() ([]model.SsoApp, error) {
 	}
 	return apps, nil
 }
+
+// GetMaxSort 获取最大排序值
+func (r *ssoAppRepository) GetMaxSort() (int, error) {
+	var maxSort int
+	result := r.db.Model(&model.SsoApp{}).Select("COALESCE(MAX(sort), 0)").Scan(&maxSort)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return maxSort, nil
+}

@@ -11,7 +11,8 @@ type SsoTenant struct {
 	Status     int       `json:"status" gorm:"type:tinyint;default:1;comment:状态: 1=有效, 0=禁用"`
 	Remark     string    `json:"remark" gorm:"type:varchar(512);comment:备注"`
 	IsDeleted  bool      `json:"is_deleted" gorm:"type:tinyint(1);default:0;comment:是否删除"`
-	TenantID   string    `json:"tenant_id" gorm:"type:varchar(64);not null;default:'0';comment:租户ID"`
+	IsSystem   bool      `json:"is_system" gorm:"type:tinyint(1);default:0;comment:是否系统内置"`
+	TenantID   string    `json:"tenant_id" gorm:"type:varchar(64);not null;default:'';comment:租户ID"`
 	CreateID   string    `json:"create_id" gorm:"type:varchar(64);default:'0';comment:创建人ID"`
 	CreateBy   string    `json:"create_by" gorm:"type:varchar(64);comment:创建人"`
 	CreateAt   time.Time `json:"create_at" gorm:"autoCreateTime;comment:创建时间"`

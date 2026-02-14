@@ -19,8 +19,8 @@ func SeedData(db *gorm.DB) {
 	// 1. 初始化默认数据连接组 (ParentID = "0")
 	defaultConnGroup := model.MdConn{
 		ID:           sf.GenerateIDString(),
-		TenantID:     "1",
-		ParentID:     "0",
+		TenantID:     utils.SystemTenantID,
+		ParentID:     "",
 		ConnName:     "system",
 		ConnKind:     "MySQL",
 		ConnHost:     "localhost",
@@ -49,7 +49,7 @@ func SeedData(db *gorm.DB) {
 	// // 2. 初始化默认模型组 (ParentID = "0")
 	// defaultModelGroup := model.MdModel{
 	// 	ID:        sf.GenerateIDString(),
-	// 	TenantID:  "1",
+	// 	TenantID:  utils.SystemTenantID,
 	// 	ParentID:  "0",
 	// 	ModelName: "system",
 	// 	ModelCode: "system",

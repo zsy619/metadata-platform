@@ -17,11 +17,12 @@ func SeedData(db *gorm.DB) {
 
 	// 1. 初始化超管租户
 	defaultTenant := model.SsoTenant{
-		ID:         "1",
-		TenantID:   "0",
+		ID:         utils.SystemTenantID,
+		TenantID:   utils.SystemTenantID,
 		TenantName: "system",
 		TenantCode: "system",
 		Status:     1,
+		IsSystem:   true,
 		CreateBy:   "system",
 		CreateAt:   now,
 		UpdateBy:   "system",
@@ -41,14 +42,15 @@ func SeedData(db *gorm.DB) {
 	// 2. 初始化管理员账号
 	salt := utils.GenerateSalt()
 	adminUser := model.SsoUser{
-		ID:       "1",
-		TenantID: "1",
+		ID:       utils.SuperAdminID,
+		TenantID: utils.SystemTenantID,
 		Account:  "admin",
 		Password: utils.EncryptPasswordSM3("Admin@2026", salt),
 		Salt:     salt,
 		Name:     "系统管理员",
 		Status:   1,
 		Kind:     1, // 1: 系统管理员
+		IsSystem: true,
 		CreateBy: "system",
 		CreateAt: now,
 		UpdateBy: "system",
@@ -68,9 +70,11 @@ func SeedData(db *gorm.DB) {
 	apps := []model.SsoPos{
 		{
 			ID:       "1",
+			TenantID: utils.SystemTenantID,
 			PosName:  "元数据管理",
 			PosCode:  "metadata",
 			Status:   1,
+			IsSystem: true,
 			Remark:   "元数据管理",
 			CreateBy: "system",
 			CreateAt: now,
@@ -79,9 +83,11 @@ func SeedData(db *gorm.DB) {
 		},
 		{
 			ID:       "2",
+			TenantID: utils.SystemTenantID,
 			PosName:  "用户管理",
 			PosCode:  "sso",
 			Status:   1,
+			IsSystem: true,
 			Remark:   "账号认证与权限管理系统",
 			CreateBy: "system",
 			CreateAt: now,
@@ -104,13 +110,14 @@ func SeedData(db *gorm.DB) {
 	// 4. 初始化默认角色
 	roles := []model.SsoRole{
 		{
-			ID:        "1",
-			TenantID:  "1",
+			ID:        utils.SuperRoleID,
+			TenantID:  utils.SystemTenantID,
 			RoleName:  "超级管理员",
 			RoleCode:  "super_role",
 			Status:    1,
-			DataScope: "1", // 1: 全部数据权限
+			DataRange: utils.DataRangeAll,
 			Remark:    "系统最高权限管理员",
+			IsSystem:  true,
 			CreateBy:  "system",
 			CreateAt:  now,
 			UpdateBy:  "system",
@@ -133,9 +140,10 @@ func SeedData(db *gorm.DB) {
 	userRoles := []model.SsoUserRole{
 		{
 			ID:       "1",
-			TenantID: "1",
-			UserID:   "1",
-			RoleID:   "1",
+			TenantID: utils.SystemTenantID,
+			UserID:   utils.SuperAdminID,
+			RoleID:   utils.SuperRoleID,
+			IsSystem: true,
 			CreateBy: "system",
 			CreateAt: now,
 			UpdateBy: "system",

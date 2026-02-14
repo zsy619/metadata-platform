@@ -60,3 +60,13 @@ func (r *ssoPosRepository) GetAllPoss() ([]model.SsoPos, error) {
 	}
 	return positions, nil
 }
+
+// GetMaxSort 获取最大排序值
+func (r *ssoPosRepository) GetMaxSort() (int, error) {
+	var maxSort int
+	result := r.db.Model(&model.SsoPos{}).Select("COALESCE(MAX(sort), 0)").Scan(&maxSort)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return maxSort, nil
+}

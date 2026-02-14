@@ -29,12 +29,12 @@
           </template>
           <el-table-column prop="role_name" label="角色名称" width="180" show-overflow-tooltip />
           <el-table-column prop="role_code" label="角色编码" width="150" />
-          <el-table-column prop="data_scope" label="数据范围" width="100">
+          <el-table-column prop="data_range" label="数据范围" width="100">
             <template #default="scope">
-              <el-tag v-if="scope.row.data_scope === '1'" type="success">全部</el-tag>
-              <el-tag v-else-if="scope.row.data_scope === '2'" type="warning">自定义</el-tag>
-              <el-tag v-else-if="scope.row.data_scope === '3'" type="info">本部门</el-tag>
-              <el-tag v-else type="info">本部门及以下</el-tag>
+              <el-tag v-if="scope.row.data_range === DATA_RANGE.ALL" type="success">{{ DATA_RANGE_LABELS[DATA_RANGE.ALL] }}</el-tag>
+              <el-tag v-else-if="scope.row.data_range === DATA_RANGE.CUSTOM" type="warning">{{ DATA_RANGE_LABELS[DATA_RANGE.CUSTOM] }}</el-tag>
+              <el-tag v-else-if="scope.row.data_range === DATA_RANGE.DEPARTMENT" type="info">{{ DATA_RANGE_LABELS[DATA_RANGE.DEPARTMENT] }}</el-tag>
+              <el-tag v-else type="info">{{ DATA_RANGE_LABELS[DATA_RANGE.DEPT_AND_BELOW] }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="status" label="状态" width="80">
@@ -55,46 +55,17 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" label-position="right">
-        <el-form-item label="角色名称" prop="role_name">
-          <el-input v-model="formData.role_name" placeholder="请输入角色名称" />
-        </el-form-item>
-        <el-form-item label="角色编码" prop="role_code">
-          <el-input v-model="formData.role_code" placeholder="请输入角色编码" />
-        </el-form-item>
-        <el-form-item label="数据范围" prop="data_scope">
-          <el-select v-model="formData.data_scope" style="width: 100%">
-            <el-option label="全部数据权限" value="1" />
-            <el-option label="自定数据权限" value="2" />
-            <el-option label="本部门数据权限" value="3" />
-            <el-option label="本部门及以下" value="4" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状&#12288;&#12288;态" prop="status">
-          <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
-        </el-form-item>
-        <el-form-item label="序&#12288;&#12288;号" prop="sort">
-          <el-input-number v-model="formData.sort" :min="0" />
-        </el-form-item>
-        <el-form-item label="备&#12288;&#12288;注" prop="remark">
-          <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
-      </template>
-    </el-dialog>
+    <RoleForm v-model="dialogVisible" :data="formData" @success="loadData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { createRole, deleteRole, getRoles, updateRole } from '@/api/user'
+import { deleteRole, getRoles } from '@/api/user'
+import { DATA_RANGE, DATA_RANGE_LABELS } from '@/utils/constants'
 import { Delete, Edit, Plus, RefreshLeft, Search, UserFilled } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
+import RoleForm from './RoleForm.vue'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
@@ -114,14 +85,7 @@ const filteredData = computed(() => {
 })
 
 const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const formRef = ref<FormInstance>()
 const formData = ref<any>({})
-const submitLoading = ref(false)
-const formRules: FormRules = {
-  role_name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
-  role_code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }]
-}
 
 const loadData = async () => {
   loadingText.value = '加载中...'
@@ -142,13 +106,11 @@ const handleDebouncedSearch = () => {}
 const handleReset = () => { searchQuery.value = ''; filterStatus.value = '' }
 
 const handleCreate = () => {
-  dialogTitle.value = '新增角色'
-  formData.value = { status: 1, sort: 0, data_scope: '1' }
+  formData.value = { status: 1, sort: 0, data_range: DATA_RANGE.ALL }
   dialogVisible.value = true
 }
 
 const handleEdit = (row: any) => {
-  dialogTitle.value = '编辑角色'
   formData.value = { ...row }
   dialogVisible.value = true
 }
@@ -160,22 +122,6 @@ const handleDelete = async (row: any) => {
     ElMessage.success('删除成功')
     loadData()
   } catch (error: any) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') }
-}
-
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        formData.value.id ? await updateRole(formData.value.id, formData.value) : await createRole(formData.value)
-        ElMessage.success(formData.value.id ? '更新成功' : '创建成功')
-        dialogVisible.value = false
-        loadData()
-      } catch (error: any) { ElMessage.error(error.message || '操作失败') }
-      finally { submitLoading.value = false }
-    }
-  })
 }
 
 onMounted(() => loadData())

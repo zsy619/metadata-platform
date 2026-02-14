@@ -36,6 +36,14 @@ func (s *ssoMenuService) CreateMenu(menu *model.SsoMenu) error {
 	// 创建ID
 	menu.ID = utils.GetSnowflake().GenerateIDString()
 
+	// 自动获取 Sort 最大值并加1
+	if menu.Sort == 0 {
+		maxSort, err := s.menuRepo.GetMaxSort()
+		if err == nil {
+			menu.Sort = maxSort + 1
+		}
+	}
+
 	// 创建菜单
 	return s.menuRepo.CreateMenu(menu)
 }
@@ -73,9 +81,14 @@ func (s *ssoMenuService) UpdateMenu(menu *model.SsoMenu) error {
 // DeleteMenu 删除菜单
 func (s *ssoMenuService) DeleteMenu(id string) error {
 	// 检查菜单是否存在
-	_, err := s.menuRepo.GetMenuByID(id)
+	menu, err := s.menuRepo.GetMenuByID(id)
 	if err != nil {
 		return errors.New("菜单不存在")
+	}
+
+	// 检查是否为系统内置菜单
+	if menu.IsSystem {
+		return errors.New("系统内置菜单不允许删除")
 	}
 
 	// 删除菜单

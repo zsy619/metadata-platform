@@ -22,12 +22,13 @@ type SsoUser struct {
 	EndTime         *time.Time `json:"end_time" form:"end_time" gorm:"type:datetime;column:end_time;comment:账号截止日期"`
 	Kind            int        `json:"kind" form:"kind" gorm:"default:2;column:kind;comment:账号类型(1:管理员, 2:普通用户)"`
 	Remark          string     `json:"remark" form:"remark" gorm:"size:512;column:remark;comment:备注"`
-	Sort            int        `json:"sort" form:"sort" gorm:"default:0;column:sort;comment:排序"`
+	Sort            int        `json:"sort" form:"sort" gorm:"default:0;column:sort;comment:序号"`
 	FirstLogin      int        `json:"first_login" form:"first_login" gorm:"default:0;column:first_login;comment:是否首次登录"`
 	LastLoginTime   *time.Time `json:"last_login_time" form:"last_login_time" gorm:"type:datetime;column:last_login_time;comment:最后登录时间"`
 	LastIP          string     `json:"last_ip" form:"last_ip" gorm:"size:32;column:last_ip;comment:最后登录IP"`
 	LoginErrorCount int        `json:"login_error_count" form:"login_error_count" gorm:"default:0;column:login_error_count;comment:登录错误次数"`
 	IsDeleted       bool       `json:"is_deleted" form:"is_deleted" gorm:"type:tinyint(1);default:0;column:is_deleted;comment:是否删除"`
+	IsSystem        bool       `json:"is_system" gorm:"type:tinyint(1);default:0;comment:是否系统内置"`
 	TenantID        string     `json:"tenant_id" form:"tenant_id" gorm:"index;type:varchar(64);not null;default:'0';column:tenant_id;comment:租户ID"`
 	CreateID        string     `json:"create_id" form:"create_id" gorm:"size:64;default:'0';column:create_id;comment:创建人ID"`
 	CreateBy        string     `json:"create_by" form:"create_by" gorm:"size:64;column:create_by;comment:创建人"`

@@ -37,6 +37,7 @@ type SsoAppRepository interface {
 	UpdateApp(app *model.SsoApp) error
 	DeleteApp(id string) error
 	GetAllApps() ([]model.SsoApp, error)
+	GetMaxSort() (int, error)
 }
 
 // SsoMenuRepository 菜单仓库接口
@@ -47,6 +48,7 @@ type SsoMenuRepository interface {
 	UpdateMenu(menu *model.SsoMenu) error
 	DeleteMenu(id string) error
 	GetAllMenus() ([]model.SsoMenu, error)
+	GetMaxSort() (int, error)
 }
 
 // SsoRoleRepository 角色仓库接口
@@ -57,6 +59,7 @@ type SsoRoleRepository interface {
 	UpdateRole(role *model.SsoRole) error
 	DeleteRole(id string) error
 	GetAllRoles() ([]model.SsoRole, error)
+	GetMaxSort() (int, error)
 }
 
 // SsoOrgRepository 组织仓库接口
@@ -67,6 +70,7 @@ type SsoOrgRepository interface {
 	UpdateOrg(org *model.SsoOrg) error
 	DeleteOrg(id string) error
 	GetAllOrgs() ([]model.SsoOrg, error)
+	GetMaxSort() (int, error)
 }
 
 // SsoPosRepository 职位仓库接口
@@ -77,6 +81,7 @@ type SsoPosRepository interface {
 	UpdatePos(pos *model.SsoPos) error
 	DeletePos(id string) error
 	GetAllPoss() ([]model.SsoPos, error)
+	GetMaxSort() (int, error)
 }
 
 // SsoUserRoleRepository 用户角色仓库接口
