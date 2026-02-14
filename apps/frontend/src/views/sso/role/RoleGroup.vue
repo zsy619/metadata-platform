@@ -30,7 +30,7 @@
               <el-tag v-else type="danger">禁用</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="sort" label="排序" width="80" />
+          <el-table-column prop="sort" label="序号" width="80" />
           <el-table-column prop="remark" label="备注" show-overflow-tooltip />
           <el-table-column label="操作" width="180" fixed="right">
             <template #default="scope">
@@ -49,10 +49,10 @@
         <el-form-item label="角色组编码" prop="group_code">
           <el-input v-model="formData.group_code" placeholder="请输入角色组编码" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="状&#12288;&#12288;态" prop="status">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="排序" prop="sort">
+        <el-form-item label="序&#12288;&#12288;号" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">

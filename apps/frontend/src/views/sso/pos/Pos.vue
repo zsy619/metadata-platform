@@ -49,10 +49,10 @@
         <el-form-item label="职位编码" prop="pos_code">
           <el-input v-model="formData.pos_code" placeholder="请输入职位编码" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="状&#12288;&#12288;态" prop="status">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="排序" prop="sort">
+        <el-form-item label="排&#12288;&#12288;序" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" />
         </el-form-item>
       </el-form>

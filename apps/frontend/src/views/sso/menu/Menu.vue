@@ -83,10 +83,10 @@
         <el-form-item v-if="formData.menu_type !== 'F'" label="显示状态" prop="visible">
           <el-switch v-model="formData.visible" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="状态" prop="state">
+        <el-form-item label="状&#12288;&#12288;态" prop="state">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="排序" prop="sort">
+        <el-form-item label="排&#12288;&#12288;序" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" />
         </el-form-item>
       </el-form>

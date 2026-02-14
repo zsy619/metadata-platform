@@ -74,10 +74,10 @@
         <el-form-item label="租户编码" prop="tenant_code">
           <el-input v-model="formData.tenant_code" placeholder="请输入租户编码" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="状&#12288;&#12288;态" prop="status">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
+        <el-form-item label="备&#12288;&#12288;注" prop="remark">
           <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
         </el-form-item>
       </el-form>

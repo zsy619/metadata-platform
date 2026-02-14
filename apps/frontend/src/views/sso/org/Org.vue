@@ -67,7 +67,7 @@
         <el-form-item label="类型编码" prop="kind_code">
           <el-input v-model="formData.kind_code" placeholder="请输入类型编码" />
         </el-form-item>
-        <el-form-item label="联系人" prop="contact">
+        <el-form-item label="联&nbsp;系&nbsp;人" prop="contact">
           <el-input v-model="formData.contact" placeholder="请输入联系人" />
         </el-form-item>
         <el-form-item label="联系电话" prop="phone">
@@ -76,13 +76,13 @@
         <el-form-item label="联系地址" prop="address">
           <el-input v-model="formData.address" placeholder="请输入联系地址" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="状&#12288;&#12288;态" prop="status">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="排序" prop="sort">
+        <el-form-item label="序&#12288;&#12288;号" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" />
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
+        <el-form-item label="备&#12288;&#12288;注" prop="remark">
           <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
         </el-form-item>
       </el-form>

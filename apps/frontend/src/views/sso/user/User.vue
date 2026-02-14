@@ -52,25 +52,25 @@
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="550px" destroy-on-close>
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" label-position="right">
-        <el-form-item label="账号" prop="account">
+        <el-form-item label="账&#12288;&#12288;号" prop="account">
           <el-input v-model="formData.account" placeholder="请输入账号" />
         </el-form-item>
         <el-form-item v-if="!formData.id" label="密码" prop="password">
           <el-input v-model="formData.password" type="password" show-password placeholder="请输入密码" />
         </el-form-item>
-        <el-form-item label="姓名" prop="name">
+        <el-form-item label="姓&#12288;&#12288;名" prop="name">
           <el-input v-model="formData.name" placeholder="请输入姓名" />
         </el-form-item>
-        <el-form-item label="手机号" prop="mobile">
+        <el-form-item label="手&nbsp;机&nbsp;号" prop="mobile">
           <el-input v-model="formData.mobile" placeholder="请输入手机号" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
+        <el-form-item label="邮&#12288;&#12288;箱" prop="email">
           <el-input v-model="formData.email" placeholder="请输入邮箱" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="状&#12288;&#12288;态" prop="status">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
+        <el-form-item label="备&#12288;&#12288;注" prop="remark">
           <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
         </el-form-item>
       </el-form>

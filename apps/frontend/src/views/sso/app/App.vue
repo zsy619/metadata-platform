@@ -68,16 +68,16 @@
         <el-form-item label="应用编码" prop="app_code">
           <el-input v-model="formData.app_code" placeholder="请输入应用编码" />
         </el-form-item>
-        <el-form-item label="域名/IP" prop="host">
+        <el-form-item label="域&nbsp;&nbsp;名/IP" prop="host">
           <el-input v-model="formData.host" placeholder="请输入域名或IP地址" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="状&#12288;&#12288;态" prop="status">
           <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
         </el-form-item>
-        <el-form-item label="排序" prop="sort">
+        <el-form-item label="排&#12288;&#12288;序" prop="sort">
           <el-input-number v-model="formData.sort" :min="0" />
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
+        <el-form-item label="备&#12288;&#12288;注" prop="remark">
           <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
         </el-form-item>
       </el-form>
@@ -94,7 +94,7 @@ import { createApp, deleteApp, getApps, updateApp } from '@/api/user'
 import { Delete, Document, Edit, Folder, FolderOpened, Monitor, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
