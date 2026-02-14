@@ -1,17 +1,18 @@
 /* 
   元数据平台 - 全局设计变量
-  企业级应用配色方案 v3.0
+  企业级应用配色方案 v4.0 - Modern Enterprise
+  基于 UI/UX Pro Max 设计指南
 */
 
 :root {
   /* ========== 品牌主色 (Brand Primary) - 专业蓝 ========== */
-  --el-color-primary: #2563EB;
+  --el-color-primary: #3B82F6;
   --el-color-primary-light-3: #60A5FA;
   --el-color-primary-light-5: #93C5FD;
   --el-color-primary-light-7: #BFDBFE;
   --el-color-primary-light-8: #DBEAFE;
   --el-color-primary-light-9: #EFF6FF;
-  --el-color-primary-dark-2: #1D4ED8;
+  --el-color-primary-dark-2: #2563EB;
 
   /* ========== 品牌点缀 (Accent) - 活力橙 ========== */
   --el-color-accent: #F97316;
@@ -21,12 +22,16 @@
   /* ========== 功能色 (Functional) ========== */
   --el-color-success: #10B981;
   --el-color-success-light: #D1FAE5;
+  --el-color-success-light-2: #ECFDF5;
   --el-color-warning: #F59E0B;
   --el-color-warning-light: #FEF3C7;
+  --el-color-warning-light-2: #FFFBEB;
   --el-color-danger: #EF4444;
   --el-color-danger-light: #FEE2E2;
+  --el-color-danger-light-2: #FEF2F2;
   --el-color-info: #6366F1;
   --el-color-info-light: #E0E7FF;
+  --el-color-info-light-2: #EEF2FF;
 
   /* ========== 结构背景 (Structure) ========== */
   --el-bg-color-page: #F8FAFC;
@@ -37,8 +42,8 @@
   --el-fill-color-blank: #FFFFFF;
 
   /* ========== 文字体系 (Typography) ========== */
-  --el-text-color-primary: #1E293B;
-  --el-text-color-regular: #475569;
+  --el-text-color-primary: #0F172A;
+  --el-text-color-regular: #334155;
   --el-text-color-secondary: #64748B;
   --el-text-color-placeholder: #94A3B8;
   --el-text-color-disabled: #CBD5E1;
@@ -47,19 +52,26 @@
   --el-border-color: #E2E8F0;
   --el-border-color-light: #F1F5F9;
   --el-border-color-lighter: #F8FAFC;
-  --el-border-radius-base: 6px;
+  --el-border-radius-base: 8px;
   --el-border-radius-medium: 10px;
-  --el-border-radius-large: 14px;
-  --el-border-radius-round: 20px;
+  --el-border-radius-large: 12px;
+  --el-border-radius-round: 9999px;
 
   /* ========== 阴影系统 (Shadows) ========== */
-  --el-box-shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  --el-box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --el-box-shadow-dark: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --el-box-shadow-light: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --el-box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --el-box-shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --el-box-shadow-dark: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --el-box-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 
   /* ========== 变换与过渡 (Transitions) ========== */
-  --el-transition-duration: 0.25s;
-  --el-transition-function-ease-in-out-bezier: cubic-bezier(0.4, 0, 0.2, 1);
+  --el-transition-duration-fast: 0.15s;
+  --el-transition-duration: 0.2s;
+  --el-transition-duration-slow: 0.3s;
+  --el-transition-function-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --el-transition-function-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --el-transition-function-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --el-transition-function-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ========== 间距系统 (Spacing) ========== */
   --el-spacing-base: 4px;
@@ -68,6 +80,7 @@
   --el-spacing-md: 16px;
   --el-spacing-lg: 24px;
   --el-spacing-xl: 32px;
+  --el-spacing-2xl: 48px;
 
   /* ========== 字体大小 (Font Size) ========== */
   --el-font-size-xs: 12px;
@@ -92,4 +105,39 @@
   --el-chart-color-6: #EC4899;
   --el-chart-color-7: #06B6D4;
   --el-chart-color-8: #84CC16;
+
+  /* ========== 组件层级 (Z-Index) ========== */
+  --el-z-index-dropdown: 1000;
+  --el-z-index-sticky: 1020;
+  --el-z-index-fixed: 1030;
+  --el-z-index-modal-backdrop: 1040;
+  --el-z-index-modal: 1050;
+  --el-z-index-popover: 1060;
+  --el-z-index-tooltip: 1070;
+  --el-z-index-toast: 1080;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* 选择文本颜色 */
+::selection {
+  background: #BFDBFE;
+  color: #1E40AF;
 }
