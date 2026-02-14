@@ -1,61 +1,95 @@
 /* 
   元数据平台 - 全局设计变量
-  遵循 前端设计规范 v2.1
+  企业级应用配色方案 v3.0
 */
 
 :root {
-  /* ========== 品牌主色 (Brand Primary) - Royal Blue ========== */
-  --el-color-primary: #3f51b5;
-  --el-color-primary-light-3: #7986cb;
-  --el-color-primary-light-5: #9fa8da;
-  --el-color-primary-light-7: #c5cae9;
-  --el-color-primary-light-8: #e8eaf6;
-  --el-color-primary-light-9: #f5f6fa;
-  --el-color-primary-dark-2: #303f9f;
+  /* ========== 品牌主色 (Brand Primary) - 专业蓝 ========== */
+  --el-color-primary: #2563EB;
+  --el-color-primary-light-3: #60A5FA;
+  --el-color-primary-light-5: #93C5FD;
+  --el-color-primary-light-7: #BFDBFE;
+  --el-color-primary-light-8: #DBEAFE;
+  --el-color-primary-light-9: #EFF6FF;
+  --el-color-primary-dark-2: #1D4ED8;
 
-  /* ========== 品牌点缀 (Accent) - Orange ========== */
-  --el-color-accent: #FF9800;
-  --el-color-accent-light: #FFB74D;
-  --el-color-accent-dark: #F57C00;
+  /* ========== 品牌点缀 (Accent) - 活力橙 ========== */
+  --el-color-accent: #F97316;
+  --el-color-accent-light: #FB923C;
+  --el-color-accent-dark: #EA580C;
 
   /* ========== 功能色 (Functional) ========== */
-  --el-color-success: #67C23A;
-  --el-color-success-light: #e1f3d8;
-  --el-color-warning: #E6A23C;
-  --el-color-warning-light: #fdf6ec;
-  --el-color-danger: #F56C6C;
-  --el-color-danger-light: #fef0f0;
-  --el-color-info: #909399;
-  --el-color-info-light: #f4f4f5;
+  --el-color-success: #10B981;
+  --el-color-success-light: #D1FAE5;
+  --el-color-warning: #F59E0B;
+  --el-color-warning-light: #FEF3C7;
+  --el-color-danger: #EF4444;
+  --el-color-danger-light: #FEE2E2;
+  --el-color-info: #6366F1;
+  --el-color-info-light: #E0E7FF;
 
   /* ========== 结构背景 (Structure) ========== */
-  --el-bg-color-page: #F0F2F5;        /* 页面底色 */
-  --el-bg-color: #FFFFFF;             /* 容器/卡片背景 */
-  --el-bg-color-overlay: #FFFFFF;     /* 弹窗背景 */
-  --el-fill-color-light: #F5F7FA;     /* 表头背景 */
-  --el-fill-color-lighter: #FAFAFA;   /* 悬停背景 */
+  --el-bg-color-page: #F8FAFC;
+  --el-bg-color: #FFFFFF;
+  --el-bg-color-overlay: #FFFFFF;
+  --el-fill-color-light: #F1F5F9;
+  --el-fill-color-lighter: #F8FAFC;
+  --el-fill-color-blank: #FFFFFF;
 
   /* ========== 文字体系 (Typography) ========== */
-  --el-text-color-primary: #303133;   /* 主要文字 */
-  --el-text-color-regular: #606266;   /* 常规文字 */
-  --el-text-color-secondary: #909399; /* 次要文字 */
-  --el-text-color-placeholder: #C0C4CC;
-  --el-text-color-disabled: #C0C4CC;
+  --el-text-color-primary: #1E293B;
+  --el-text-color-regular: #475569;
+  --el-text-color-secondary: #64748B;
+  --el-text-color-placeholder: #94A3B8;
+  --el-text-color-disabled: #CBD5E1;
 
   /* ========== 边框与圆角 (Borders & Radius) ========== */
-  --el-border-color: #DCDFE6;
-  --el-border-color-light: #E4E7ED;
-  --el-border-color-lighter: #EBEEF5;
+  --el-border-color: #E2E8F0;
+  --el-border-color-light: #F1F5F9;
+  --el-border-color-lighter: #F8FAFC;
   --el-border-radius-base: 6px;
   --el-border-radius-medium: 10px;
-  --el-border-radius-large: 16px;
+  --el-border-radius-large: 14px;
+  --el-border-radius-round: 20px;
 
   /* ========== 阴影系统 (Shadows) ========== */
-  --el-box-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-  --el-box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.08);
-  --el-box-shadow-dark: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
+  --el-box-shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --el-box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --el-box-shadow-dark: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
 
   /* ========== 变换与过渡 (Transitions) ========== */
-  --el-transition-duration: 0.3s;
+  --el-transition-duration: 0.25s;
   --el-transition-function-ease-in-out-bezier: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ========== 间距系统 (Spacing) ========== */
+  --el-spacing-base: 4px;
+  --el-spacing-xs: 4px;
+  --el-spacing-sm: 8px;
+  --el-spacing-md: 16px;
+  --el-spacing-lg: 24px;
+  --el-spacing-xl: 32px;
+
+  /* ========== 字体大小 (Font Size) ========== */
+  --el-font-size-xs: 12px;
+  --el-font-size-sm: 14px;
+  --el-font-size-base: 16px;
+  --el-font-size-lg: 18px;
+  --el-font-size-xl: 20px;
+  --el-font-size-2xl: 24px;
+  --el-font-size-3xl: 30px;
+
+  /* ========== 线条粗细 (Border Width) ========== */
+  --el-border-width-base: 1px;
+  --el-border-width-light: 1px;
+  --el-border-width-lighter: 1px;
+
+  /* ========== 图表色板 (Chart Colors) ========== */
+  --el-chart-color-1: #3B82F6;
+  --el-chart-color-2: #10B981;
+  --el-chart-color-3: #F59E0B;
+  --el-chart-color-4: #EF4444;
+  --el-chart-color-5: #8B5CF6;
+  --el-chart-color-6: #EC4899;
+  --el-chart-color-7: #06B6D4;
+  --el-chart-color-8: #84CC16;
 }

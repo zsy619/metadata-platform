@@ -19,7 +19,7 @@ func SeedData(db *gorm.DB) {
 	defaultTenant := model.SsoTenant{
 		ID:         "1",
 		TenantID:   "0",
-		TenantName: "系统管理组",
+		TenantName: "system",
 		TenantCode: "system",
 		Status:     1,
 		CreateBy:   "system",
@@ -44,7 +44,7 @@ func SeedData(db *gorm.DB) {
 		ID:       "1",
 		TenantID: "1",
 		Account:  "admin",
-		Password: utils.EncryptPasswordSM3("admin@123", salt),
+		Password: utils.EncryptPasswordSM3("Admin@2026", salt),
 		Salt:     salt,
 		Name:     "系统管理员",
 		Status:   1,

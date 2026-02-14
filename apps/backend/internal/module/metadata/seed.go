@@ -21,7 +21,7 @@ func SeedData(db *gorm.DB) {
 		ID:           sf.GenerateIDString(),
 		TenantID:     "1",
 		ParentID:     "0",
-		ConnName:     "默认连接组",
+		ConnName:     "system",
 		ConnKind:     "MySQL",
 		ConnHost:     "localhost",
 		ConnPort:     3306,
@@ -37,7 +37,7 @@ func SeedData(db *gorm.DB) {
 
 	// 检查是否已存在
 	var count int64
-	db.Model(&model.MdConn{}).Where("conn_name = ? AND parent_id = ?", "默认连接组", "0").Count(&count)
+	db.Model(&model.MdConn{}).Where("conn_name = ? AND parent_id = ?", "system", "0").Count(&count)
 	if count == 0 {
 		if err := db.Create(&defaultConnGroup).Error; err != nil {
 			utils.SugarLogger.Errorf("Failed to seed default connection group: %v", err)
@@ -51,8 +51,8 @@ func SeedData(db *gorm.DB) {
 	// 	ID:        sf.GenerateIDString(),
 	// 	TenantID:  "1",
 	// 	ParentID:  "0",
-	// 	ModelName: "默认模型组",
-	// 	ModelCode: "default_group",
+	// 	ModelName: "system",
+	// 	ModelCode: "system",
 	// 	ModelKind: 0, // 0 as folder/group
 	// 	IsDeleted: false,
 	// 	CreateBy:  "system",
@@ -61,7 +61,7 @@ func SeedData(db *gorm.DB) {
 	// 	UpdateAt:  now,
 	// }
 
-	// db.Model(&model.MdModel{}).Where("model_code = ?", "default_group").Count(&count)
+	// db.Model(&model.MdModel{}).Where("model_code = ?", "system").Count(&count)
 	// if count == 0 {
 	// 	if err := db.Create(&defaultModelGroup).Error; err != nil {
 	// 		utils.SugarLogger.Errorf("Failed to seed default model group: %v", err)

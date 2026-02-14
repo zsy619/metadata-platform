@@ -69,7 +69,7 @@ p {
 
 /* ========== 基础容器 ========== */
 .container-padding {
-    padding: 15px;
+    padding: 16px;
     height: calc(100vh - 50px);
     box-sizing: border-box;
     display: flex;
@@ -86,6 +86,29 @@ p {
     margin-bottom: 24px;
 }
 
+/* ========== 页面标题区 ========== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+}
+
+.page-title .title-icon {
+    font-size: 24px;
+    color: var(--el-color-primary);
+}
+
 /* ========== 工具类 ========== */
 .flex-center {
     display: flex;
@@ -99,15 +122,36 @@ p {
     justify-content: space-between;
 }
 
-.w-full {
-    width: 100%;
+.flex-start {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
-.page-header {
+.flex-end {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    justify-content: flex-end;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.gap-sm {
+    gap: 8px;
+}
+
+.gap-md {
+    gap: 16px;
+}
+
+.gap-lg {
+    gap: 24px;
+}
+
+.w-full {
+    width: 100%;
 }
 
 .text-ellipsis {
@@ -116,46 +160,165 @@ p {
     text-overflow: ellipsis;
 }
 
-.m-t-sm {
-    margin-top: 8px !important;
+.text-center {
+    text-align: center;
 }
 
-.m-t-md {
-    margin-top: 16px !important;
+.text-left {
+    text-align: left;
 }
 
-.m-t-lg {
-    margin-top: 24px !important;
+.text-right {
+    text-align: right;
 }
 
-.m-t-xl {
-    margin-top: 32px !important;
+/* ========== 间距 ========== */
+.m-0 { margin: 0 !important; }
+.mt-sm { margin-top: 8px !important; }
+.mt-md { margin-top: 16px !important; }
+.mt-lg { margin-top: 24px !important; }
+.mt-xl { margin-top: 32px !important; }
+
+.mb-sm { margin-bottom: 8px !important; }
+.mb-md { margin-bottom: 16px !important; }
+.mb-lg { margin-bottom: 24px !important; }
+.mb-xl { margin-bottom: 32px !important; }
+
+.ml-sm { margin-left: 8px !important; }
+.ml-md { margin-left: 16px !important; }
+.ml-lg { margin-left: 24px !important; }
+
+.mr-sm { margin-right: 8px !important; }
+.mr-md { margin-right: 16px !important; }
+.mr-lg { margin-right: 24px !important; }
+
+.p-0 { padding: 0 !important; }
+.p-sm { padding: 8px !important; }
+.p-md { padding: 16px !important; }
+.p-lg { padding: 24px !important; }
+
+/* ========== 文字颜色 ========== */
+.text-primary { color: var(--el-color-primary) !important; }
+.text-secondary { color: var(--el-text-color-secondary) !important; }
+.text-danger { color: var(--el-color-danger) !important; }
+.text-success { color: var(--el-color-success) !important; }
+.text-warning { color: var(--el-color-warning) !important; }
+.text-info { color: var(--el-color-info) !important; }
+.text-muted { color: var(--el-text-color-placeholder) !important; }
+
+/* ========== 文字大小 ========== */
+.text-xs { font-size: 12px !important; }
+.text-sm { font-size: 14px !important; }
+.text-base { font-size: 16px !important; }
+.text-lg { font-size: 18px !important; }
+.text-xl { font-size: 20px !important; }
+.text-2xl { font-size: 24px !important; }
+.text-3xl { font-size: 30px !important; }
+
+/* ========== 文字粗细 ========== */
+.font-light { font-weight: 300 !important; }
+.font-normal { font-weight: 400 !important; }
+.font-medium { font-weight: 500 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-bold { font-weight: 700 !important; }
+
+/* ========== 边框 ========== */
+.border { border: 1px solid var(--el-border-color) !important; }
+.border-t { border-top: 1px solid var(--el-border-color) !important; }
+.border-b { border-bottom: 1px solid var(--el-border-color) !important; }
+.border-l { border-left: 1px solid var(--el-border-color) !important; }
+.border-r { border-right: 1px solid var(--el-border-color) !important; }
+
+.border-0 { border: 0 !important; }
+.rounded { border-radius: var(--el-border-radius-base) !important; }
+.rounded-md { border-radius: var(--el-border-radius-medium) !important; }
+.rounded-lg { border-radius: var(--el-border-radius-large) !important; }
+.rounded-full { border-radius: 9999px !important; }
+
+/* ========== 阴影 ========== */
+.shadow-sm { box-shadow: var(--el-box-shadow-light) !important; }
+.shadow { box-shadow: var(--el-box-shadow) !important; }
+.shadow-lg { box-shadow: var(--el-box-shadow-dark) !important; }
+.shadow-none { box-shadow: none !important; }
+
+/* ========== 背景 ========== */
+.bg-white { background-color: #fff !important; }
+.bg-gray { background-color: var(--el-bg-color-page) !important; }
+.bg-primary { background-color: var(--el-color-primary) !important; }
+.bg-success { background-color: var(--el-color-success) !important; }
+.bg-warning { background-color: var(--el-color-warning) !important; }
+.bg-danger { background-color: var(--el-color-danger) !important; }
+.bg-info { background-color: var(--el-color-info) !important; }
+
+/* ========== 圆角按钮样式 ========== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: none;
+    outline: none;
 }
 
-.m-b-sm {
-    margin-bottom: 8px !important;
+.btn-primary {
+    background: linear-gradient(135deg, #2563EB 0%, #3375E8 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
 }
 
-.m-b-md {
-    margin-bottom: 16px !important;
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
 }
 
-.m-b-lg {
-    margin-bottom: 24px !important;
+.btn-default {
+    background-color: var(--el-bg-color);
+    color: var(--el-text-color-regular);
+    border: 1px solid var(--el-border-color);
 }
 
-.text-primary {
+.btn-default:hover {
+    background-color: var(--el-fill-color-light);
+    border-color: var(--el-color-primary);
     color: var(--el-color-primary);
 }
 
-.text-secondary {
-    color: var(--el-text-color-secondary);
+.btn-danger {
+    background-color: var(--el-color-danger);
+    color: #fff;
 }
 
-.text-danger {
-    color: var(--el-color-danger);
+.btn-danger:hover {
+    background-color: #f78989;
 }
 
-.text-success {
-    color: var(--el-color-success);
+/* ========== 动画 ========== */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+    transition: all 0.3s ease;
+}
+
+.slide-enter-from {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.slide-leave-to {
+    opacity: 0;
+    transform: translateY(10px);
 }
