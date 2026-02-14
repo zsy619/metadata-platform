@@ -46,8 +46,8 @@
   --el-border-color: #DCDFE6;
   --el-border-color-light: #E4E7ED;
   --el-border-color-lighter: #EBEEF5;
-  --el-border-radius-base: 4px;
-  --el-border-radius-medium: 8px;
+  --el-border-radius-base: 6px;
+  --el-border-radius-medium: 10px;
   --el-border-radius-large: 16px;
 
   /* ========== 阴影系统 (Shadows) ========== */
