@@ -2,20 +2,32 @@ package api
 
 import (
 	"context"
-	"metadata-platform/internal/module/user/model"
+	"encoding/json"
+	"fmt"
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
+
+	userModel "metadata-platform/internal/module/user/model"
 )
 
 // SsoMenuHandler 菜单处理器结构体
 type SsoMenuHandler struct {
+	*utils.BaseHandler
 	menuService service.SsoMenuService
+	audit       AuditService
 }
 
 // NewSsoMenuHandler 创建菜单处理器实例
-func NewSsoMenuHandler(menuService service.SsoMenuService) *SsoMenuHandler {
-	return &SsoMenuHandler{menuService: menuService}
+func NewSsoMenuHandler(menuService service.SsoMenuService, auditQueue *queue.AuditLogQueue) *SsoMenuHandler {
+	return &SsoMenuHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		menuService: menuService,
+		audit:       &auditServiceImpl{queue: auditQueue},
+	}
 }
 
 // SsoCreateMenuRequest 创建菜单请求结构
@@ -27,7 +39,7 @@ type SsoCreateMenuRequest struct {
 	Status    int    `json:"state" form:"state"`
 	DataRange string `json:"data_range" form:"data_range"`
 	DataScope string `json:"data_scope" form:"data_scope"`
-	Visible   int    `json:"visible" form:"visible"`
+	IsVisible bool   `json:"is_visible" form:"is_visible"`
 	MenuType  string `json:"menu_type" form:"menu_type"`
 	Icon      string `json:"icon" form:"icon"`
 	URL       string `json:"url" form:"url"`
@@ -40,22 +52,22 @@ type SsoCreateMenuRequest struct {
 
 // SsoUpdateMenuRequest 更新菜单请求结构
 type SsoUpdateMenuRequest struct {
-	ParentID  string `json:"parent_id" form:"parent_id"`
-	AppCode   string `json:"application_code" form:"application_code"`
-	MenuName  string `json:"menu_name" form:"menu_name"`
-	MenuCode  string `json:"menu_code" form:"menu_code"`
-	Status    int    `json:"state" form:"state"`
-	DataRange string `json:"data_range" form:"data_range"`
-	DataScope string `json:"data_scope" form:"data_scope"`
-	Visible   int    `json:"visible" form:"visible"`
-	MenuType  string `json:"menu_type" form:"menu_type"`
-	Icon      string `json:"icon" form:"icon"`
-	URL       string `json:"url" form:"url"`
-	Method    string `json:"method" form:"method"`
-	Target    string `json:"target" form:"target"`
-	Remark    string `json:"remark" form:"remark"`
-	Sort      int    `json:"sort" form:"sort"`
-	Tier      int    `json:"tier" form:"tier"`
+	ParentID  *string `json:"parent_id" form:"parent_id"`
+	AppCode   *string `json:"application_code" form:"application_code"`
+	MenuName  *string `json:"menu_name" form:"menu_name"`
+	MenuCode  *string `json:"menu_code" form:"menu_code"`
+	Status    *int    `json:"state" form:"state"`
+	DataRange *string `json:"data_range" form:"data_range"`
+	DataScope *string `json:"data_scope" form:"data_scope"`
+	IsVisible *bool   `json:"is_visible" form:"is_visible"`
+	MenuType  *string `json:"menu_type" form:"menu_type"`
+	Icon      *string `json:"icon" form:"icon"`
+	URL       *string `json:"url" form:"url"`
+	Method    *string `json:"method" form:"method"`
+	Target    *string `json:"target" form:"target"`
+	Remark    *string `json:"remark" form:"remark"`
+	Sort      *int    `json:"sort" form:"sort"`
+	Tier      *int    `json:"tier" form:"tier"`
 }
 
 // CreateMenu 创建菜单
@@ -66,8 +78,12 @@ func (h *SsoMenuHandler) CreateMenu(c context.Context, ctx *app.RequestContext) 
 		return
 	}
 
+	// 获取当前用户ID和账户
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	fmt.Println(headerUser.UserID, headerUser.UserAccount, headerUser.TenantID)
+
 	// 创建菜单模型
-	menu := &model.SsoMenu{
+	menu := &userModel.SsoMenu{
 		ParentID:  req.ParentID,
 		AppCode:   req.AppCode,
 		MenuName:  req.MenuName,
@@ -75,7 +91,7 @@ func (h *SsoMenuHandler) CreateMenu(c context.Context, ctx *app.RequestContext) 
 		Status:    req.Status,
 		DataRange: req.DataRange,
 		DataScope: req.DataScope,
-		Visible:   req.Visible,
+		IsVisible: req.IsVisible,
 		MenuType:  req.MenuType,
 		Icon:      req.Icon,
 		URL:       req.URL,
@@ -84,6 +100,9 @@ func (h *SsoMenuHandler) CreateMenu(c context.Context, ctx *app.RequestContext) 
 		Remark:    req.Remark,
 		Sort:      req.Sort,
 		Tier:      req.Tier,
+		CreateID:  headerUser.UserID,
+		CreateBy:  headerUser.UserAccount,
+		TenantID:  headerUser.TenantID,
 	}
 
 	// 调用服务层创建菜单
@@ -91,6 +110,19 @@ func (h *SsoMenuHandler) CreateMenu(c context.Context, ctx *app.RequestContext) 
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// 记录数据变更日志
+	afterData, _ := json.Marshal(menu)
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:        utils.GetSnowflake().GenerateIDString(),
+		TraceID:   ctx.GetString("trace_id"),
+		ModelID:   "menu",
+		RecordID:  menu.ID,
+		Action:    "CREATE",
+		AfterData: string(afterData),
+		CreateBy:  headerUser.UserAccount,
+		Source:    "menu_service",
+	})
 
 	ctx.JSON(201, menu)
 }
@@ -118,81 +150,128 @@ func (h *SsoMenuHandler) UpdateMenu(c context.Context, ctx *app.RequestContext) 
 		return
 	}
 
-	// 调用服务层获取菜单
-	menu, err := h.menuService.GetMenuByID(id)
+	// 获取当前用户ID和账户
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	fmt.Println(headerUser.UserID, headerUser.UserAccount, headerUser.TenantID)
+
+	// 获取变更前数据
+	beforeData, err := h.menuService.GetMenuByID(id)
 	if err != nil {
 		ctx.JSON(404, map[string]string{"error": "菜单不存在"})
 		return
 	}
+	beforeJSON, _ := json.Marshal(beforeData)
 
 	// 更新菜单字段
-	if req.ParentID != "" {
-		menu.ParentID = req.ParentID
+	if req.ParentID != nil {
+		beforeData.ParentID = *req.ParentID
 	}
-	if req.AppCode != "" {
-		menu.AppCode = req.AppCode
+	if req.AppCode != nil {
+		beforeData.AppCode = *req.AppCode
 	}
-	if req.MenuName != "" {
-		menu.MenuName = req.MenuName
+	if req.MenuName != nil {
+		beforeData.MenuName = *req.MenuName
 	}
-	if req.MenuCode != "" {
-		menu.MenuCode = req.MenuCode
+	if req.MenuCode != nil {
+		beforeData.MenuCode = *req.MenuCode
 	}
-	if req.Status != 0 {
-		menu.Status = req.Status
+	if req.Status != nil {
+		beforeData.Status = *req.Status
 	}
-	if req.DataRange != "" {
-		menu.DataRange = req.DataRange
+	if req.DataRange != nil {
+		beforeData.DataRange = *req.DataRange
 	}
-	if req.DataScope != "" {
-		menu.DataScope = req.DataScope
+	if req.DataScope != nil {
+		beforeData.DataScope = *req.DataScope
 	}
-	if req.Visible != 0 {
-		menu.Visible = req.Visible
+	if req.IsVisible != nil {
+		beforeData.IsVisible = *req.IsVisible
 	}
-	if req.MenuType != "" {
-		menu.MenuType = req.MenuType
+	if req.MenuType != nil {
+		beforeData.MenuType = *req.MenuType
 	}
-	if req.Icon != "" {
-		menu.Icon = req.Icon
+	if req.Icon != nil {
+		beforeData.Icon = *req.Icon
 	}
-	if req.URL != "" {
-		menu.URL = req.URL
+	if req.URL != nil {
+		beforeData.URL = *req.URL
 	}
-	if req.Method != "" {
-		menu.Method = req.Method
+	if req.Method != nil {
+		beforeData.Method = *req.Method
 	}
-	if req.Target != "" {
-		menu.Target = req.Target
+	if req.Target != nil {
+		beforeData.Target = *req.Target
 	}
-	if req.Remark != "" {
-		menu.Remark = req.Remark
+	if req.Remark != nil {
+		beforeData.Remark = *req.Remark
 	}
-	if req.Sort != 0 {
-		menu.Sort = req.Sort
+	if req.Sort != nil {
+		beforeData.Sort = *req.Sort
 	}
-	if req.Tier != 0 {
-		menu.Tier = req.Tier
+	if req.Tier != nil {
+		beforeData.Tier = *req.Tier
 	}
 
+	// 设置更新人信息
+	beforeData.UpdateID = headerUser.UserID
+	beforeData.UpdateBy = headerUser.UserAccount
+
 	// 调用服务层更新菜单
-	if err := h.menuService.UpdateMenu(menu); err != nil {
+	if err := h.menuService.UpdateMenu(beforeData); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(200, menu)
+	// 记录数据变更日志
+	afterJSON, _ := json.Marshal(beforeData)
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    ctx.GetString("trace_id"),
+		ModelID:    "menu",
+		RecordID:   id,
+		Action:     "UPDATE",
+		BeforeData: string(beforeJSON),
+		AfterData:  string(afterJSON),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "menu_service",
+	})
+
+	ctx.JSON(200, beforeData)
 }
 
 // DeleteMenu 删除菜单
 func (h *SsoMenuHandler) DeleteMenu(c context.Context, ctx *app.RequestContext) {
 	id := ctx.Param("id")
 
+	// 获取当前用户ID和账户
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	fmt.Println(headerUser.UserID, headerUser.UserAccount, headerUser.TenantID)
+
+	// 获取删除前数据
+	beforeData, err := h.menuService.GetMenuByID(id)
+	if err != nil {
+		ctx.JSON(404, map[string]string{"error": "菜单不存在"})
+		return
+	}
+	beforeJSON, _ := json.Marshal(beforeData)
+
 	// 调用服务层删除菜单
 	if err := h.menuService.DeleteMenu(id); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// 记录数据变更日志
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    ctx.GetString("trace_id"),
+		ModelID:    "menu",
+		RecordID:   id,
+		Action:     "DELETE",
+		BeforeData: string(beforeJSON),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "menu_service",
+	})
 
 	ctx.JSON(200, map[string]string{"message": "菜单删除成功"})
 }

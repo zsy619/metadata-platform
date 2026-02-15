@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"metadata-platform/internal/module/audit/model"
 	"metadata-platform/internal/module/audit/service"
 	"metadata-platform/internal/utils"
@@ -15,7 +16,7 @@ import (
 func AuditMiddleware(auditSvc service.AuditService) app.HandlerFunc {
 	return func(c context.Context, ctx *app.RequestContext) {
 		start := time.Now()
-		
+
 		// 生成 TraceID
 		traceID := uuid.New().String()
 		ctx.Set("trace_id", traceID)
@@ -25,14 +26,16 @@ func AuditMiddleware(auditSvc service.AuditService) app.HandlerFunc {
 
 		latency := time.Since(start).Milliseconds()
 		statusCode := ctx.Response.StatusCode()
-		
+
 		// 暂时简单的 UserID 获取 (后续应结合 JWT Middleware)
 		userID := string(ctx.Request.Header.Get("X-User-ID"))
-		if userID == "" {
-			userID = "anonymous"
-		}
-		
+		userAccount := string(ctx.Request.Header.Get("X-User-Account"))
+		fmt.Println(userID, userAccount)
+
 		tenantID := string(ctx.Request.Header.Get("X-Tenant-ID"))
+		if tenantID == "" {
+			tenantID = "1"
+		}
 
 		// 解析客户端信息
 		clientInfo := utils.ParseUserAgent(

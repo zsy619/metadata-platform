@@ -20,10 +20,10 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 
 	// 初始化组织类型服务
 	orgKindService := service.NewOrgKindService(db)
-	orgKindHandler := service.NewOrgKindHandler(orgKindService)
+	orgKindHandler := service.NewSsoOrgKindHandler(orgKindService, auditQueue)
 
 	// 初始化处理器集合
-	handlers := api.NewSsoHandler(services)
+	handlers := api.NewSsoHandler(services, auditQueue)
 
 	// 注册路由
 	handlers.RegisterRoutes(r, orgKindHandler)

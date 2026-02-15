@@ -3,14 +3,15 @@ package service
 import (
 	"context"
 	"errors"
-	auditModel "metadata-platform/internal/module/audit/model"
-	auditService "metadata-platform/internal/module/audit/service"
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
 	"metadata-platform/internal/utils"
 	"time"
 
 	"github.com/google/uuid"
+
+	auditModel "metadata-platform/internal/module/audit/model"
+	auditService "metadata-platform/internal/module/audit/service"
 )
 
 // ssoAuthService 实现

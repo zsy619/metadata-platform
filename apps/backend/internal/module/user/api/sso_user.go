@@ -4,18 +4,23 @@ import (
 	"context"
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 )
 
 // SsoUserHandler 用户处理器结构体
 type SsoUserHandler struct {
+	*utils.BaseHandler
 	userService service.SsoUserService
 }
 
 // NewSsoUserHandler 创建用户处理器实例
 func NewSsoUserHandler(userService service.SsoUserService) *SsoUserHandler {
-	return &SsoUserHandler{userService: userService}
+	return &SsoUserHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		userService: userService,
+	}
 }
 
 // SsoCreateUserRequest 创建用户请求结构
@@ -58,7 +63,7 @@ func (h *SsoUserHandler) CreateUser(c context.Context, ctx *app.RequestContext) 
 		Mobile:   req.Mobile,
 		Email:    req.Email,
 		Kind:     req.Kind,
-		Status:    req.Status,
+		Status:   req.Status,
 		Remark:   req.Remark,
 	}
 

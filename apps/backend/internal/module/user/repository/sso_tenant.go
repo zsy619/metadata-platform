@@ -60,3 +60,13 @@ func (r *ssoTenantRepository) GetAllTenants() ([]model.SsoTenant, error) {
 	}
 	return tenants, nil
 }
+
+// GetMaxSort 获取最大排序值
+func (r *ssoOrgRepository) GetMaxSort() (int, error) {
+	var maxSort int
+	result := r.db.Model(&model.SsoOrg{}).Select("COALESCE(MAX(sort), 0)").Scan(&maxSort)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return maxSort, nil
+}

@@ -11,12 +11,16 @@ import (
 
 // MasterDetailHandler 主子表处理器
 type MasterDetailHandler struct {
+	*utils.BaseHandler
 	mdService service.MasterDetailService
 }
 
 // NewMasterDetailHandler 创建主子表处理器实例
 func NewMasterDetailHandler(mdService service.MasterDetailService) *MasterDetailHandler {
-	return &MasterDetailHandler{mdService: mdService}
+	return &MasterDetailHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		mdService:   mdService,
+	}
 }
 
 // CreateMasterDetail 创建主子表数据

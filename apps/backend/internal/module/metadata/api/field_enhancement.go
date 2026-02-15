@@ -12,12 +12,16 @@ import (
 
 // FieldEnhancementHandler 字段增强处理器
 type FieldEnhancementHandler struct {
+	*utils.BaseHandler
 	enhService service.MdModelFieldEnhancementService
 }
 
 // NewFieldEnhancementHandler 创建字段增强处理器实例
 func NewFieldEnhancementHandler(enhService service.MdModelFieldEnhancementService) *FieldEnhancementHandler {
-	return &FieldEnhancementHandler{enhService: enhService}
+	return &FieldEnhancementHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		enhService:  enhService,
+	}
 }
 
 // GetEnhancementsByModelID 获取模型的所有字段增强配置

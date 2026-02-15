@@ -13,12 +13,16 @@ import (
 
 // MdConnHandler 数据连接API处理器
 type MdConnHandler struct {
+	*utils.BaseHandler
 	connService service.MdConnService
 }
 
 // NewMdConnHandler 创建数据连接API处理器实例
 func NewMdConnHandler(connService service.MdConnService) *MdConnHandler {
-	return &MdConnHandler{connService: connService}
+	return &MdConnHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		connService: connService,
+	}
 }
 
 // CreateRequest 创建数据连接请求

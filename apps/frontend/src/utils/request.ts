@@ -39,6 +39,28 @@ request.interceptors.request.use(
             config.headers = config.headers || {}
             config.headers.Authorization = `Bearer ${token}`
         }
+        
+        // 获取用户信息并添加到请求头
+        // 从localStorage获取用户信息（登录后存储）
+        const userInfoStr = storage.get('userInfo')
+        if (userInfoStr) {
+            try {
+                const userInfo = typeof userInfoStr === 'string' ? JSON.parse(userInfoStr) : userInfoStr
+                // 添加用户ID和账户到请求头
+                if (userInfo.id) {
+                    config.headers['X-User-ID'] = userInfo.id
+                }
+                if (userInfo.account) {
+                    config.headers['X-User-Account'] = userInfo.account
+                }
+            } catch (e) {
+                console.warn('解析用户信息失败:', e)
+            }
+        }
+        
+        // 添加租户ID到请求头
+        config.headers['X-Tenant-ID'] = storage.getTenantID()
+        
         return config
     },
     (error: AxiosError) => {

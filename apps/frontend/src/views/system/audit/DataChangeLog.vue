@@ -38,7 +38,7 @@
                         </template>
                     </el-table-column>
                     <el-table-column prop="create_by" label="操作人" width="120" align="center" />
-                    <el-table-column prop="create_at" label="变更时间" width="180" align="center">
+                    <el-table-column prop="create_at" label="变更时间" width="260" align="center">
                         <template #default="scope">
                             {{ formatDate(scope.row.create_at) }}
                         </template>

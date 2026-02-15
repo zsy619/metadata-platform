@@ -2,22 +2,25 @@ package api
 
 import (
 	"context"
+	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
-
-	"metadata-platform/internal/module/user/service"
-	"metadata-platform/internal/utils"
 )
 
 // SsoAuthHandler 认证 API 处理器
 type SsoAuthHandler struct {
+	*utils.BaseHandler
 	authService service.SsoAuthService
 }
 
 // NewSsoAuthHandler 创建认证 API 处理器实例
 func NewSsoAuthHandler(authService service.SsoAuthService) *SsoAuthHandler {
-	return &SsoAuthHandler{authService: authService}
+	return &SsoAuthHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		authService: authService,
+	}
 }
 
 // SsoLoginRequest 登录请求

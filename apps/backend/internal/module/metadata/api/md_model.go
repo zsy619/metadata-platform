@@ -14,12 +14,16 @@ import (
 
 // MdModelHandler 模型定义API处理器
 type MdModelHandler struct {
+	*utils.BaseHandler
 	modelService service.MdModelService
 }
 
 // NewMdModelHandler 创建模型定义API处理器实例
 func NewMdModelHandler(modelService service.MdModelService) *MdModelHandler {
-	return &MdModelHandler{modelService: modelService}
+	return &MdModelHandler{
+		BaseHandler:  utils.NewBaseHandler(),
+		modelService: modelService,
+	}
 }
 
 // BuildFromTableRequest 从表构建模型请求
@@ -107,15 +111,15 @@ type CreateModelFieldRequest struct {
 
 // SaveVisualModelRequest 可视化构建保存模型请求
 type SaveVisualModelRequest struct {
-	ModelID      string               `json:"model_id"`
-	ConnID       string               `json:"conn_id" binding:"required"`
-	ModelName    string               `json:"model_name" binding:"required"`
-	ModelCode    string               `json:"model_code" binding:"required"`
-	ModelVersion string               `json:"model_version"`
-	ModelKind    int                  `json:"model_kind"`
-	IsPublic     bool                 `json:"is_public"`
-	Remark       string               `json:"remark"`
-	Parameters   string               `json:"parameters"`
+	ModelID      string                   `json:"model_id"`
+	ConnID       string                   `json:"conn_id" binding:"required"`
+	ModelName    string                   `json:"model_name" binding:"required"`
+	ModelCode    string                   `json:"model_code" binding:"required"`
+	ModelVersion string                   `json:"model_version"`
+	ModelKind    int                      `json:"model_kind"`
+	IsPublic     bool                     `json:"is_public"`
+	Remark       string                   `json:"remark"`
+	Parameters   string                   `json:"parameters"`
 	Tables       []model.MdModelTable     `json:"tables"`
 	Fields       []model.MdModelField     `json:"fields"`
 	Joins        []model.MdModelJoin      `json:"joins"`
@@ -254,7 +258,7 @@ func (h *MdModelHandler) UpdateSQLModel(c context.Context, ctx *app.RequestConte
 	tenantID, _ := ctx.Get("tenant_id")
 	userID, _ := ctx.Get("user_id")
 	username, _ := ctx.Get("username")
-	
+
 	serviceReq := &service.UpdateSQLModelRequest{
 		ModelID:       req.ModelID,
 		ModelName:     req.ModelName,
@@ -613,6 +617,7 @@ func (h *MdModelHandler) DeleteModelField(c context.Context, ctx *app.RequestCon
 
 	utils.SuccessResponse(ctx, nil)
 }
+
 // SaveVisualModel 全量保存可视化构建模型
 func (h *MdModelHandler) SaveVisualModel(c context.Context, ctx *app.RequestContext) {
 	var req SaveVisualModelRequest

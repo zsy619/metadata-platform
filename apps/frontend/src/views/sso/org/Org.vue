@@ -97,7 +97,8 @@ const buildTreeData = (items: any[], parentId = '0', excludeIdSet: Set<string> =
         .filter(item => (item.parent_id || '0') === parentId && !excludeIdSet.has(item.id))
         .map(item => ({
             value: item.id,
-            label: item.org_name,
+            label: item.org_code,
+            org_name: item.org_name,
             disabled: excludeIdSet.has(item.id),
             children: buildTreeData(items, item.id, excludeIdSet)
         }))
@@ -183,7 +184,7 @@ const handleDebouncedSearch = () => { }
 const handleReset = () => { searchQuery.value = ''; filterStatus.value = '' }
 
 const handleCreate = () => {
-    formData.value = { status: 1, sort: 0, parent_id: '0' }
+    formData.value = { status: 1, sort: 0, parent_id: '' }
     excludeIds.value = []
     dialogVisible.value = true
 }

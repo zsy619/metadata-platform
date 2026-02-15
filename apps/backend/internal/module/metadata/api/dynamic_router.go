@@ -15,6 +15,7 @@ import (
 
 // DynamicRouter 动态路由注册器
 type DynamicRouter struct {
+	*utils.BaseHandler
 	hertz        *server.Hertz
 	svc          *service.Services
 	queryHandler *DataQueryHandler
@@ -23,6 +24,7 @@ type DynamicRouter struct {
 // NewDynamicRouter 创建动态路由注册器实例
 func NewDynamicRouter(hertz *server.Hertz, svc *service.Services) *DynamicRouter {
 	return &DynamicRouter{
+		BaseHandler:  utils.NewBaseHandler(),
 		hertz:        hertz,
 		svc:          svc,
 		queryHandler: NewDataQueryHandler(svc.CRUD, svc.Model),
@@ -48,40 +50,40 @@ func (r *DynamicRouter) LoadAndRegisterAll() error {
 // RegisterAPI 注册单个动态路由
 func (r *DynamicRouter) RegisterAPI(method, path, apiCode string) {
 	utils.SugarLogger.Infof("Registering dynamic route: [%s] %s (code: %s)", method, path, apiCode)
-	
+
 	// 绑定通用处理器
 	// 注意：apiCode 在这里被用作查找 modelID 的依据（目前简单约定 apiCode = modelCode + "_" + method）
 	// 后续可以增加 MdModelAPI 关联表来更精确对应
-	
+
 	handler := r.getGenericHandler(apiCode)
-	
+
 	// 添加审计中间件
 	auditMiddleware := middleware.AuditMiddleware(r.svc.Audit)
-	
+
 	r.hertz.Handle(method, path, auditMiddleware, handler)
 }
 
 func (r *DynamicRouter) getGenericHandler(apiCode string) app.HandlerFunc {
 	return func(c context.Context, ctx *app.RequestContext) {
 		// 1. 获取 ModelID (解析 apiCode)
-		modelCode := ""
-		
+		var modelCode string
+
 		// 优先匹配特殊后缀
 		var handlerType string
-		if strings.HasSuffix(apiCode, "_QUERY") {
-			modelCode = strings.TrimSuffix(apiCode, "_QUERY")
+		if before, ok := strings.CutSuffix(apiCode, "_QUERY"); ok {
+			modelCode = before
 			handlerType = "QUERY"
-		} else if strings.HasSuffix(apiCode, "_BATCH_CREATE") {
-			modelCode = strings.TrimSuffix(apiCode, "_BATCH_CREATE")
+		} else if before, ok := strings.CutSuffix(apiCode, "_BATCH_CREATE"); ok {
+			modelCode = before
 			handlerType = "BATCH_CREATE"
-		} else if strings.HasSuffix(apiCode, "_BATCH_DELETE") {
-			modelCode = strings.TrimSuffix(apiCode, "_BATCH_DELETE")
+		} else if before, ok := strings.CutSuffix(apiCode, "_BATCH_DELETE"); ok {
+			modelCode = before
 			handlerType = "BATCH_DELETE"
-		} else if strings.HasSuffix(apiCode, "_STATISTICS") {
-			modelCode = strings.TrimSuffix(apiCode, "_STATISTICS")
+		} else if before, ok := strings.CutSuffix(apiCode, "_STATISTICS"); ok {
+			modelCode = before
 			handlerType = "STATISTICS"
-		} else if strings.HasSuffix(apiCode, "_AGGREGATE") {
-			modelCode = strings.TrimSuffix(apiCode, "_AGGREGATE")
+		} else if before, ok := strings.CutSuffix(apiCode, "_AGGREGATE"); ok {
+			modelCode = before
 			handlerType = "AGGREGATE"
 		} else {
 			// 默认逻辑：取最后一个下划线前缀
@@ -131,7 +133,7 @@ func (r *DynamicRouter) getGenericHandler(apiCode string) app.HandlerFunc {
 			// Hertz HandlerFunc: func(c context.Context, ctx *app.RequestContext)
 			// 但是 DynamicRouter 的 HandleCreate 签名目前是 func(c context.Context, ctx *app.RequestContext)
 			// 所以直接使用 c 即可
-			
+
 			result, err := r.svc.CRUD.Create(c, md.ID, data)
 			if err != nil {
 				utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())

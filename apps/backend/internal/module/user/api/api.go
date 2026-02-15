@@ -2,6 +2,7 @@ package api
 
 import (
 	"metadata-platform/internal/middleware"
+	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/service"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
@@ -17,25 +18,25 @@ type SsoHandler struct {
 	UserHandler    *SsoUserHandler
 	PosHandler     *SsoPosHandler
 	AuthHandler    *SsoAuthHandler
-	OrgKindHandler *service.OrgKindHandler
+	OrgKindHandler *service.SsoOrgKindHandler
 }
 
 // NewSsoHandler 创建用户模块处理器集合
-func NewSsoHandler(services *service.Services) *SsoHandler {
+func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) *SsoHandler {
 	return &SsoHandler{
 		UserHandler:   NewSsoUserHandler(services.User),
-		TenantHandler: NewSsoTenantHandler(services.Tenant),
-		AppHandler:    NewSsoAppHandler(services.App),
-		MenuHandler:   NewSsoMenuHandler(services.Menu),
-		RoleHandler:   NewSsoRoleHandler(services.Role),
-		OrgHandler:    NewSsoOrgHandler(services.Org),
-		PosHandler:    NewSsoPosHandler(services.Pos),
+		TenantHandler: NewSsoTenantHandler(services.Tenant, auditQueue),
+		AppHandler:    NewSsoAppHandler(services.App, auditQueue),
+		MenuHandler:   NewSsoMenuHandler(services.Menu, auditQueue),
+		RoleHandler:   NewSsoRoleHandler(services.Role, auditQueue),
+		OrgHandler:    NewSsoOrgHandler(services.Org, auditQueue),
+		PosHandler:    NewSsoPosHandler(services.Pos, auditQueue),
 		AuthHandler:   NewSsoAuthHandler(services.Auth),
 	}
 }
 
 // RegisterRoutes 注册路由
-func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *service.OrgKindHandler) {
+func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *service.SsoOrgKindHandler) {
 	// 用户相关路由
 	userRouter := router.Group("/api/user")
 	{
@@ -68,13 +69,13 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 	}
 
 	// 应用相关路由
-	applicationRouter := router.Group("/api/app")
+	appRouter := router.Group("/api/app")
 	{
-		applicationRouter.POST("", h.AppHandler.CreateApp)
-		applicationRouter.GET("/:id", h.AppHandler.GetAppByID)
-		applicationRouter.PUT("/:id", h.AppHandler.UpdateApp)
-		applicationRouter.DELETE("/:id", h.AppHandler.DeleteApp)
-		applicationRouter.GET("", h.AppHandler.GetAllApps)
+		appRouter.POST("", h.AppHandler.CreateApp)
+		appRouter.GET("/:id", h.AppHandler.GetAppByID)
+		appRouter.PUT("/:id", h.AppHandler.UpdateApp)
+		appRouter.DELETE("/:id", h.AppHandler.DeleteApp)
+		appRouter.GET("", h.AppHandler.GetAllApps)
 	}
 
 	// 菜单相关路由
@@ -98,23 +99,13 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 	}
 
 	// 组织相关路由
-	organizationRouter := router.Group("/api/unit")
+	orgRouter := router.Group("/api/org")
 	{
-		organizationRouter.POST("", h.OrgHandler.CreateOrg)
-		organizationRouter.GET("/:id", h.OrgHandler.GetOrgByID)
-		organizationRouter.PUT("/:id", h.OrgHandler.UpdateOrg)
-		organizationRouter.DELETE("/:id", h.OrgHandler.DeleteOrg)
-		organizationRouter.GET("", h.OrgHandler.GetAllOrgs)
-	}
-
-	// 职位相关路由
-	positionRouter := router.Group("/api/pos")
-	{
-		positionRouter.POST("", h.PosHandler.CreatePos)
-		positionRouter.GET("/:id", h.PosHandler.GetPosByID)
-		positionRouter.PUT("/:id", h.PosHandler.UpdatePos)
-		positionRouter.DELETE("/:id", h.PosHandler.DeletePos)
-		positionRouter.GET("", h.PosHandler.GetAllPoss)
+		orgRouter.POST("", h.OrgHandler.CreateOrg)
+		orgRouter.GET("/:id", h.OrgHandler.GetOrgByID)
+		orgRouter.PUT("/:id", h.OrgHandler.UpdateOrg)
+		orgRouter.DELETE("/:id", h.OrgHandler.DeleteOrg)
+		orgRouter.GET("", h.OrgHandler.GetAllOrgs)
 	}
 
 	// 组织类型相关路由
@@ -125,5 +116,15 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 		orgKindRouter.PUT("/:id", orgKindHandler.UpdateOrgKind)
 		orgKindRouter.DELETE("/:id", orgKindHandler.DeleteOrgKind)
 		orgKindRouter.GET("", orgKindHandler.GetAllOrgKinds)
+	}
+
+	// 职位相关路由
+	posRouter := router.Group("/api/pos")
+	{
+		posRouter.POST("", h.PosHandler.CreatePos)
+		posRouter.GET("/:id", h.PosHandler.GetPosByID)
+		posRouter.PUT("/:id", h.PosHandler.UpdatePos)
+		posRouter.DELETE("/:id", h.PosHandler.DeletePos)
+		posRouter.GET("", h.PosHandler.GetAllPoss)
 	}
 }

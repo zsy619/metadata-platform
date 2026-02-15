@@ -46,11 +46,9 @@ func (m *MockSsoAuthService) ChangePassword(userID string, oldPassword string, n
 
 func BenchmarkSsoAuthLogin(b *testing.B) {
 	mockSvc := new(MockSsoAuthService)
-	handler := NewSsoAuthHandler(mockSvc)
-
-	// Pre-setup expectations
-	// Pre-setup expectations
 	mockSvc.On("Login", "admin", "123456", mock.Anything, mock.Anything).Return("access-token", "refresh-token", nil)
+
+	handler := NewSsoAuthHandler(mockSvc)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -59,8 +57,11 @@ func BenchmarkSsoAuthLogin(b *testing.B) {
 			ctx := app.NewContext(0)
 
 			body, _ := json.Marshal(SsoLoginRequest{
-				Account:  "admin",
-				Password: "123456",
+				Account:     "admin",
+				Password:    "123456",
+				TenantID:    1,
+				CaptchaID:   "test-captcha-id",
+				CaptchaCode: "1234",
 			})
 			ctx.Request.SetBody(body)
 			ctx.Request.Header.SetContentTypeBytes([]byte("application/json"))

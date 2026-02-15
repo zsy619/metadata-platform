@@ -123,13 +123,23 @@ const filterApp = (node: any, keyword: string) => {
   return node.label.toLowerCase().includes(keyword.toLowerCase())
 }
 
+const getMaxSort = (): number => {
+  if (!props.allData || props.allData.length === 0) return 1
+  const maxSort = Math.max(...props.allData.map(item => item.sort || 0))
+  return maxSort + 1
+}
+
 watch(
   () => props.modelValue,
   (val) => {
     if (val && props.data) {
-      formData.value = { ...props.data }
+      const data = { ...props.data }
+      if (data.parent_id === '0' || data.parent_id === 0) {
+        data.parent_id = ''
+      }
+      formData.value = data
     } else if (val) {
-      formData.value = { parent_id: '', app_name: '', app_code: '', host: '', status: 1, sort: 0, remark: '' }
+      formData.value = { parent_id: '', app_name: '', app_code: '', host: '', status: 1, sort: getMaxSort(), remark: '' }
     }
   }
 )
@@ -152,11 +162,15 @@ const handleSubmit = async () => {
       }
       loading.value = true
       try {
+        const submitData = { ...formData.value }
+        if (!submitData.parent_id) {
+          submitData.parent_id = ''
+        }
         if (formData.value.id) {
-          await updateApp(formData.value.id, formData.value)
+          await updateApp(formData.value.id, submitData)
           ElMessage.success('更新成功')
         } else {
-          await createApp(formData.value)
+          await createApp(submitData)
           ElMessage.success('创建成功')
         }
         handleClose()

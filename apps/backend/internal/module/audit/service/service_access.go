@@ -28,7 +28,7 @@ func NewAccessLogService(db *gorm.DB, auditLog *queue.AuditLogQueue) *AccessLogS
 }
 
 // GetAccessLogs 获取访问日志列表（分页）
-func (s *AccessLogService) GetAccessLogs(page, pageSize int, filters map[string]interface{}) ([]model.SysAccessLog, int64, error) {
+func (s *AccessLogService) GetAccessLogs(page, pageSize int, filters map[string]any) ([]model.SysAccessLog, int64, error) {
 	var logs []model.SysAccessLog
 	var total int64
 
@@ -80,7 +80,7 @@ func (s *AccessLogService) GetAccessLogs(page, pageSize int, filters map[string]
 }
 
 // GetAllAccessLogs 获取所有访问日志（用于导出）
-func (s *AccessLogService) GetAllAccessLogs(filters map[string]interface{}) ([]model.SysAccessLog, error) {
+func (s *AccessLogService) GetAllAccessLogs(filters map[string]any) ([]model.SysAccessLog, error) {
 	var logs []model.SysAccessLog
 
 	query := s.db.Model(&model.SysAccessLog{})
@@ -132,8 +132,8 @@ func (s *AccessLogService) RecordAccess(ctx context.Context, log *model.SysAcces
 }
 
 // GetStatistics 获取访问统计数据
-func (s *AccessLogService) GetStatistics(filters map[string]interface{}) (map[string]interface{}, error) {
-	stats := make(map[string]interface{})
+func (s *AccessLogService) GetStatistics(filters map[string]any) (map[string]any, error) {
+	stats := make(map[string]any)
 
 	baseQuery := s.db.Model(&model.SysAccessLog{})
 
@@ -217,7 +217,7 @@ func (s *AccessLogService) GetStatistics(filters map[string]interface{}) (map[st
 	if s.db.Dialector.Name() == "postgres" {
 		dateFormat = "TO_CHAR(create_at, 'HH24')"
 	}
-	if err := hourQuery.Select(dateFormat+" as hour, COUNT(*) as count").Group(dateFormat).Order("hour").Scan(&hourlyCounts).Error; err != nil {
+	if err := hourQuery.Select(dateFormat + " as hour, COUNT(*) as count").Group(dateFormat).Order("hour").Scan(&hourlyCounts).Error; err != nil {
 		if !strings.Contains(err.Error(), "invalid") {
 			return nil, err
 		}
@@ -228,7 +228,7 @@ func (s *AccessLogService) GetStatistics(filters map[string]interface{}) (map[st
 }
 
 // GetAbnormalAccess 获取异常访问记录
-func (s *AccessLogService) GetAbnormalAccess(filters map[string]interface{}, page, pageSize int) ([]model.SysAccessLog, int64, error) {
+func (s *AccessLogService) GetAbnormalAccess(filters map[string]any, page, pageSize int) ([]model.SysAccessLog, int64, error) {
 	var logs []model.SysAccessLog
 	var total int64
 

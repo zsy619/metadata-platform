@@ -11,12 +11,16 @@ import (
 
 // TreeHandler 树形结构处理器
 type TreeHandler struct {
+	*utils.BaseHandler
 	treeService service.TreeService
 }
 
 // NewTreeHandler 创建树形结构处理器实例
 func NewTreeHandler(treeService service.TreeService) *TreeHandler {
-	return &TreeHandler{treeService: treeService}
+	return &TreeHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		treeService: treeService,
+	}
 }
 
 // GetTree 获取完整树结构
@@ -34,7 +38,7 @@ func (h *TreeHandler) GetTree(c context.Context, ctx *app.RequestContext) {
 func (h *TreeHandler) GetChildren(c context.Context, ctx *app.RequestContext) {
 	modelID := ctx.Param("model_id")
 	id := ctx.Param("id")
-	
+
 	children, err := h.treeService.GetChildren(modelID, id)
 	if err != nil {
 		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
@@ -47,7 +51,7 @@ func (h *TreeHandler) GetChildren(c context.Context, ctx *app.RequestContext) {
 func (h *TreeHandler) GetPath(c context.Context, ctx *app.RequestContext) {
 	modelID := ctx.Param("model_id")
 	id := ctx.Param("id")
-	
+
 	path, err := h.treeService.GetPath(modelID, id)
 	if err != nil {
 		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
@@ -77,7 +81,7 @@ func (h *TreeHandler) AddNode(c context.Context, ctx *app.RequestContext) {
 func (h *TreeHandler) MoveNode(c context.Context, ctx *app.RequestContext) {
 	modelID := ctx.Param("model_id")
 	id := ctx.Param("id")
-	
+
 	var req struct {
 		TargetParentID string `json:"target_parent_id"`
 	}
@@ -98,7 +102,7 @@ func (h *TreeHandler) MoveNode(c context.Context, ctx *app.RequestContext) {
 func (h *TreeHandler) DeleteNode(c context.Context, ctx *app.RequestContext) {
 	modelID := ctx.Param("model_id")
 	id := ctx.Param("id")
-	
+
 	err := h.treeService.DeleteNode(modelID, id)
 	if err != nil {
 		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())

@@ -35,9 +35,11 @@ type SsoAppRepository interface {
 	GetAppByID(id string) (*model.SsoApp, error)
 	GetAppByCode(code string) (*model.SsoApp, error)
 	UpdateApp(app *model.SsoApp) error
+	UpdateAppFields(id string, fields map[string]any) error
 	DeleteApp(id string) error
 	GetAllApps() ([]model.SsoApp, error)
 	GetMaxSort() (int, error)
+	HasChildren(parentID string) (bool, error)
 }
 
 // SsoMenuRepository 菜单仓库接口
@@ -68,6 +70,7 @@ type SsoOrgRepository interface {
 	GetOrgByID(id string) (*model.SsoOrg, error)
 	GetOrgByCode(code string) (*model.SsoOrg, error)
 	UpdateOrg(org *model.SsoOrg) error
+	UpdateOrgFields(id string, fields map[string]any) error
 	DeleteOrg(id string) error
 	GetAllOrgs() ([]model.SsoOrg, error)
 	GetMaxSort() (int, error)

@@ -12,30 +12,34 @@ import (
 
 // DataIOHandler 数据导入导出处理器
 type DataIOHandler struct {
+	*utils.BaseHandler
 	ioService service.DataIOService
 }
 
 // NewDataIOHandler 创建数据导入导出处理器实例
 func NewDataIOHandler(ioService service.DataIOService) *DataIOHandler {
-	return &DataIOHandler{ioService: ioService}
+	return &DataIOHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		ioService:   ioService,
+	}
 }
 
 // ExportData 导出数据
 func (h *DataIOHandler) ExportData(c context.Context, ctx *app.RequestContext) {
 	modelID := ctx.Param("model_id")
 	format := ctx.Query("format")
-	
+
 	queryParams := make(map[string]any)
 	ctx.BindQuery(&queryParams)
-	
+
 	// Hertz Response Writer adapter
 	ctx.SetStatusCode(consts.StatusOK)
-	
+
 	var err error
 	if format == "json" {
 		ctx.Header("Content-Type", "application/json")
 		ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s.json", modelID))
-		
+
 		// Use stream writer
 		writer := ctx.Response.BodyWriter()
 		err = h.ioService.ExportToJSON(modelID, queryParams, writer)
@@ -43,7 +47,7 @@ func (h *DataIOHandler) ExportData(c context.Context, ctx *app.RequestContext) {
 		// Default to Excel
 		ctx.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 		ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s.xlsx", modelID))
-		
+
 		writer := ctx.Response.BodyWriter()
 		err = h.ioService.ExportToExcel(modelID, queryParams, writer)
 	}
@@ -72,7 +76,7 @@ func (h *DataIOHandler) ImportTemplate(c context.Context, ctx *app.RequestContex
 // ImportData 导入数据
 func (h *DataIOHandler) ImportData(c context.Context, ctx *app.RequestContext) {
 	modelID := ctx.Param("model_id")
-	
+
 	fileHeader, err := ctx.FormFile("file")
 	if err != nil {
 		utils.ErrorResponse(ctx, consts.StatusBadRequest, "File is required")
@@ -85,12 +89,12 @@ func (h *DataIOHandler) ImportData(c context.Context, ctx *app.RequestContext) {
 		return
 	}
 	defer file.Close()
-	
+
 	// Check extension or content type to decide format
 	filename := fileHeader.Filename
 	var success int
 	var errors []string
-	
+
 	if len(filename) > 5 && filename[len(filename)-5:] == ".json" {
 		success, errors, err = h.ioService.ImportFromJSON(modelID, file)
 	} else {

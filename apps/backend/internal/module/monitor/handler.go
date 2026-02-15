@@ -29,14 +29,14 @@ func WSHandler(ctx context.Context, c *app.RequestContext) {
 		for {
 			// 模拟实时数据
 			data := map[string]interface{}{
-				"timestamp": time.Now().Format("15:04:05"),
-				"requests":  1000 + rand.Intn(500),
-				"qps":       300 + rand.Intn(200),
+				"timestamp":  time.Now().Format("15:04:05"),
+				"requests":   1000 + rand.Intn(500),
+				"qps":        300 + rand.Intn(200),
 				"error_rate": float64(rand.Intn(10)) / 100.0,
 				"latency":    50 + rand.Intn(100),
-				"type": "realtime",
+				"type":       "realtime",
 			}
-			
+
 			if err := conn.WriteJSON(data); err != nil {
 				break
 			}

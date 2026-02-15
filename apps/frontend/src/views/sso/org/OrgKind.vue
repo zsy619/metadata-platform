@@ -163,6 +163,9 @@ const handleEdit = (row: any) => {
     if (data.kind_code && !data.code) {
         data.code = data.kind_code
     }
+    if (data.parent_id === '0' || data.parent_id === 0) {
+        data.parent_id = ''
+    }
     formData.value = data
     dialogVisible.value = true
 }

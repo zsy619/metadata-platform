@@ -46,9 +46,14 @@ func (r *ssoAppRepository) UpdateApp(app *model.SsoApp) error {
 	return r.db.Save(app).Error
 }
 
-// DeleteApp 删除应用
+// UpdateAppFields 更新应用指定字段
+func (r *ssoAppRepository) UpdateAppFields(id string, fields map[string]any) error {
+	return r.db.Model(&model.SsoApp{}).Where("id = ?", id).Updates(fields).Error
+}
+
+// DeleteApp 删除应用（物理删除）
 func (r *ssoAppRepository) DeleteApp(id string) error {
-	return r.db.Model(&model.SsoApp{}).Where("id = ?", id).Update("is_deleted", true).Error
+	return r.db.Unscoped().Delete(&model.SsoApp{}, "id = ?", id).Error
 }
 
 // GetAllApps 获取所有应用
@@ -69,4 +74,14 @@ func (r *ssoAppRepository) GetMaxSort() (int, error) {
 		return 0, result.Error
 	}
 	return maxSort, nil
+}
+
+// HasChildren 检查是否有子应用
+func (r *ssoAppRepository) HasChildren(parentID string) (bool, error) {
+	var count int64
+	result := r.db.Model(&model.SsoApp{}).Where("parent_id = ?", parentID).Count(&count)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return count > 0, nil
 }

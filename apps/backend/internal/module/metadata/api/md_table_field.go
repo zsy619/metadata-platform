@@ -2,23 +2,26 @@ package api
 
 import (
 	"context"
-
-	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/protocol/consts"
-
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/service"
 	"metadata-platform/internal/utils"
+
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/protocol/consts"
 )
 
 // MdTableFieldHandler 数据连接表字段处理器结构体
 type MdTableFieldHandler struct {
+	*utils.BaseHandler
 	fieldService service.MdTableFieldService
 }
 
 // NewMdTableFieldHandler 创建数据连接表字段处理器实例
 func NewMdTableFieldHandler(fieldService service.MdTableFieldService) *MdTableFieldHandler {
-	return &MdTableFieldHandler{fieldService: fieldService}
+	return &MdTableFieldHandler{
+		BaseHandler:  utils.NewBaseHandler(),
+		fieldService: fieldService,
+	}
 }
 
 // CreateFieldRequest 创建数据连接表字段请求结构

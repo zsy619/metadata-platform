@@ -4,15 +4,24 @@
       <el-tabs v-model="activeTab">
         <el-tab-pane label="基本信息" name="basic">
           <el-form-item label="上级组织" prop="parent_id">
-            <el-tree-select
-              v-model="formData.parent_id"
-              :data="processedTreeData"
-              check-strictly
-              :render-after-expand="false"
-              placeholder="请选择上级组织（不选则为顶级组织）"
-              clearable
-              style="width: 100%"
-            />
+            <div style="width: 100%; display: flex; align-items: center; gap: 8px;">
+              <el-tree-select
+                v-model="formData.parent_id"
+                :data="processedTreeData"
+                check-strictly
+                :render-after-expand="false"
+                placeholder="请选择上级组织（不选则为顶级组织）"
+                clearable
+                style="flex: 1"
+              >
+                <template #default="{ data }">
+                  <span>{{ data.label }} - {{ data.org_name }}</span>
+                </template>
+              </el-tree-select>
+              <span v-if="selectedParentName" style="color: var(--el-text-color-secondary); font-size: 14px; white-space: nowrap;">
+                {{ selectedParentName }}
+              </span>
+            </div>
           </el-form-item>
           <el-form-item label="组织名称" prop="org_name">
             <el-input v-model="formData.org_name" placeholder="请输入组织名称" />
@@ -122,13 +131,36 @@ const processedTreeData = computed(() => {
   return filterTree(props.orgTreeData)
 })
 
+const selectedParentName = computed(() => {
+  if (!formData.value.parent_id) {
+    return ''
+  }
+  const findNode = (nodes: any[]): string => {
+    for (const node of nodes) {
+      if (node.value === formData.value.parent_id) {
+        return node.org_name || node.label
+      }
+      if (node.children?.length) {
+        const found = findNode(node.children)
+        if (found) return found
+      }
+    }
+    return ''
+  }
+  return findNode(processedTreeData.value)
+})
+
 watch(
   () => props.modelValue,
   (val) => {
     if (val && props.data) {
-      formData.value = { ...props.data }
+      const data = { ...props.data }
+      if (data.parent_id === '0' || data.parent_id === 0 || data.parent_id === '') {
+        data.parent_id = ''
+      }
+      formData.value = data
     } else if (val) {
-      formData.value = { parent_id: '0', org_name: '', org_short: '', org_code: '', kind_code: '', contact: '', phone: '', address: '', status: 1, sort: 0, remark: '' }
+      formData.value = { parent_id: '', org_name: '', org_short: '', org_code: '', kind_code: '', contact: '', phone: '', address: '', status: 1, sort: 0, remark: '' }
     }
     if (val) {
       activeTab.value = 'basic'
@@ -148,11 +180,15 @@ const handleSubmit = async () => {
     if (valid) {
       loading.value = true
       try {
-        if (formData.value.id) {
-          await updateUnit(formData.value.id, formData.value)
+        const submitData = { ...formData.value }
+        if (!submitData.parent_id) {
+          submitData.parent_id = ''
+        }
+        if (submitData.id) {
+          await updateUnit(submitData.id, submitData)
           ElMessage.success('更新成功')
         } else {
-          await createUnit(formData.value)
+          await createUnit(submitData)
           ElMessage.success('创建成功')
         }
         handleClose()

@@ -63,6 +63,16 @@ func (s *ssoOrgService) UpdateOrg(org *model.SsoOrg) error {
 	return s.orgRepo.UpdateOrg(org)
 }
 
+// UpdateOrgFields 更新组织指定字段
+func (s *ssoOrgService) UpdateOrgFields(id string, fields map[string]any) error {
+	// 检查组织是否存在
+	_, err := s.orgRepo.GetOrgByID(id)
+	if err != nil {
+		return errors.New("组织不存在")
+	}
+	return s.orgRepo.UpdateOrgFields(id, fields)
+}
+
 // DeleteOrg 删除组织
 func (s *ssoOrgService) DeleteOrg(id string) error {
 	// 检查组织是否存在

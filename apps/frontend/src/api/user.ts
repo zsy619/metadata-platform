@@ -345,7 +345,7 @@ export const deleteRole = async (id: string): Promise<void> => {
  */
 export const getUnits = async (): Promise<Unit[]> => {
   return request({
-    url: '/api/unit',
+    url: '/api/org',
     method: 'get'
   })
 }
@@ -357,7 +357,7 @@ export const getUnits = async (): Promise<Unit[]> => {
  */
 export const getUnitById = async (id: string): Promise<Unit> => {
   return request({
-    url: `/api/unit/${id}`,
+    url: `/api/org/${id}`,
     method: 'get'
   })
 }
@@ -369,7 +369,7 @@ export const getUnitById = async (id: string): Promise<Unit> => {
  */
 export const createUnit = async (data: Partial<Unit>): Promise<Unit> => {
   return request({
-    url: '/api/unit',
+    url: '/api/org',
     method: 'post',
     data
   })
@@ -383,7 +383,7 @@ export const createUnit = async (data: Partial<Unit>): Promise<Unit> => {
  */
 export const updateUnit = async (id: string, data: Partial<Unit>): Promise<Unit> => {
   return request({
-    url: `/api/unit/${id}`,
+    url: `/api/org/${id}`,
     method: 'put',
     data
   })
@@ -396,7 +396,7 @@ export const updateUnit = async (id: string, data: Partial<Unit>): Promise<Unit>
  */
 export const deleteUnit = async (id: string): Promise<void> => {
   return request({
-    url: `/api/unit/${id}`,
+    url: `/api/org/${id}`,
     method: 'delete'
   })
 }

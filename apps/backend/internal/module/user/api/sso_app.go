@@ -2,20 +2,46 @@ package api
 
 import (
 	"context"
-	"metadata-platform/internal/module/user/model"
+	"encoding/json"
+	"fmt"
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
+
+	userModel "metadata-platform/internal/module/user/model"
 )
 
 // SsoAppHandler 应用处理器结构体
 type SsoAppHandler struct {
+	*utils.BaseHandler
 	appService service.SsoAppService
+	audit      AuditService
+}
+
+// AuditService 审计服务接口
+type AuditService interface {
+	RecordDataChange(ctx context.Context, log *model.SysDataChangeLog)
+}
+
+type auditServiceImpl struct {
+	queue *queue.AuditLogQueue
+}
+
+func (a *auditServiceImpl) RecordDataChange(ctx context.Context, log *model.SysDataChangeLog) {
+	if a.queue != nil {
+		a.queue.PushDataChange(log)
+	}
 }
 
 // NewSsoAppHandler 创建应用处理器实例
-func NewSsoAppHandler(appService service.SsoAppService) *SsoAppHandler {
-	return &SsoAppHandler{appService: appService}
+func NewSsoAppHandler(appService service.SsoAppService, auditQueue *queue.AuditLogQueue) *SsoAppHandler {
+	return &SsoAppHandler{
+		appService: appService,
+		audit:      &auditServiceImpl{queue: auditQueue},
+	}
 }
 
 // SsoCreateAppRequest 创建应用请求结构
@@ -32,14 +58,14 @@ type SsoCreateAppRequest struct {
 
 // SsoUpdateAppRequest 更新应用请求结构
 type SsoUpdateAppRequest struct {
-	ParentID string `json:"parent_id" form:"parent_id"`
-	AppName  string `json:"app_name" form:"app_name"`
-	AppCode  string `json:"app_code" form:"app_code"`
-	Status   int    `json:"state" form:"state"`
-	Host     string `json:"host" form:"host"`
-	Logo     string `json:"logo" form:"logo"`
-	Remark   string `json:"remark" form:"remark"`
-	Sort     int    `json:"sort" form:"sort"`
+	ParentID *string `json:"parent_id" form:"parent_id"`
+	AppName  *string `json:"app_name" form:"app_name"`
+	AppCode  *string `json:"app_code" form:"app_code"`
+	Status   *int    `json:"state" form:"state"`
+	Host     *string `json:"host" form:"host"`
+	Logo     *string `json:"logo" form:"logo"`
+	Remark   *string `json:"remark" form:"remark"`
+	Sort     *int    `json:"sort" form:"sort"`
 }
 
 // CreateApp 创建应用
@@ -50,8 +76,11 @@ func (h *SsoAppHandler) CreateApp(c context.Context, ctx *app.RequestContext) {
 		return
 	}
 
+	userID, userAccount, tenantID := h.GetHeaderUser(c, ctx)
+	fmt.Println(userID, userAccount, tenantID)
+
 	// 创建应用模型
-	application := &model.SsoApp{
+	application := &userModel.SsoApp{
 		ParentID: req.ParentID,
 		AppName:  req.AppName,
 		AppCode:  req.AppCode,
@@ -60,6 +89,9 @@ func (h *SsoAppHandler) CreateApp(c context.Context, ctx *app.RequestContext) {
 		Logo:     req.Logo,
 		Remark:   req.Remark,
 		Sort:     req.Sort,
+		CreateID: userID,
+		CreateBy: userAccount,
+		TenantID: tenantID,
 	}
 
 	// 调用服务层创建应用
@@ -67,6 +99,19 @@ func (h *SsoAppHandler) CreateApp(c context.Context, ctx *app.RequestContext) {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// 记录数据变更日志
+	afterData, _ := json.Marshal(application)
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:        utils.GetSnowflake().GenerateIDString(),
+		TraceID:   ctx.GetString("trace_id"),
+		ModelID:   "app",
+		RecordID:  application.ID,
+		Action:    "CREATE",
+		AfterData: string(afterData),
+		CreateBy:  userAccount,
+		Source:    "app_service",
+	})
 
 	ctx.JSON(201, application)
 }
@@ -94,44 +139,74 @@ func (h *SsoAppHandler) UpdateApp(c context.Context, ctx *app.RequestContext) {
 		return
 	}
 
-	// 调用服务层获取应用
-	application, err := h.appService.GetAppByID(id)
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	fmt.Println(headerUser.UserID, headerUser.UserAccount, headerUser.TenantID)
+
+	// 获取变更前数据
+	beforeData, err := h.appService.GetAppByID(id)
 	if err != nil {
 		ctx.JSON(404, map[string]string{"error": "应用不存在"})
 		return
 	}
+	beforeJSON, _ := json.Marshal(beforeData)
 
-	// 更新应用字段
-	if req.ParentID != "" {
-		application.ParentID = req.ParentID
+	// 构建更新字段（只更新传递的字段）
+	fields := map[string]any{
+		"update_id": headerUser.UserID,
+		"update_by": headerUser.UserAccount,
 	}
-	if req.AppName != "" {
-		application.AppName = req.AppName
+
+	if req.ParentID != nil {
+		fields["parent_id"] = *req.ParentID
 	}
-	if req.AppCode != "" {
-		application.AppCode = req.AppCode
+	if req.AppName != nil {
+		fields["app_name"] = *req.AppName
 	}
-	if req.Status != 0 {
-		application.Status = req.Status
+	if req.AppCode != nil {
+		fields["app_code"] = *req.AppCode
 	}
-	if req.Host != "" {
-		application.Host = req.Host
+	if req.Status != nil {
+		fields["status"] = *req.Status
 	}
-	if req.Logo != "" {
-		application.Logo = req.Logo
+	if req.Host != nil {
+		fields["host"] = *req.Host
 	}
-	if req.Remark != "" {
-		application.Remark = req.Remark
+	if req.Logo != nil {
+		fields["logo"] = *req.Logo
 	}
-	if req.Sort != 0 {
-		application.Sort = req.Sort
+	if req.Remark != nil {
+		fields["remark"] = *req.Remark
+	}
+	if req.Sort != nil {
+		fields["sort"] = *req.Sort
 	}
 
 	// 调用服务层更新应用
-	if err := h.appService.UpdateApp(application); err != nil {
+	if err := h.appService.UpdateAppFields(id, fields); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// 获取更新后的应用
+	application, err := h.appService.GetAppByID(id)
+	if err != nil {
+		ctx.JSON(200, map[string]string{"message": "更新成功"})
+		return
+	}
+
+	// 记录数据变更日志
+	afterJSON, _ := json.Marshal(application)
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    ctx.GetString("trace_id"),
+		ModelID:    "app",
+		RecordID:   id,
+		Action:     "UPDATE",
+		BeforeData: string(beforeJSON),
+		AfterData:  string(afterJSON),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "app_service",
+	})
 
 	ctx.JSON(200, application)
 }
@@ -140,11 +215,34 @@ func (h *SsoAppHandler) UpdateApp(c context.Context, ctx *app.RequestContext) {
 func (h *SsoAppHandler) DeleteApp(c context.Context, ctx *app.RequestContext) {
 	id := ctx.Param("id")
 
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	fmt.Println(headerUser.UserID, headerUser.UserAccount, headerUser.TenantID)
+
+	// 获取删除前数据
+	beforeData, err := h.appService.GetAppByID(id)
+	if err != nil {
+		ctx.JSON(404, map[string]string{"error": "应用不存在"})
+		return
+	}
+	beforeJSON, _ := json.Marshal(beforeData)
+
 	// 调用服务层删除应用
 	if err := h.appService.DeleteApp(id); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// 记录数据变更日志
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    ctx.GetString("trace_id"),
+		ModelID:    "app",
+		RecordID:   id,
+		Action:     "DELETE",
+		BeforeData: string(beforeJSON),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "app_service",
+	})
 
 	ctx.JSON(200, map[string]string{"message": "应用删除成功"})
 }

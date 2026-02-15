@@ -104,6 +104,22 @@ class Storage {
             }
         })
     }
+
+    /**
+     * 设置租户ID
+     * @param tenantID 租户ID
+     */
+    setTenantID(tenantID: string) {
+        this.set('tenantID', tenantID)
+    }
+
+    /**
+     * 获取租户ID
+     * @returns 租户ID，默认返回 "1"
+     */
+    getTenantID(): string {
+        return this.get<string>('tenantID') || '1'
+    }
 }
 
 export default new Storage()

@@ -46,6 +46,11 @@ func (r *ssoOrgRepository) UpdateOrg(unit *model.SsoOrg) error {
 	return r.db.Save(unit).Error
 }
 
+// UpdateOrgFields 更新组织指定字段
+func (r *ssoOrgRepository) UpdateOrgFields(id string, fields map[string]any) error {
+	return r.db.Model(&model.SsoOrg{}).Where("id = ?", id).Updates(fields).Error
+}
+
 // DeleteOrg 删除组织
 func (r *ssoOrgRepository) DeleteOrg(id string) error {
 	return r.db.Model(&model.SsoOrg{}).Where("id = ?", id).Update("is_deleted", true).Error
@@ -59,14 +64,4 @@ func (r *ssoOrgRepository) GetAllOrgs() ([]model.SsoOrg, error) {
 		return nil, result.Error
 	}
 	return units, nil
-}
-
-// GetMaxSort 获取最大排序值
-func (r *ssoOrgRepository) GetMaxSort() (int, error) {
-	var maxSort int
-	result := r.db.Model(&model.SsoOrg{}).Select("COALESCE(MAX(sort), 0)").Scan(&maxSort)
-	if result.Error != nil {
-		return 0, result.Error
-	}
-	return maxSort, nil
 }

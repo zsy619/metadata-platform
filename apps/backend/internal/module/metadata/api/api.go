@@ -12,12 +12,16 @@ import (
 
 // APIHandler API处理器结构体
 type APIHandler struct {
+	*utils.BaseHandler
 	apiService service.APIService
 }
 
 // NewAPIHandler 创建API处理器实例
 func NewAPIHandler(apiService service.APIService) *APIHandler {
-	return &APIHandler{apiService: apiService}
+	return &APIHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		apiService:  apiService,
+	}
 }
 
 // CreateAPIRequest 创建API请求结构

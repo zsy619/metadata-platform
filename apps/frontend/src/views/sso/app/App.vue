@@ -45,7 +45,7 @@
                         <template #default="scope">
                             <el-button type="primary" size="small" :icon="Plus" @click="handleAddChild(scope.row)" text bg>新增子级</el-button>
                             <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
-                            <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
+                            <el-button v-if="!hasChildren(scope.row.id)" type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -138,7 +138,9 @@ const handleSearch = () => {
         const pid = item.parent_id || ''
         if (pid) findAllParents(pid)
     })
-    const fullList = [...filterList, ...allData.value.filter(item => allParentIds.has(item.id))]
+    const filterIds = new Set(filterList.map(item => item.id))
+    const parentItems = allData.value.filter(item => allParentIds.has(item.id) && !filterIds.has(item.id))
+    const fullList = [...filterList, ...parentItems]
     treeData.value = buildTree(fullList)
 }
 
@@ -162,13 +164,12 @@ const handleEdit = (row: any) => {
     dialogVisible.value = true
 }
 
-const handleDelete = (row: any) => {
-    const hasChildren = allData.value.some(item => item.parent_id === row.id)
-    const msg = hasChildren
-        ? `该应用下存在子级应用，删除将同时删除所有子级应用。确定要删除应用 "${row.app_name}" 吗？`
-        : `确定要删除应用 "${row.app_name}" 吗？`
+const hasChildren = (id: string) => {
+    return allData.value.some(item => item.parent_id === id)
+}
 
-    ElMessageBox.confirm(msg, '提示', { type: 'warning' })
+const handleDelete = (row: any) => {
+    ElMessageBox.confirm(`确定要删除应用 "${row.app_name}" 吗？`, '提示', { type: 'warning' })
         .then(async () => {
             try {
                 await deleteApp(row.id)

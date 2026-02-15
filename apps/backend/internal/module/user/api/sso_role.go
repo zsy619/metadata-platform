@@ -2,20 +2,32 @@ package api
 
 import (
 	"context"
-	"metadata-platform/internal/module/user/model"
+	"encoding/json"
+	"fmt"
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
+
+	userModel "metadata-platform/internal/module/user/model"
 )
 
 // SsoRoleHandler 角色处理器结构体
 type SsoRoleHandler struct {
+	*utils.BaseHandler
 	roleService service.SsoRoleService
+	audit       AuditService
 }
 
 // NewSsoRoleHandler 创建角色处理器实例
-func NewSsoRoleHandler(roleService service.SsoRoleService) *SsoRoleHandler {
-	return &SsoRoleHandler{roleService: roleService}
+func NewSsoRoleHandler(roleService service.SsoRoleService, auditQueue *queue.AuditLogQueue) *SsoRoleHandler {
+	return &SsoRoleHandler{
+		BaseHandler: utils.NewBaseHandler(),
+		roleService: roleService,
+		audit:       &auditServiceImpl{queue: auditQueue},
+	}
 }
 
 // SsoCreateRoleRequest 创建角色请求结构
@@ -35,17 +47,17 @@ type SsoCreateRoleRequest struct {
 
 // SsoUpdateRoleRequest 更新角色请求结构
 type SsoUpdateRoleRequest struct {
-	ParentID  string `json:"parent_id" form:"parent_id"`
-	AppCode   string `json:"app_code" form:"application_code"`
-	OrgID     string `json:"org_id" form:"org_id"`
-	KindCode  string `json:"kind_code" form:"kind_code"`
-	RoleName  string `json:"role_name" form:"role_name"`
-	RoleCode  string `json:"role_code" form:"role_code"`
-	Status    int    `json:"status" form:"status"`
-	DataRange string `json:"data_range" form:"data_range"`
-	DataScope string `json:"data_scope" form:"data_scope"`
-	Remark    string `json:"remark" form:"remark"`
-	Sort      int    `json:"sort" form:"sort"`
+	ParentID  *string `json:"parent_id" form:"parent_id"`
+	AppCode   *string `json:"app_code" form:"application_code"`
+	OrgID     *string `json:"org_id" form:"org_id"`
+	KindCode  *string `json:"kind_code" form:"kind_code"`
+	RoleName  *string `json:"role_name" form:"role_name"`
+	RoleCode  *string `json:"role_code" form:"role_code"`
+	Status    *int    `json:"status" form:"status"`
+	DataRange *string `json:"data_range" form:"data_range"`
+	DataScope *string `json:"data_scope" form:"data_scope"`
+	Remark    *string `json:"remark" form:"remark"`
+	Sort      *int    `json:"sort" form:"sort"`
 }
 
 // CreateRole 创建角色
@@ -56,8 +68,12 @@ func (h *SsoRoleHandler) CreateRole(c context.Context, ctx *app.RequestContext) 
 		return
 	}
 
+	// 获取当前用户ID和账户
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	fmt.Println(headerUser.UserID, headerUser.UserAccount, headerUser.TenantID)
+
 	// 创建角色模型
-	role := &model.SsoRole{
+	role := &userModel.SsoRole{
 		ParentID:  req.ParentID,
 		AppCode:   req.AppCode,
 		OrgID:     req.OrgID,
@@ -69,6 +85,9 @@ func (h *SsoRoleHandler) CreateRole(c context.Context, ctx *app.RequestContext) 
 		DataScope: req.DataScope,
 		Remark:    req.Remark,
 		Sort:      req.Sort,
+		CreateID:  headerUser.UserID,
+		CreateBy:  headerUser.UserAccount,
+		TenantID:  headerUser.TenantID,
 	}
 
 	// 调用服务层创建角色
@@ -76,6 +95,19 @@ func (h *SsoRoleHandler) CreateRole(c context.Context, ctx *app.RequestContext) 
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// 记录数据变更日志
+	afterData, _ := json.Marshal(role)
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:        utils.GetSnowflake().GenerateIDString(),
+		TraceID:   ctx.GetString("trace_id"),
+		ModelID:   "role",
+		RecordID:  role.ID,
+		Action:    "CREATE",
+		AfterData: string(afterData),
+		CreateBy:  headerUser.UserAccount,
+		Source:    "role_service",
+	})
 
 	ctx.JSON(201, role)
 }
@@ -103,66 +135,113 @@ func (h *SsoRoleHandler) UpdateRole(c context.Context, ctx *app.RequestContext) 
 		return
 	}
 
-	// 调用服务层获取角色
-	role, err := h.roleService.GetRoleByID(id)
+	// 获取当前用户ID和账户
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	fmt.Println(headerUser.UserID, headerUser.UserAccount, headerUser.TenantID)
+
+	// 获取变更前数据
+	beforeData, err := h.roleService.GetRoleByID(id)
 	if err != nil {
 		ctx.JSON(404, map[string]string{"error": "角色不存在"})
 		return
 	}
+	beforeJSON, _ := json.Marshal(beforeData)
 
 	// 更新角色字段
-	if req.ParentID != "" {
-		role.ParentID = req.ParentID
+	if req.ParentID != nil {
+		beforeData.ParentID = *req.ParentID
 	}
-	if req.AppCode != "" {
-		role.AppCode = req.AppCode
+	if req.AppCode != nil {
+		beforeData.AppCode = *req.AppCode
 	}
-	if req.OrgID != "" {
-		role.OrgID = req.OrgID
+	if req.OrgID != nil {
+		beforeData.OrgID = *req.OrgID
 	}
-	if req.KindCode != "" {
-		role.KindCode = req.KindCode
+	if req.KindCode != nil {
+		beforeData.KindCode = *req.KindCode
 	}
-	if req.RoleName != "" {
-		role.RoleName = req.RoleName
+	if req.RoleName != nil {
+		beforeData.RoleName = *req.RoleName
 	}
-	if req.RoleCode != "" {
-		role.RoleCode = req.RoleCode
+	if req.RoleCode != nil {
+		beforeData.RoleCode = *req.RoleCode
 	}
-	if req.Status != 0 {
-		role.Status = req.Status
+	if req.Status != nil {
+		beforeData.Status = *req.Status
 	}
-	if req.DataRange != "" {
-		role.DataRange = req.DataRange
+	if req.DataRange != nil {
+		beforeData.DataRange = *req.DataRange
 	}
-	if req.DataScope != "" {
-		role.DataScope = req.DataScope
+	if req.DataScope != nil {
+		beforeData.DataScope = *req.DataScope
 	}
-	if req.Remark != "" {
-		role.Remark = req.Remark
+	if req.Remark != nil {
+		beforeData.Remark = *req.Remark
 	}
-	if req.Sort != 0 {
-		role.Sort = req.Sort
+	if req.Sort != nil {
+		beforeData.Sort = *req.Sort
 	}
 
+	// 设置更新人信息
+	beforeData.UpdateID = headerUser.UserID
+	beforeData.UpdateBy = headerUser.UserAccount
+
 	// 调用服务层更新角色
-	if err := h.roleService.UpdateRole(role); err != nil {
+	if err := h.roleService.UpdateRole(beforeData); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(200, role)
+	// 记录数据变更日志
+	afterJSON, _ := json.Marshal(beforeData)
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    ctx.GetString("trace_id"),
+		ModelID:    "role",
+		RecordID:   id,
+		Action:     "UPDATE",
+		BeforeData: string(beforeJSON),
+		AfterData:  string(afterJSON),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "role_service",
+	})
+
+	ctx.JSON(200, beforeData)
 }
 
 // DeleteRole 删除角色
 func (h *SsoRoleHandler) DeleteRole(c context.Context, ctx *app.RequestContext) {
 	id := ctx.Param("id")
 
+	// 获取当前用户ID和账户
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	fmt.Println(headerUser.UserID, headerUser.UserAccount, headerUser.TenantID)
+
+	// 获取删除前数据
+	beforeData, err := h.roleService.GetRoleByID(id)
+	if err != nil {
+		ctx.JSON(404, map[string]string{"error": "角色不存在"})
+		return
+	}
+	beforeJSON, _ := json.Marshal(beforeData)
+
 	// 调用服务层删除角色
 	if err := h.roleService.DeleteRole(id); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// 记录数据变更日志
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    ctx.GetString("trace_id"),
+		ModelID:    "role",
+		RecordID:   id,
+		Action:     "DELETE",
+		BeforeData: string(beforeJSON),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "role_service",
+	})
 
 	ctx.JSON(200, map[string]string{"message": "角色删除成功"})
 }

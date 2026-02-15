@@ -8,7 +8,9 @@ export const useUserStore = defineStore('user', () => {
     // 状态
     const token = ref<string>(storage.get('token') || '')
     const refreshToken = ref<string>(storage.get('refreshToken') || '')
-    const userInfo = ref<User | null>(null)
+    // 从localStorage恢复用户信息
+    const savedUserInfo = storage.get('userInfo')
+    const userInfo = ref<User | null>(savedUserInfo ? (typeof savedUserInfo === 'string' ? JSON.parse(savedUserInfo) : savedUserInfo) : null)
 
     // Getters
     const isLoggedIn = computed(() => !!token.value)
@@ -38,6 +40,12 @@ export const useUserStore = defineStore('user', () => {
 
             // 持久化
             storage.set('token', accessToken)
+            // 持久化用户信息，用于请求头传递
+            storage.set('userInfo', JSON.stringify(user))
+            // 持久化租户ID
+            if (user.tenant_id) {
+                storage.setTenantID(user.tenant_id)
+            }
             // storage.set('refreshToken', res.data.refreshToken) // 如果后端返回 refreshToken
 
             return Promise.resolve(res)
@@ -55,6 +63,8 @@ export const useUserStore = defineStore('user', () => {
         try {
             const res = await getUserProfile()
             userInfo.value = res.data
+            // 持久化用户信息，用于请求头传递
+            storage.set('userInfo', JSON.stringify(res.data))
             return Promise.resolve(res.data)
         } catch (error) {
             return Promise.reject(error)
@@ -80,6 +90,8 @@ export const useUserStore = defineStore('user', () => {
             // 清除持久化
             storage.remove('token')
             storage.remove('refreshToken')
+            storage.remove('userInfo')
+            storage.remove('tenantID')
         }
     }
 

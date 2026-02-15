@@ -12,12 +12,16 @@ import (
 
 // MdTableHandler 数据连接表处理器结构体
 type MdTableHandler struct {
+	*utils.BaseHandler
 	tableService service.MdTableService
 }
 
 // NewMdTableHandler 创建数据连接表处理器实例
 func NewMdTableHandler(tableService service.MdTableService) *MdTableHandler {
-	return &MdTableHandler{tableService: tableService}
+	return &MdTableHandler{
+		BaseHandler:  utils.NewBaseHandler(),
+		tableService: tableService,
+	}
 }
 
 // CreateTableRequest 创建数据连接表请求结构

@@ -14,6 +14,7 @@ import (
 
 // DataQueryHandler 通用数据查询处理器
 type DataQueryHandler struct {
+	*utils.BaseHandler
 	crudService  service.CRUDService
 	modelService service.MdModelService
 }
@@ -21,6 +22,7 @@ type DataQueryHandler struct {
 // NewDataQueryHandler 创建处理器实例
 func NewDataQueryHandler(crudService service.CRUDService, modelService service.MdModelService) *DataQueryHandler {
 	return &DataQueryHandler{
+		BaseHandler:  utils.NewBaseHandler(),
 		crudService:  crudService,
 		modelService: modelService,
 	}
@@ -176,8 +178,8 @@ func (h *DataQueryHandler) PreviewVisualModelSQL(c context.Context, ctx *app.Req
 			ModelKind: 2, // Visual
 			ConnID:    req.ConnID,
 		},
-		Tables: make([]*model.MdModelTable, len(req.Tables)),
-		Fields: make([]*model.MdModelField, len(req.Fields)),
+		Tables:  make([]*model.MdModelTable, len(req.Tables)),
+		Fields:  make([]*model.MdModelField, len(req.Fields)),
 		Joins:   make([]*model.MdModelJoin, len(req.Joins)),
 		Wheres:  make([]*model.MdModelWhere, len(req.Wheres)),
 		Orders:  make([]*model.MdModelOrder, len(req.Orders)),

@@ -129,6 +129,9 @@ watch(
       if (data.kind_code && !data.code) {
         data.code = data.kind_code
       }
+      if (data.parent_id === '0' || data.parent_id === 0) {
+        data.parent_id = ''
+      }
       formData.value = data
     } else if (val) {
       formData.value = { parent_id: '', name: '', code: '', status: 1, sort: 0, remark: '' }
