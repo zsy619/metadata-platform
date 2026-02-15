@@ -84,6 +84,7 @@ func NewOrgKindHandler(service *OrgKindService) *OrgKindHandler {
 // CreateOrgKind 创建组织类型
 func (h *OrgKindHandler) CreateOrgKind(ctx context.Context, c *app.RequestContext) {
 	var req struct {
+		ParentID string `json:"parent_id"`
 		Name     string `json:"name"`
 		Code     string `json:"code"`
 		Sort     int    `json:"sort"`
@@ -132,6 +133,7 @@ func (h *OrgKindHandler) CreateOrgKind(ctx context.Context, c *app.RequestContex
 
 	orgKind := &model.SsoOrgKind{
 		ID:       utils.GetSnowflake().GenerateIDString(),
+		ParentID: req.ParentID,
 		KindName: req.Name,
 		KindCode: req.Code,
 		Sort:     req.Sort,
@@ -182,11 +184,12 @@ func (h *OrgKindHandler) UpdateOrgKind(ctx context.Context, c *app.RequestContex
 	}
 
 	var req struct {
-		Name   string `json:"name"`
-		Code   string `json:"code"`
-		Sort   int    `json:"sort"`
-		Status int    `json:"status"`
-		Remark string `json:"remark"`
+		ParentID string `json:"parent_id"`
+		Name     string `json:"name"`
+		Code     string `json:"code"`
+		Sort     int    `json:"sort"`
+		Status   int    `json:"status"`
+		Remark   string `json:"remark"`
 	}
 
 	if err := c.Bind(&req); err != nil {
@@ -211,6 +214,7 @@ func (h *OrgKindHandler) UpdateOrgKind(ctx context.Context, c *app.RequestContex
 	}
 
 	data := map[string]any{
+		"parent_id": req.ParentID,
 		"kind_name": req.Name,
 		"kind_code": req.Code,
 		"sort":      req.Sort,

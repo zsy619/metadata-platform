@@ -1,8 +1,17 @@
 <template>
-  <el-dialog v-model="visible" :title="title" width="500px" destroy-on-close @close="handleClose">
+  <el-dialog v-model="visible" :title="title" width="550px" destroy-on-close @close="handleClose">
     <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px" label-position="right">
-      <el-form-item v-if="formData.parent_id" label="父级应用" prop="parent_id">
-        <el-input :value="parentAppName" disabled />
+      <el-form-item label="父级应用" prop="parent_id">
+        <el-tree-select
+          v-model="formData.parent_id"
+          :data="processedTreeSelectData"
+          :render-after-expand="false"
+          check-strictly
+          placeholder="请选择父级应用（不选则为顶级）"
+          clearable
+          style="width: 100%"
+          :filter-method="filterApp"
+        />
       </el-form-item>
       <el-form-item label="应用名称" prop="app_name">
         <el-input v-model="formData.app_name" placeholder="请输入应用名称" />
@@ -10,17 +19,17 @@
       <el-form-item label="应用编码" prop="app_code">
         <el-input v-model="formData.app_code" placeholder="请输入应用编码" />
       </el-form-item>
-      <el-form-item label="域名/IP" prop="host">
+      <el-form-item label="域&nbsp;名&nbsp;/&nbsp;IP" prop="host">
         <el-input v-model="formData.host" placeholder="请输入域名或IP地址" />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="状&#12288;&#12288;态" prop="status">
         <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
       </el-form-item>
-      <el-form-item label="排序" prop="sort">
+      <el-form-item label="序&#12288;&#12288;号" prop="sort">
         <el-input-number v-model="formData.sort" :min="0" style="width: 100%" />
       </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+      <el-form-item label="备&#12288;&#12288;注" prop="remark">
+        <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -31,15 +40,15 @@
 </template>
 
 <script setup lang="ts">
-import { createApp, updateApp } from '@/api/user'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
-import { computed, ref, watch } from 'vue'
+import { createApp, updateApp } from '@/api/user';
+import type { FormInstance, FormRules } from 'element-plus';
+import { ElMessage } from 'element-plus';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
   modelValue: boolean
   data: any
-  parentAppName?: string
+  allData: any[]
 }>()
 
 const emit = defineEmits<{
@@ -71,6 +80,49 @@ const formRules: FormRules = {
   app_code: [{ required: true, message: '请输入应用编码', trigger: 'blur' }]
 }
 
+const getDisabledIds = (): string[] => {
+  if (!formData.value.id) return []
+  const disabledIds = [formData.value.id]
+  const addChildren = (pid: string) => {
+    props.allData.forEach(item => {
+      const itemPid = item.parent_id || ''
+      if (itemPid === pid) {
+        disabledIds.push(item.id)
+        addChildren(item.id)
+      }
+    })
+  }
+  addChildren(formData.value.id)
+  return disabledIds
+}
+
+const buildTreeSelectData = (list: any[], parentId: string = '', excludeIds: string[] = []): any[] => {
+  return list
+    .filter(item => {
+      const pid = item.parent_id || ''
+      return pid === parentId && !excludeIds.includes(item.id)
+    })
+    .map(item => ({
+      value: item.id,
+      label: item.app_name,
+      children: buildTreeSelectData(list, item.id, excludeIds)
+    }))
+    .sort((a, b) => {
+      const itemA = list.find(i => i.id === a.value)
+      const itemB = list.find(i => i.id === b.value)
+      return (itemA?.sort || 0) - (itemB?.sort || 0)
+    })
+}
+
+const processedTreeSelectData = computed(() => {
+  const excludeIds = getDisabledIds()
+  return buildTreeSelectData(props.allData, '', excludeIds)
+})
+
+const filterApp = (node: any, keyword: string) => {
+  return node.label.toLowerCase().includes(keyword.toLowerCase())
+}
+
 watch(
   () => props.modelValue,
   (val) => {
@@ -91,6 +143,13 @@ const handleSubmit = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (valid) {
+      if (formData.value.id && formData.value.parent_id) {
+        const disabledIds = getDisabledIds()
+        if (disabledIds.includes(formData.value.parent_id)) {
+          ElMessage.error('不能选择当前应用的下级作为父级应用')
+          return
+        }
+      }
       loading.value = true
       try {
         if (formData.value.id) {

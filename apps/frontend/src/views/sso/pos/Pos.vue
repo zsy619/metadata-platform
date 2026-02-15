@@ -16,15 +16,25 @@
         <el-button @click="handleReset" :icon="RefreshLeft">重置</el-button>
       </div>
       <div class="table-area">
-        <el-table v-loading="loading" :element-loading-text="loadingText" :data="filteredData" border stripe style="width: 100%; height: 100%;">
+        <el-table
+          v-loading="loading"
+          :element-loading-text="loadingText"
+          :data="treeData"
+          border
+          stripe
+          row-key="id"
+          :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+          default-expand-all
+          style="width: 100%; height: 100%;"
+        >
           <template #empty>
             <el-empty :description="searchQuery ? '未搜索到相关职位' : '暂无职位'">
               <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增职位</el-button>
             </el-empty>
           </template>
-          <el-table-column prop="pos_name" label="职位名称" width="180" />
+          <el-table-column prop="pos_name" label="职位名称" width="220" show-overflow-tooltip />
           <el-table-column prop="pos_code" label="职位编码" width="150" />
-          <el-table-column prop="data_range" label="数据范围" width="100">
+          <el-table-column prop="data_range" label="数据范围" width="120">
             <template #default="scope">
               <el-tag v-if="scope.row.data_range === DATA_RANGE.ALL" type="success">{{ DATA_RANGE_LABELS[DATA_RANGE.ALL] }}</el-tag>
               <el-tag v-else-if="scope.row.data_range === DATA_RANGE.CUSTOM" type="warning">{{ DATA_RANGE_LABELS[DATA_RANGE.CUSTOM] }}</el-tag>
@@ -39,6 +49,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="sort" label="排序" width="80" />
+          <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
           <el-table-column label="操作" width="180" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
@@ -48,7 +59,7 @@
         </el-table>
       </div>
     </el-card>
-    <PosForm v-model="dialogVisible" :data="formData" @success="loadData" />
+    <PosForm v-model="dialogVisible" :data="formData" :pos-tree-data="posTreeSelectData" :exclude-ids="excludeIds" @success="loadData" />
   </div>
 </template>
 
@@ -66,14 +77,75 @@ const searchQuery = ref('')
 
 const allData = ref<any[]>([])
 
-const filteredData = computed(() => {
-  let data = allData.value
+/**
+ * 构建树型数据结构
+ * @param items 扁平数据列表
+ * @param parentId 父节点ID，默认为空字符串表示根节点
+ * @returns 树型结构数据
+ */
+const buildTree = (items: any[], parentId = ''): any[] => {
+  return items
+    .filter(item => (item.parent_id || '') === parentId)
+    .map(item => ({
+      ...item,
+      children: buildTree(items, item.id)
+    }))
+}
+
+/**
+ * 树型表格数据 - 用于表格展示
+ * 支持搜索时返回扁平化结果
+ */
+const treeData = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    data = data.filter(item => (item.pos_name || '').toLowerCase().includes(query))
+    return allData.value.filter(item => (item.pos_name || '').toLowerCase().includes(query))
   }
-  return data
+  return buildTree(allData.value)
 })
+
+/**
+ * 构建树型选择器数据结构
+ * @param items 扁平数据列表
+ * @param parentId 父节点ID
+ * @param excludeIds 需要排除的节点ID列表（用于编辑时排除自己及子节点）
+ * @returns 树型选择器数据
+ */
+const buildTreeSelectData = (items: any[], parentId = '', excludeIds: string[] = []): any[] => {
+  return items
+    .filter(item => (item.parent_id || '') === parentId && !excludeIds.includes(item.id))
+    .map(item => ({
+      value: item.id,
+      label: item.pos_name,
+      children: buildTreeSelectData(items, item.id, excludeIds)
+    }))
+}
+
+/**
+ * 获取指定节点的所有子节点ID（递归）
+ * @param items 所有数据列表
+ * @param parentId 父节点ID
+ * @returns 所有子节点ID列表
+ */
+const getAllChildrenIds = (items: any[], parentId: string): string[] => {
+  const children = items.filter(item => (item.parent_id || '') === parentId)
+  let ids: string[] = []
+  for (const child of children) {
+    ids.push(child.id)
+    ids = ids.concat(getAllChildrenIds(items, child.id))
+  }
+  return ids
+}
+
+/**
+ * 树型选择器数据 - 用于上级职位选择
+ */
+const posTreeSelectData = computed(() => buildTreeSelectData(allData.value))
+
+/**
+ * 编辑时需要排除的节点ID列表（包含自己及所有子节点）
+ */
+const excludeIds = ref<string[]>([])
 
 const dialogVisible = ref(false)
 const formData = ref<any>({})
@@ -97,16 +169,23 @@ const handleDebouncedSearch = () => {}
 const handleReset = () => { searchQuery.value = '' }
 
 const handleCreate = () => {
-  formData.value = { status: 1, sort: 0, data_range: DATA_RANGE.ALL }
+  formData.value = { status: 1, sort: 0, data_range: DATA_RANGE.ALL, parent_id: '' }
+  excludeIds.value = []
   dialogVisible.value = true
 }
 
 const handleEdit = (row: any) => {
   formData.value = { ...row }
+  excludeIds.value = [row.id, ...getAllChildrenIds(allData.value, row.id)]
   dialogVisible.value = true
 }
 
 const handleDelete = async (row: any) => {
+  const children = allData.value.filter(item => (item.parent_id || '') === row.id)
+  if (children.length > 0) {
+    ElMessage.warning('该职位下存在子职位，请先删除子职位')
+    return
+  }
   try {
     await ElMessageBox.confirm(`确定要删除职位 "${row.pos_name}" 吗？`, '提示', { type: 'warning' })
     await deletePos(row.id)

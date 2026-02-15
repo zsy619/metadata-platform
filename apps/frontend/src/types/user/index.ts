@@ -107,53 +107,63 @@ export interface Tenant extends BaseEntity {
 
 /**
  * 应用服务模块模型
+ * 对应后端 sso_app 表
  */
 export interface App extends BaseEntity {
-    /** 父级id */
-    parentID: string;
-    /** 子系统名字（中文名：比如 教务系统） */
-    svcName: string;
-    /** 子系统编码（比如：zuul） */
-    svcCode: string;
-    /** 是否可用:1 可用 0 禁用 */
+    /** 父ID */
+    parent_id: string;
+    /** 应用名称 */
+    app_name: string;
+    /** 应用编码 */
+    app_code: string;
+    /** 状态（1 启用 0 禁用） */
     status: number;
     /** 系统运行机器的域名或ip */
     host: string;
     /** 系统logo */
     logo: string;
-    /** 描述信息 */
+    /** 备注 */
     remark: string;
     /** 排序 */
     sort: number;
+    /** 是否删除 */
+    is_deleted: boolean;
+    /** 是否系统内置 */
+    is_system: boolean;
+    /** 创建人ID */
+    create_id: string;
     /** 创建人 */
-    createBy: string;
-    /** 修改人 */
-    updateBy: string;
+    create_by: string;
+    /** 更新人ID */
+    update_id: string;
+    /** 更新人 */
+    update_by: string;
 }
 
 /**
  * 菜单权限模型
+ * 对应后端 sso_menu 表
  */
 export interface Menu extends BaseEntity {
-    /** 父id */
-    parentID: string;
-    /** 子系统编码（比如：zuul） */
-    svcCode: string;
+    /** 父ID */
+    parent_id: string;
+    /** 应用编码 */
+    app_code: string;
     /** 菜单名称 */
-    menuName: string;
-    /** 标识权限 */
-    menuCode: string;
-    /** 是否可用（1 可用 0 禁用） */
+    menu_name: string;
+    /** 菜单编码（权限标识） */
+    menu_code: string;
+    /** 状态（1 启用 0 禁用） */
     status: number;
     /** 数据权限范围（1：全部 2：自定义 3：本部门 4：本部门及以下） */
-    dataRange: string;
+    data_range: string;
     /** 自定义数据范围（组织ID组合） */
-    dataScope: string;
-    /** 菜单状态（1 显示 0 隐藏） */
-    visible: number;
+    data_scope: string;
+    /** 是否可见 */
+    is_visible: boolean;
     /** 菜单类型（M目录 C菜单 F按钮 Z资源） */
-    menuType: string;
-    /** 菜单图标 */
+    menu_type: string;
+    /** 图标 */
     icon: string;
     /** 请求地址 */
     url: string;
@@ -161,16 +171,24 @@ export interface Menu extends BaseEntity {
     method: string;
     /** 打开方式 */
     target: string;
-    /** 描述 */
+    /** 备注 */
     remark: string;
     /** 排序 */
     sort: number;
-    /** 树层级 */
+    /** 层级 */
     tier: number;
+    /** 是否删除 */
+    is_deleted: boolean;
+    /** 是否系统内置 */
+    is_system: boolean;
+    /** 创建人ID */
+    create_id: string;
     /** 创建人 */
-    createBy: string;
-    /** 修改人 */
-    updateBy: string;
+    create_by: string;
+    /** 更新人ID */
+    update_id: string;
+    /** 更新人 */
+    update_by: string;
 }
 
 /**
