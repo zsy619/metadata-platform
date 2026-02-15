@@ -152,61 +152,6 @@ const handleDelete = (row: any) => {
 onMounted(() => { fetchData() })
 </script>
 <style scoped>
-.tenant-list {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.main-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-height: 0;
-}
-
-:deep(.el-card__body) {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-}
-
-.page-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.title-icon {
-    font-size: 24px;
-    color: var(--el-color-primary);
-}
-
-.header-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.search-area {
-    flex-shrink: 0;
-    margin-bottom: 15px;
-}
-
 .table-area {
     flex: 1;
     overflow: hidden;

@@ -18,7 +18,7 @@
                 <el-button @click="handleReset" :icon="RefreshLeft">重置</el-button>
             </div>
             <div class="table-area">
-                <el-table v-loading="loading" :element-loading-text="loadingText" :data="treeData" border stripe row-key="id" :tree-props="{ children: 'children', hasChildren: 'hasChildren' }" default-expand-all style="width: 100%; height: 100%;">
+                <el-table class="tree-table" v-loading="loading" :element-loading-text="loadingText" :data="treeData" border stripe row-key="id" :tree-props="{ children: 'children', hasChildren: 'hasChildren' }" :indent="24" default-expand-all style="width: 100%; height: 100%;">
                     <template #empty>
                         <el-empty :description="searchQuery ? '未搜索到相关应用' : '暂无应用'">
                             <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增应用</el-button>

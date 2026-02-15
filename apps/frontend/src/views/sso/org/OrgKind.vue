@@ -1,24 +1,3 @@
-<style scoped>
-/* 关键：让展开按钮和自定义内容在同一行 */
-::v-deep(.el-table__cell) .cell {
-    display: flex;
-    align-items: center;
-}
-
-/* 展开按钮容器 */
-::v-deep(.el-table__expand-icon) {
-    display: flex;
-    align-items: center;
-    height: 20px;
-    margin-right: 4px;
-}
-
-/* 叶子节点（无子节点）的缩进对齐 */
-::v-deep(.el-table__placeholder) {
-    width: 20px;
-    margin-right: 4px;
-}
-</style>
 <template>
     <div class="container-padding">
         <div class="page-header">
@@ -39,7 +18,7 @@
                 <el-button @click="handleReset" :icon="RefreshLeft">重置</el-button>
             </div>
             <div class="table-area">
-                <el-table v-loading="loading" :element-loading-text="loadingText" :data="tableData" border stripe row-key="id" :tree-props="{ children: 'children', hasChildren: 'hasChildren' }" default-expand-all style="width: 100%; height: 100%;">
+                <el-table class="tree-table" v-loading="loading" :element-loading-text="loadingText" :data="tableData" border stripe row-key="id" :tree-props="{ children: 'children', hasChildren: 'hasChildren' }" :indent="24" default-expand-all style="width: 100%; height: 100%;">
                     <template #empty>
                         <el-empty :description="searchQuery ? '未搜索到相关类型' : '暂无类型'">
                             <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增类型</el-button>
@@ -203,62 +182,3 @@ const handleFormSuccess = () => {
 
 onMounted(() => loadData())
 </script>
-<style scoped>
-.main-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-:deep(.el-card__body) {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-}
-
-.page-title {
-    font-size: 20px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.title-icon {
-    font-size: 24px;
-    color: var(--el-color-primary);
-}
-
-.header-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.search-area {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-}
-
-.table-area {
-    flex: 1;
-    overflow: hidden;
-}
-
-.text-primary {
-    color: var(--el-text-color-primary);
-}
-</style>
