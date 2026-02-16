@@ -29,24 +29,22 @@ export const useUserStore = defineStore('user', () => {
     const login = async (loginForm: LoginRequest) => {
         try {
             const res = await loginApi(loginForm)
-            // 兼容直接返回token或返回包装对象的情况
             const data = (res as any).data || res
             const accessToken = data.token || data.access_token
+            const refreshToken = data.refresh_token || ''
             const user = data.user || {}
 
-            // 保存状态
             token.value = accessToken
             userInfo.value = user
 
-            // 持久化
             storage.set('token', accessToken)
-            // 持久化用户信息，用于请求头传递
+            storage.set('refreshToken', refreshToken)
             storage.set('userInfo', JSON.stringify(user))
-            // 持久化租户ID
             if (user.tenant_id) {
                 storage.setTenantID(user.tenant_id)
+            }else{
+                storage.setTenantID("1")
             }
-            // storage.set('refreshToken', res.data.refreshToken) // 如果后端返回 refreshToken
 
             return Promise.resolve(res)
         } catch (error) {

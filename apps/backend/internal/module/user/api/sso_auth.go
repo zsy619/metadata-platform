@@ -2,11 +2,12 @@ package api
 
 import (
 	"context"
-	"metadata-platform/internal/module/user/service"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
+
+	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 )
 
 // SsoAuthHandler 认证 API 处理器
@@ -64,7 +65,7 @@ func (h *SsoAuthHandler) Login(c context.Context, ctx *app.RequestContext) {
 		string(ctx.Request.Header.Get("Accept-Language")),
 	)
 
-	accessToken, refreshToken, err := h.authService.Login(req.Account, req.Password, req.TenantID, clientInfo)
+	accessToken, refreshToken, user, err := h.authService.Login(req.Account, req.Password, req.TenantID, clientInfo)
 	if err != nil {
 		ctx.JSON(consts.StatusUnauthorized, map[string]any{
 			"code":    401,
@@ -73,12 +74,31 @@ func (h *SsoAuthHandler) Login(c context.Context, ctx *app.RequestContext) {
 		return
 	}
 
+	var roles []map[string]string
+	for _, role := range user.Roles {
+		roles = append(roles, map[string]string{
+			"id":   role.ID,
+			"name": role.RoleName,
+		})
+	}
+
 	ctx.JSON(consts.StatusOK, map[string]any{
 		"code":    200,
 		"message": "登录成功",
 		"data": map[string]any{
 			"access_token":  accessToken,
 			"refresh_token": refreshToken,
+			"user": map[string]any{
+				"id":        user.ID,
+				"account":   user.Account,
+				"name":      user.Name,
+				"sex":       user.Sex,
+				"mobile":    user.Mobile,
+				"email":     user.Email,
+				"avatar":    user.Avatar,
+				"tenant_id": user.TenantID,
+				"roles":     roles,
+			},
 		},
 	})
 }

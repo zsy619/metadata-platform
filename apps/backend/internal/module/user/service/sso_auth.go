@@ -3,33 +3,37 @@ package service
 import (
 	"context"
 	"errors"
-	"metadata-platform/internal/module/user/model"
-	"metadata-platform/internal/module/user/repository"
-	"metadata-platform/internal/utils"
 	"time"
 
 	"github.com/google/uuid"
 
 	auditModel "metadata-platform/internal/module/audit/model"
 	auditService "metadata-platform/internal/module/audit/service"
+	"metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/utils"
 )
 
 // ssoAuthService 实现
 type ssoAuthService struct {
 	userRepo     repository.SsoUserRepository
+	roleRepo     repository.SsoRoleRepository
+	userRoleRepo repository.SsoUserRoleRepository
 	auditService auditService.AuditService
 }
 
 // NewSsoAuthService 创建认证服务实例
-func NewSsoAuthService(userRepo repository.SsoUserRepository, auditService auditService.AuditService) SsoAuthService {
+func NewSsoAuthService(userRepo repository.SsoUserRepository, roleRepo repository.SsoRoleRepository, userRoleRepo repository.SsoUserRoleRepository, auditService auditService.AuditService) SsoAuthService {
 	return &ssoAuthService{
 		userRepo:     userRepo,
+		roleRepo:     roleRepo,
+		userRoleRepo: userRoleRepo,
 		auditService: auditService,
 	}
 }
 
 // Login 验证账号密码并返回 token
-func (s *ssoAuthService) Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (string, string, error) {
+func (s *ssoAuthService) Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (string, string, *model.SsoUser, error) {
 	loginTime := time.Now()
 	var loginStatus int = 1 // default success
 	var errMsg string
@@ -64,9 +68,8 @@ func (s *ssoAuthService) Login(account string, password string, tenantID uint, c
 			Timezone:         clientInfo.Timezone,
 			IPLocation:       clientInfo.IPLocation,
 			Platform:         clientInfo.Platform,
-			// Device field if needed for backward compact or composite string
-			CreateAt:     loginTime,
-			ErrorMessage: errMsg,
+			CreateAt:         loginTime,
+			ErrorMessage:     errMsg,
 		})
 	}()
 
@@ -74,7 +77,7 @@ func (s *ssoAuthService) Login(account string, password string, tenantID uint, c
 	if err != nil {
 		loginStatus = 0
 		errMsg = err.Error()
-		return "", "", err
+		return "", "", nil, err
 	}
 	// 校验密码
 	if user == nil || !utils.CheckPasswordHash(password, user.Password, user.Salt) {
@@ -83,21 +86,21 @@ func (s *ssoAuthService) Login(account string, password string, tenantID uint, c
 		if user != nil {
 			_ = s.userRepo.IncrementLoginError(user.ID)
 		}
-		return "", "", errors.New("用户名或密码错误")
+		return "", "", nil, errors.New("用户名或密码错误")
 	}
 
 	// 校验状态
 	if user.Status != 1 {
 		loginStatus = 0
 		errMsg = "账号已被禁用"
-		return "", "", errors.New("账号已被禁用")
+		return "", "", nil, errors.New("账号已被禁用")
 	}
 
 	// 校验过期时间
 	if user.EndTime != nil && user.EndTime.Before(time.Now()) {
 		loginStatus = 0
 		errMsg = "账号已过期"
-		return "", "", errors.New("账号已过期")
+		return "", "", nil, errors.New("账号已过期")
 	}
 
 	// 登录成功，更新审计信息
@@ -108,17 +111,20 @@ func (s *ssoAuthService) Login(account string, password string, tenantID uint, c
 	if err != nil {
 		loginStatus = 0
 		errMsg = "生成令牌失败: " + err.Error()
-		return "", "", err
+		return "", "", nil, err
 	}
 	refresh, err := utils.GenerateRefreshToken(user.ID)
 	if err != nil {
 		loginStatus = 0
 		errMsg = "生成刷新令牌失败: " + err.Error()
-		return "", "", err
+		return "", "", nil, err
 	}
-	// 这里可以将 refresh token 保存到数据库或缓存，略过实现
-	_ = tenantID // 暂未使用
-	return access, refresh, nil
+	// 获取用户角色列表
+	roles, _ := s.roleRepo.GetRolesByUserID(user.ID)
+	user.Roles = roles
+
+	_ = tenantID
+	return access, refresh, user, nil
 }
 
 // Logout 退出登录

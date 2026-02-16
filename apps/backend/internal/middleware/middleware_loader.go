@@ -11,9 +11,9 @@ import (
 
 // MiddlewareConfig 中间件配置
 type MiddlewareConfig struct {
-	Name     string                 `json:"name"`     // 中间件名称
-	Enabled  bool                   `json:"enabled"`  // 是否启用
-	Priority int                    `json:"priority"` // 中间件优先级
+	Name     string         `json:"name"`     // 中间件名称
+	Enabled  bool           `json:"enabled"`  // 是否启用
+	Priority int            `json:"priority"` // 中间件优先级
 	Config   map[string]any `json:"config"`   // 中间件配置
 }
 
@@ -23,9 +23,9 @@ type MiddlewareFactory func(config map[string]any) app.HandlerFunc
 // MiddlewareLoader 中间件加载器
 type MiddlewareLoader struct {
 	middlewareFactories map[string]MiddlewareFactory // 中间件工厂映射
-	middlewareConfigs   []*MiddlewareConfig         // 中间件配置列表
-	middlewareChain     []app.HandlerFunc           // 中间件链
-	middlewareLock      sync.RWMutex                // 中间件锁
+	middlewareConfigs   []*MiddlewareConfig          // 中间件配置列表
+	middlewareChain     []app.HandlerFunc            // 中间件链
+	middlewareLock      sync.RWMutex                 // 中间件锁
 }
 
 // NewMiddlewareLoader 创建中间件加载器

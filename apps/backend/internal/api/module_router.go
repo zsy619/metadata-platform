@@ -1,18 +1,14 @@
 package api
 
 import (
-	"metadata-platform/internal/module/audit/queue"
-
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"gorm.io/gorm"
 
 	audit "metadata-platform/internal/module/audit"
-
+	"metadata-platform/internal/module/audit/queue"
 	metadata "metadata-platform/internal/module/metadata"
-
-	user "metadata-platform/internal/module/user"
-
 	"metadata-platform/internal/module/monitor"
+	user "metadata-platform/internal/module/user"
 )
 
 // RegisterModuleRoutes 注册所有模块的路由

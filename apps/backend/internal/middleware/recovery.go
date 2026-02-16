@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"context"
-	"metadata-platform/internal/utils"
 	"net/http"
 	"runtime/debug"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
+
+	"metadata-platform/internal/utils"
 )
 
 // RecoveryMiddleware 全局异常捕获中间件

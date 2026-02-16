@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
+
+	"gorm.io/gorm"
+
 	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
 	"metadata-platform/internal/utils"
-
-	"gorm.io/gorm"
-
 	auditService "metadata-platform/internal/module/audit/service"
 )
 
@@ -75,6 +75,17 @@ type SsoOrgService interface {
 	GetAllOrgs() ([]model.SsoOrg, error)
 }
 
+// SsoOrgKindService 组织类型服务接口
+type SsoOrgKindService interface {
+	CreateOrgKind(item *model.SsoOrgKind) error
+	GetOrgKindByID(id string) (*model.SsoOrgKind, error)
+	GetOrgKindByCode(code string) (*model.SsoOrgKind, error)
+	UpdateOrgKind(item *model.SsoOrgKind) error
+	UpdateOrgKindFields(id string, fields map[string]any) error
+	DeleteOrgKind(id string) error
+	GetAllOrgKinds() ([]model.SsoOrgKind, error)
+}
+
 // SsoPosService 职位服务接口
 type SsoPosService interface {
 	CreatePos(pos *model.SsoPos) error
@@ -87,7 +98,7 @@ type SsoPosService interface {
 
 // SsoAuthService 认证服务接口
 type SsoAuthService interface {
-	Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (accessToken string, refreshToken string, err error)
+	Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (accessToken string, refreshToken string, user *model.SsoUser, err error)
 	Logout(ctx context.Context, userID string, clientInfo utils.ClientInfo) error
 	Refresh(refreshToken string) (newAccessToken string, err error)
 	GetUserInfo(userID string) (*model.SsoUser, error)
@@ -104,22 +115,24 @@ type Services struct {
 	Org        SsoOrgService
 	Pos        SsoPosService
 	Auth       SsoAuthService
+	OrgKind    SsoOrgKindService
 	CasbinSync SsoCasbinSyncService
 	Audit      auditService.AuditService
 }
 
 // NewServices 创建用户模块服务集合
-func NewServices(repos *repository.Repositories, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *Services {
+func NewServices(repos *repository.Repositories, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *Services {
 	auditSvc := auditService.NewAuditService(auditDB, auditQueue)
 	return &Services{
-		User:   NewSsoUserService(repos.User, repos.Org),
-		Tenant: NewSsoTenantService(repos.Tenant),
-		App:    NewSsoAppService(repos.App),
-		Menu:   NewSsoMenuService(repos.Menu),
-		Role:   NewSsoRoleService(repos.Role),
-		Org:    NewSsoOrgService(repos.Org),
-		Pos:    NewSsoPosService(repos.Pos),
-		Auth:   NewSsoAuthService(repos.User, auditSvc),
+		User:    NewSsoUserService(repos.User, repos.Org, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup),
+		Tenant:  NewSsoTenantService(repos.Tenant),
+		App:     NewSsoAppService(repos.App),
+		Menu:    NewSsoMenuService(repos.Menu),
+		Role:    NewSsoRoleService(repos.Role, repos.RoleMenu, repos.UserRole, repos.PosRole, repos.OrgRole, repos.RoleGroupRole),
+		Org:     NewSsoOrgService(repos.Org, repos.OrgUser, repos.OrgRole, repos.OrgMenu),
+		Pos:     NewSsoPosService(repos.Pos),
+		Auth:    NewSsoAuthService(repos.User, repos.Role, repos.UserRole, auditSvc),
+		OrgKind: NewSsoOrgKindService(repos.OrgKind),
 		CasbinSync: NewSsoCasbinSyncService(
 			repos.UserRole,
 			repos.RoleMenu,

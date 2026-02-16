@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"metadata-platform/internal/module/audit/model"
-	"metadata-platform/internal/module/audit/queue"
-	"metadata-platform/internal/module/user/service"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/queue"
 	userModel "metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 )
 
 // SsoOrgHandler 组织处理器结构体
@@ -124,7 +124,7 @@ func (h *SsoOrgHandler) CreateOrg(c context.Context, ctx *app.RequestContext) {
 	afterData, _ := json.Marshal(unit)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:        utils.GetSnowflake().GenerateIDString(),
-		TraceID:   ctx.GetString("trace_id"),
+		TraceID:   headerUser.TraceID,
 		ModelID:   "org",
 		RecordID:  unit.ID,
 		Action:    "CREATE",
@@ -249,7 +249,7 @@ func (h *SsoOrgHandler) UpdateOrg(c context.Context, ctx *app.RequestContext) {
 	afterJSON, _ := json.Marshal(unit)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "org",
 		RecordID:   id,
 		Action:     "UPDATE",
@@ -287,7 +287,7 @@ func (h *SsoOrgHandler) DeleteOrg(c context.Context, ctx *app.RequestContext) {
 	// 记录数据变更日志
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "org",
 		RecordID:   id,
 		Action:     "DELETE",

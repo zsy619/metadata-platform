@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"metadata-platform/internal/module/audit/model"
-	"metadata-platform/internal/module/audit/queue"
-	"metadata-platform/internal/module/user/service"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/queue"
 	userModel "metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 )
 
 // SsoTenantHandler 租户处理器结构体
@@ -79,7 +79,7 @@ func (h *SsoTenantHandler) CreateTenant(c context.Context, ctx *app.RequestConte
 	afterData, _ := json.Marshal(tenant)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:        utils.GetSnowflake().GenerateIDString(),
-		TraceID:   ctx.GetString("trace_id"),
+		TraceID:   headerUser.TraceID,
 		ModelID:   "tenant",
 		RecordID:  tenant.ID,
 		Action:    "CREATE",
@@ -154,7 +154,7 @@ func (h *SsoTenantHandler) UpdateTenant(c context.Context, ctx *app.RequestConte
 	afterJSON, _ := json.Marshal(beforeData)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "tenant",
 		RecordID:   id,
 		Action:     "UPDATE",
@@ -192,7 +192,7 @@ func (h *SsoTenantHandler) DeleteTenant(c context.Context, ctx *app.RequestConte
 	// 记录数据变更日志
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "tenant",
 		RecordID:   id,
 		Action:     "DELETE",

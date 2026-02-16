@@ -56,6 +56,13 @@ func (r *ssoOrgRepository) DeleteOrg(id string) error {
 	return r.db.Model(&model.SsoOrg{}).Where("id = ?", id).Update("is_deleted", true).Error
 }
 
+// HasChildren 检查是否有子组织
+func (r *ssoOrgRepository) HasChildren(parentID string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.SsoOrg{}).Where("parent_id = ? AND is_deleted = false", parentID).Count(&count).Error
+	return count > 0, err
+}
+
 // GetAllOrgs 获取所有组织
 func (r *ssoOrgRepository) GetAllOrgs() ([]model.SsoOrg, error) {
 	var units []model.SsoOrg

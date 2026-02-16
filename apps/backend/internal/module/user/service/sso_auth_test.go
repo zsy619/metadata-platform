@@ -113,10 +113,111 @@ func (m *MockAuditService) GetAllDataChangeLogs(filters map[string]interface{}) 
 	return nil, nil
 }
 
+// MockSsoRoleRepository is a mock implementation of repository.SsoRoleRepository
+type MockSsoRoleRepository struct {
+	mock.Mock
+}
+
+func (m *MockSsoRoleRepository) CreateRole(role *model.SsoRole) error {
+	args := m.Called(role)
+	return args.Error(0)
+}
+
+func (m *MockSsoRoleRepository) GetRoleByID(id string) (*model.SsoRole, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.SsoRole), args.Error(1)
+}
+
+func (m *MockSsoRoleRepository) GetRoleByCode(code string) (*model.SsoRole, error) {
+	args := m.Called(code)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.SsoRole), args.Error(1)
+}
+
+func (m *MockSsoRoleRepository) UpdateRole(role *model.SsoRole) error {
+	args := m.Called(role)
+	return args.Error(0)
+}
+
+func (m *MockSsoRoleRepository) DeleteRole(id string) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
+
+func (m *MockSsoRoleRepository) GetAllRoles() ([]model.SsoRole, error) {
+	args := m.Called()
+	return args.Get(0).([]model.SsoRole), args.Error(1)
+}
+
+func (m *MockSsoRoleRepository) GetMaxSort() (int, error) {
+	args := m.Called()
+	return args.Int(0), args.Error(1)
+}
+
+func (m *MockSsoRoleRepository) GetRolesByUserID(userID string) ([]model.SsoRole, error) {
+	args := m.Called(userID)
+	return args.Get(0).([]model.SsoRole), args.Error(1)
+}
+
+// MockSsoUserRoleRepository is a mock implementation of repository.SsoUserRoleRepository
+type MockSsoUserRoleRepository struct {
+	mock.Mock
+}
+
+func (m *MockSsoUserRoleRepository) CreateUserRole(userRole *model.SsoUserRole) error {
+	args := m.Called(userRole)
+	return args.Error(0)
+}
+
+func (m *MockSsoUserRoleRepository) GetUserRoleByID(id string) (*model.SsoUserRole, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.SsoUserRole), args.Error(1)
+}
+
+func (m *MockSsoUserRoleRepository) DeleteUserRole(id string) error {
+	args := m.Called(id)
+	return args.Error(0)
+}
+
+func (m *MockSsoUserRoleRepository) DeleteUserRolesByUserID(userID string) error {
+	args := m.Called(userID)
+	return args.Error(0)
+}
+
+func (m *MockSsoUserRoleRepository) DeleteUserRolesByRoleID(roleID string) error {
+	args := m.Called(roleID)
+	return args.Error(0)
+}
+
+func (m *MockSsoUserRoleRepository) GetUserRolesByUserID(userID string) ([]model.SsoUserRole, error) {
+	args := m.Called(userID)
+	return args.Get(0).([]model.SsoUserRole), args.Error(1)
+}
+
+func (m *MockSsoUserRoleRepository) GetUserRolesByRoleID(roleID string) ([]model.SsoUserRole, error) {
+	args := m.Called(roleID)
+	return args.Get(0).([]model.SsoUserRole), args.Error(1)
+}
+
+func (m *MockSsoUserRoleRepository) GetAllUserRoles() ([]model.SsoUserRole, error) {
+	args := m.Called()
+	return args.Get(0).([]model.SsoUserRole), args.Error(1)
+}
+
 func TestSsoAuthService_Login(t *testing.T) {
 	mockRepo := new(MockSsoUserRepository)
+	mockRoleRepo := new(MockSsoRoleRepository)
+	mockUserRoleRepo := new(MockSsoUserRoleRepository)
 	mockAudit := new(MockAuditService)
-	authSvc := NewSsoAuthService(mockRepo, mockAudit)
+	authSvc := NewSsoAuthService(mockRepo, mockRoleRepo, mockUserRoleRepo, mockAudit)
 
 	t.Run("Success", func(t *testing.T) {
 		salt := utils.GenerateSalt()
@@ -128,12 +229,13 @@ func TestSsoAuthService_Login(t *testing.T) {
 			Salt:     salt,
 			Status:   1,
 		}
-		mockRepo.On("GetUserByAccount", "admin").Return(user, nil).Twice() // Once in Login body, once in defer
+		mockRepo.On("GetUserByAccount", "admin").Return(user, nil).Twice()
 		mockRepo.On("UpdateLoginInfo", "1", "127.0.0.1").Return(nil).Once()
+		mockRoleRepo.On("GetRolesByUserID", "1").Return([]model.SsoRole{}, nil).Once()
 		mockAudit.On("RecordLogin", mock.Anything, mock.Anything).Return().Once()
 
 		clientInfo := utils.ClientInfo{IP: "127.0.0.1", Browser: "Chrome", OS: "Mac", Platform: "Web"}
-		access, refresh, err := authSvc.Login("admin", "password123", 1, clientInfo)
+		access, refresh, _, err := authSvc.Login("admin", "password123", 1, clientInfo)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, access)
 		assert.NotEmpty(t, refresh)
@@ -156,7 +258,7 @@ func TestSsoAuthService_Login(t *testing.T) {
 		mockAudit.On("RecordLogin", mock.Anything, mock.Anything).Return().Once()
 
 		clientInfo := utils.ClientInfo{IP: "127.0.0.1", Browser: "Chrome", OS: "Mac", Platform: "Web"}
-		_, _, err := authSvc.Login("admin", "wrongpassword", 1, clientInfo)
+		_, _, _, err := authSvc.Login("admin", "wrongpassword", 1, clientInfo)
 		assert.Error(t, err)
 		assert.Equal(t, "用户名或密码错误", err.Error())
 	})
@@ -164,8 +266,10 @@ func TestSsoAuthService_Login(t *testing.T) {
 
 func TestSsoAuthService_Refresh(t *testing.T) {
 	mockRepo := new(MockSsoUserRepository)
+	mockRoleRepo := new(MockSsoRoleRepository)
+	mockUserRoleRepo := new(MockSsoUserRoleRepository)
 	mockAudit := new(MockAuditService)
-	authSvc := NewSsoAuthService(mockRepo, mockAudit)
+	authSvc := NewSsoAuthService(mockRepo, mockRoleRepo, mockUserRoleRepo, mockAudit)
 
 	user := &model.SsoUser{ID: "1", Account: "admin"}
 

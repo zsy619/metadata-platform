@@ -24,7 +24,7 @@ export const getUsers = async (): Promise<User[]> => {
  */
 export const getUserById = async (id: string): Promise<User> => {
   return request({
-    url: `/api/user/${id}`,
+    url: `/api/sso/user/${id}`,
     method: 'get'
   })
 }
@@ -50,7 +50,7 @@ export const createUser = async (data: Partial<User>): Promise<User> => {
  */
 export const updateUser = async (id: string, data: Partial<User>): Promise<User> => {
   return request({
-    url: `/api/user/${id}`,
+    url: `/api/sso/user/${id}`,
     method: 'put',
     data
   })
@@ -63,7 +63,7 @@ export const updateUser = async (id: string, data: Partial<User>): Promise<User>
  */
 export const deleteUser = async (id: string): Promise<void> => {
   return request({
-    url: `/api/user/${id}`,
+    url: `/api/sso/user/${id}`,
     method: 'delete'
   })
 }
@@ -75,7 +75,7 @@ export const deleteUser = async (id: string): Promise<void> => {
  */
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   return request({
-    url: '/api/user/login',
+    url: '/api/sso/user/login',
     method: 'post',
     data
   })
@@ -101,7 +101,7 @@ export const getTenants = async (): Promise<Tenant[]> => {
  */
 export const getTenantById = async (id: string): Promise<Tenant> => {
   return request({
-    url: `/api/tenant/${id}`,
+    url: `/api/sso/tenant/${id}`,
     method: 'get'
   })
 }
@@ -127,7 +127,7 @@ export const createTenant = async (data: Partial<Tenant>): Promise<Tenant> => {
  */
 export const updateTenant = async (id: string, data: Partial<Tenant>): Promise<Tenant> => {
   return request({
-    url: `/api/tenant/${id}`,
+    url: `/api/sso/tenant/${id}`,
     method: 'put',
     data
   })
@@ -140,7 +140,7 @@ export const updateTenant = async (id: string, data: Partial<Tenant>): Promise<T
  */
 export const deleteTenant = async (id: string): Promise<void> => {
   return request({
-    url: `/api/tenant/${id}`,
+    url: `/api/sso/tenant/${id}`,
     method: 'delete'
   })
 }
@@ -165,7 +165,7 @@ export const getApps = async (): Promise<App[]> => {
  */
 export const getAppById = async (id: string): Promise<App> => {
   return request({
-    url: `/api/app/${id}`,
+    url: `/api/sso/app/${id}`,
     method: 'get'
   })
 }
@@ -191,7 +191,7 @@ export const createApp = async (data: Partial<App>): Promise<App> => {
  */
 export const updateApp = async (id: string, data: Partial<App>): Promise<App> => {
   return request({
-    url: `/api/app/${id}`,
+    url: `/api/sso/app/${id}`,
     method: 'put',
     data
   })
@@ -204,7 +204,7 @@ export const updateApp = async (id: string, data: Partial<App>): Promise<App> =>
  */
 export const deleteApp = async (id: string): Promise<void> => {
   return request({
-    url: `/api/app/${id}`,
+    url: `/api/sso/app/${id}`,
     method: 'delete'
   })
 }
@@ -229,7 +229,7 @@ export const getMenus = async (): Promise<Menu[]> => {
  */
 export const getMenuById = async (id: string): Promise<Menu> => {
   return request({
-    url: `/api/menu/${id}`,
+    url: `/api/sso/menu/${id}`,
     method: 'get'
   })
 }
@@ -255,7 +255,7 @@ export const createMenu = async (data: Partial<Menu>): Promise<Menu> => {
  */
 export const updateMenu = async (id: string, data: Partial<Menu>): Promise<Menu> => {
   return request({
-    url: `/api/menu/${id}`,
+    url: `/api/sso/menu/${id}`,
     method: 'put',
     data
   })
@@ -268,7 +268,7 @@ export const updateMenu = async (id: string, data: Partial<Menu>): Promise<Menu>
  */
 export const deleteMenu = async (id: string): Promise<void> => {
   return request({
-    url: `/api/menu/${id}`,
+    url: `/api/sso/menu/${id}`,
     method: 'delete'
   })
 }
@@ -293,7 +293,7 @@ export const getRoles = async (): Promise<Role[]> => {
  */
 export const getRoleById = async (id: string): Promise<Role> => {
   return request({
-    url: `/api/role/${id}`,
+    url: `/api/sso/role/${id}`,
     method: 'get'
   })
 }
@@ -319,7 +319,7 @@ export const createRole = async (data: Partial<Role>): Promise<Role> => {
  */
 export const updateRole = async (id: string, data: Partial<Role>): Promise<Role> => {
   return request({
-    url: `/api/role/${id}`,
+    url: `/api/sso/role/${id}`,
     method: 'put',
     data
   })
@@ -332,7 +332,7 @@ export const updateRole = async (id: string, data: Partial<Role>): Promise<Role>
  */
 export const deleteRole = async (id: string): Promise<void> => {
   return request({
-    url: `/api/role/${id}`,
+    url: `/api/sso/role/${id}`,
     method: 'delete'
   })
 }
@@ -357,7 +357,7 @@ export const getUnits = async (): Promise<Unit[]> => {
  */
 export const getUnitById = async (id: string): Promise<Unit> => {
   return request({
-    url: `/api/org/${id}`,
+    url: `/api/sso/org/${id}`,
     method: 'get'
   })
 }
@@ -383,7 +383,7 @@ export const createUnit = async (data: Partial<Unit>): Promise<Unit> => {
  */
 export const updateUnit = async (id: string, data: Partial<Unit>): Promise<Unit> => {
   return request({
-    url: `/api/org/${id}`,
+    url: `/api/sso/org/${id}`,
     method: 'put',
     data
   })
@@ -396,7 +396,7 @@ export const updateUnit = async (id: string, data: Partial<Unit>): Promise<Unit>
  */
 export const deleteUnit = async (id: string): Promise<void> => {
   return request({
-    url: `/api/org/${id}`,
+    url: `/api/sso/org/${id}`,
     method: 'delete'
   })
 }
@@ -421,7 +421,7 @@ export const getPos = async (): Promise<Pos[]> => {
  */
 export const getPosById = async (id: string): Promise<Pos> => {
   return request({
-    url: `/api/pos/${id}`,
+    url: `/api/sso/pos/${id}`,
     method: 'get'
   })
 }
@@ -447,7 +447,7 @@ export const createPos = async (data: Partial<Pos>): Promise<Pos> => {
  */
 export const updatePos = async (id: string, data: Partial<Pos>): Promise<Pos> => {
   return request({
-    url: `/api/pos/${id}`,
+    url: `/api/sso/pos/${id}`,
     method: 'put',
     data
   })
@@ -460,7 +460,7 @@ export const updatePos = async (id: string, data: Partial<Pos>): Promise<Pos> =>
  */
 export const deletePos = async (id: string): Promise<void> => {
   return request({
-    url: `/api/pos/${id}`,
+    url: `/api/sso/pos/${id}`,
     method: 'delete'
   })
 }
@@ -472,7 +472,7 @@ export const getOrgKinds = async (): Promise<any[]> => {
 }
 
 export const getOrgKindById = async (id: string): Promise<any> => {
-  return request({ url: `/api/org-kind/${id}`, method: 'get' })
+  return request({ url: `/api/sso/org-kind/${id}`, method: 'get' })
 }
 
 export const createOrgKind = async (data: any): Promise<any> => {
@@ -480,11 +480,11 @@ export const createOrgKind = async (data: any): Promise<any> => {
 }
 
 export const updateOrgKind = async (id: string, data: any): Promise<any> => {
-  return request({ url: `/api/org-kind/${id}`, method: 'put', data })
+  return request({ url: `/api/sso/org-kind/${id}`, method: 'put', data })
 }
 
 export const deleteOrgKind = async (id: string): Promise<void> => {
-  return request({ url: `/api/org-kind/${id}`, method: 'delete' })
+  return request({ url: `/api/sso/org-kind/${id}`, method: 'delete' })
 }
 
 // ==================== 角色组相关API ====================

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"metadata-platform/internal/utils"
-
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
+
+	"metadata-platform/internal/utils"
 )
 
 // CORSMiddleware 跨域中间件

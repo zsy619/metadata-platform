@@ -3,10 +3,8 @@ package metadata
 import (
 	"context"
 	"fmt"
-	globalMiddleware "metadata-platform/internal/middleware"
 	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/metadata/api"
-	"metadata-platform/internal/module/metadata/api/middleware"
 	"metadata-platform/internal/module/metadata/repository"
 	"metadata-platform/internal/module/metadata/service"
 	"metadata-platform/internal/utils"
@@ -14,12 +12,14 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"gorm.io/gorm"
+
+	globalMiddleware "metadata-platform/internal/middleware"
 )
 
 // RegisterRoutes 注册元数据模块路由
 func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) {
 	fmt.Println(">>> Initializing Metadata Routes...")
-	
+
 	// 注册全局 404 诊断处理器
 	r.NoRoute(func(c context.Context, ctx *app.RequestContext) {
 		path := string(ctx.Request.URI().Path())
@@ -62,7 +62,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 	metadataGroup := r.Group("/api/metadata")
 	metadataGroup.Use(globalMiddleware.TenantMiddleware())
 	metadataGroup.Use(globalMiddleware.AuthMiddleware())
-	metadataGroup.Use(middleware.AuditMiddleware(services.Audit))
+	metadataGroup.Use(globalMiddleware.AuditMiddleware(services.Audit, "metadata"))
 
 	// 连通性探测路由 (用于诊断 404)
 	metadataGroup.GET("/ping", func(c context.Context, ctx *app.RequestContext) {
@@ -184,7 +184,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 
 	// 树形结构 API
 	treeGroup := r.Group("/api/tree")
-	treeGroup.Use(middleware.AuditMiddleware(services.Audit))
+	treeGroup.Use(globalMiddleware.AuditMiddleware(services.Audit, "metadata"))
 	{
 		treeGroup.GET("/:model_id", treeHandler.GetTree)
 		treeGroup.POST("/:model_id/node", treeHandler.AddNode)
@@ -196,14 +196,14 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 
 	// 主子表管理路由
 	mdGroup := r.Group("/api/master-detail")
-	mdGroup.Use(middleware.AuditMiddleware(services.Audit))
+	mdGroup.Use(globalMiddleware.AuditMiddleware(services.Audit, "metadata"))
 	{
 		mdGroup.POST("/:master/:detail", masterDetailHandler.CreateMasterDetail)
 	}
 
 	// 数据导入导出路由
 	ioGroup := r.Group("/api/data")
-	ioGroup.Use(middleware.AuditMiddleware(services.Audit))
+	ioGroup.Use(globalMiddleware.AuditMiddleware(services.Audit, "metadata"))
 	{
 		ioGroup.GET("/:model_id/export", dataIOHandler.ExportData)
 		ioGroup.GET("/:model_id/import-template", dataIOHandler.ImportTemplate)

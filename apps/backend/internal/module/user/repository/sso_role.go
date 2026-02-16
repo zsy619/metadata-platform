@@ -70,3 +70,13 @@ func (r *ssoRoleRepository) GetMaxSort() (int, error) {
 	}
 	return maxSort, nil
 }
+
+// GetRolesByUserID 根据用户ID获取角色列表
+func (r *ssoRoleRepository) GetRolesByUserID(userID string) ([]model.SsoRole, error) {
+	var roles []model.SsoRole
+	err := r.db.Table("sso_user_roles").
+		Joins("JOIN sso_roles ON sso_roles.id = sso_user_roles.role_id").
+		Where("sso_user_roles.user_id = ? AND sso_roles.is_deleted = false", userID).
+		Find(&roles).Error
+	return roles, err
+}

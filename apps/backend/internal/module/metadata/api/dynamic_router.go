@@ -3,14 +3,15 @@ package api
 import (
 	"context"
 	"fmt"
-	"metadata-platform/internal/module/metadata/api/middleware"
-	"metadata-platform/internal/module/metadata/service"
-	"metadata-platform/internal/utils"
 	"strings"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
+
+	globalMiddleware "metadata-platform/internal/middleware"
+	"metadata-platform/internal/module/metadata/service"
+	"metadata-platform/internal/utils"
 )
 
 // DynamicRouter 动态路由注册器
@@ -58,7 +59,7 @@ func (r *DynamicRouter) RegisterAPI(method, path, apiCode string) {
 	handler := r.getGenericHandler(apiCode)
 
 	// 添加审计中间件
-	auditMiddleware := middleware.AuditMiddleware(r.svc.Audit)
+	auditMiddleware := globalMiddleware.AuditMiddleware(r.svc.Audit, "metadata")
 
 	r.hertz.Handle(method, path, auditMiddleware, handler)
 }

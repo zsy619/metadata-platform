@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"metadata-platform/internal/module/audit/model"
-	"metadata-platform/internal/module/audit/queue"
-	"metadata-platform/internal/module/user/service"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/queue"
 	userModel "metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 )
 
 // SsoMenuHandler 菜单处理器结构体
@@ -115,7 +115,7 @@ func (h *SsoMenuHandler) CreateMenu(c context.Context, ctx *app.RequestContext) 
 	afterData, _ := json.Marshal(menu)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:        utils.GetSnowflake().GenerateIDString(),
-		TraceID:   ctx.GetString("trace_id"),
+		TraceID:   headerUser.TraceID,
 		ModelID:   "menu",
 		RecordID:  menu.ID,
 		Action:    "CREATE",
@@ -226,7 +226,7 @@ func (h *SsoMenuHandler) UpdateMenu(c context.Context, ctx *app.RequestContext) 
 	afterJSON, _ := json.Marshal(beforeData)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "menu",
 		RecordID:   id,
 		Action:     "UPDATE",
@@ -264,7 +264,7 @@ func (h *SsoMenuHandler) DeleteMenu(c context.Context, ctx *app.RequestContext) 
 	// 记录数据变更日志
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "menu",
 		RecordID:   id,
 		Action:     "DELETE",

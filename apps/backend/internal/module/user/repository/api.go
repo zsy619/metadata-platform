@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"metadata-platform/internal/module/user/model"
-
 	"gorm.io/gorm"
+
+	"metadata-platform/internal/module/user/model"
 )
 
 // SsoUserRepository 用户仓库接口
@@ -62,6 +62,7 @@ type SsoRoleRepository interface {
 	DeleteRole(id string) error
 	GetAllRoles() ([]model.SsoRole, error)
 	GetMaxSort() (int, error)
+	GetRolesByUserID(userID string) ([]model.SsoRole, error)
 }
 
 // SsoOrgRepository 组织仓库接口
@@ -74,9 +75,21 @@ type SsoOrgRepository interface {
 	DeleteOrg(id string) error
 	GetAllOrgs() ([]model.SsoOrg, error)
 	GetMaxSort() (int, error)
+	HasChildren(parentID string) (bool, error)
 }
 
-// SsoPosRepository 职位仓库接口
+type SsoOrgKindRepository interface {
+	CreateOrgKind(orgKind *model.SsoOrgKind) error
+	GetOrgKindByID(id string) (*model.SsoOrgKind, error)
+	GetOrgKindByCode(code string) (*model.SsoOrgKind, error)
+	UpdateOrgKind(orgKind *model.SsoOrgKind) error
+	UpdateOrgKindFields(id string, fields map[string]any) error
+	DeleteOrgKind(id string) error
+	GetAllOrgKinds() ([]model.SsoOrgKind, error)
+	GetMaxSort() (int, error)
+	HasChildren(parentID string) (bool, error)
+}
+
 type SsoPosRepository interface {
 	CreatePos(pos *model.SsoPos) error
 	GetPosByID(id string) (*model.SsoPos, error)
@@ -84,6 +97,30 @@ type SsoPosRepository interface {
 	UpdatePos(pos *model.SsoPos) error
 	DeletePos(id string) error
 	GetAllPoss() ([]model.SsoPos, error)
+	GetMaxSort() (int, error)
+}
+
+type SsoRoleGroupRepository interface {
+	CreateRoleGroup(item *model.SsoRoleGroup) error
+	GetRoleGroupByID(id string) (*model.SsoRoleGroup, error)
+	GetRoleGroupByCode(code string) (*model.SsoRoleGroup, error)
+	UpdateRoleGroup(item *model.SsoRoleGroup) error
+	UpdateRoleGroupFields(id string, fields map[string]any) error
+	DeleteRoleGroup(id string) error
+	HasChildren(parentID string) (bool, error)
+	GetAllRoleGroups() ([]model.SsoRoleGroup, error)
+	GetMaxSort() (int, error)
+}
+
+type SsoUserGroupRepository interface {
+	CreateUserGroup(item *model.SsoUserGroup) error
+	GetUserGroupByID(id string) (*model.SsoUserGroup, error)
+	GetUserGroupByCode(code string) (*model.SsoUserGroup, error)
+	UpdateUserGroup(item *model.SsoUserGroup) error
+	UpdateUserGroupFields(id string, fields map[string]any) error
+	DeleteUserGroup(id string) error
+	HasChildren(parentID string) (bool, error)
+	GetAllUserGroups() ([]model.SsoUserGroup, error)
 	GetMaxSort() (int, error)
 }
 
@@ -133,34 +170,138 @@ type SsoPosRoleRepository interface {
 	DeletePosRolesByRoleID(roleID string) error
 }
 
+type SsoRoleGroupRoleRepository interface {
+	CreateRoleGroupRole(item *model.SsoRoleGroupRole) error
+	GetRoleGroupRoleByID(id string) (*model.SsoRoleGroupRole, error)
+	GetRoleGroupRolesByGroupID(groupID string) ([]model.SsoRoleGroupRole, error)
+	GetRoleGroupRolesByRoleID(roleID string) ([]model.SsoRoleGroupRole, error)
+	DeleteRoleGroupRole(id string) error
+	DeleteRoleGroupRolesByGroupID(groupID string) error
+	DeleteRoleGroupRolesByRoleID(roleID string) error
+}
+
+type SsoUserGroupUserRepository interface {
+	CreateUserGroupUser(item *model.SsoUserGroupUser) error
+	GetUserGroupUserByID(id string) (*model.SsoUserGroupUser, error)
+	GetUserGroupUsersByGroupID(groupID string) ([]model.SsoUserGroupUser, error)
+	GetUserGroupUsersByUserID(userID string) ([]model.SsoUserGroupUser, error)
+	DeleteUserGroupUser(id string) error
+	DeleteUserGroupUsersByGroupID(groupID string) error
+	DeleteUserGroupUsersByUserID(userID string) error
+}
+
+type SsoUserRoleGroupRepository interface {
+	CreateUserRoleGroup(item *model.SsoUserRoleGroup) error
+	GetUserRoleGroupByID(id string) (*model.SsoUserRoleGroup, error)
+	GetUserRoleGroupsByUserID(userID string) ([]model.SsoUserRoleGroup, error)
+	GetUserRoleGroupsByGroupID(groupID string) ([]model.SsoUserRoleGroup, error)
+	DeleteUserRoleGroup(id string) error
+	DeleteUserRoleGroupsByUserID(userID string) error
+	DeleteUserRoleGroupsByGroupID(groupID string) error
+}
+
+type SsoCasbinRuleRepository interface {
+	CreateCasbinRule(item *model.SsoCasbinRule) error
+	GetCasbinRuleByID(id string) (*model.SsoCasbinRule, error)
+	GetCasbinRulesByPType(ptype string) ([]model.SsoCasbinRule, error)
+	GetCasbinRule(pType, v0, v1 string) (*model.SsoCasbinRule, error)
+	DeleteCasbinRule(id string) error
+	DeleteCasbinRulesByPType(ptype string) error
+	DeleteCasbinRules(pType, v0, v1 string) error
+	GetAllCasbinRules() ([]model.SsoCasbinRule, error)
+}
+
+type SsoOrgKindRoleRepository interface {
+	CreateOrgKindRole(item *model.SsoOrgKindRole) error
+	GetOrgKindRoleByID(id string) (*model.SsoOrgKindRole, error)
+	GetOrgKindRoleByKindCode(kindCode string) ([]model.SsoOrgKindRole, error)
+	GetOrgKindRoleByRoleID(roleID string) ([]model.SsoOrgKindRole, error)
+	DeleteOrgKindRole(id string) error
+	DeleteOrgKindRoleByKindCode(kindCode string) error
+	GetAllOrgKindRoles() ([]model.SsoOrgKindRole, error)
+}
+
+type SsoOrgMenuRepository interface {
+	CreateOrgMenu(item *model.SsoOrgMenu) error
+	GetOrgMenuByID(id string) (*model.SsoOrgMenu, error)
+	GetOrgMenusByOrgID(orgID string) ([]model.SsoOrgMenu, error)
+	GetOrgMenusByMenuID(menuID string) ([]model.SsoOrgMenu, error)
+	DeleteOrgMenu(id string) error
+	DeleteOrgMenuByOrgID(orgID string) error
+	GetAllOrgMenus() ([]model.SsoOrgMenu, error)
+}
+
+type SsoOrgRoleRepository interface {
+	CreateOrgRole(item *model.SsoOrgRole) error
+	GetOrgRoleByID(id string) (*model.SsoOrgRole, error)
+	GetOrgRolesByOrgID(orgID string) ([]model.SsoOrgRole, error)
+	GetOrgRolesByRoleID(roleID string) ([]model.SsoOrgRole, error)
+	DeleteOrgRole(id string) error
+	DeleteOrgRoleByOrgID(orgID string) error
+	DeleteOrgRolesByRoleID(roleID string) error
+	GetAllOrgRoles() ([]model.SsoOrgRole, error)
+}
+
+type SsoOrgUserRepository interface {
+	CreateOrgUser(item *model.SsoOrgUser) error
+	GetOrgUserByID(id string) (*model.SsoOrgUser, error)
+	GetOrgUsersByOrgID(orgID string) ([]model.SsoOrgUser, error)
+	GetOrgUsersByUserID(userID string) ([]model.SsoOrgUser, error)
+	DeleteOrgUser(id string) error
+	DeleteOrgUserByOrgID(orgID string) error
+	GetAllOrgUsers() ([]model.SsoOrgUser, error)
+}
+
 // Repositories 用户模块仓库集合
 type Repositories struct {
-	User     SsoUserRepository
-	Tenant   SsoTenantRepository
-	App      SsoAppRepository
-	Menu     SsoMenuRepository
-	Role     SsoRoleRepository
-	Org      SsoOrgRepository
-	Pos      SsoPosRepository
-	UserRole SsoUserRoleRepository
-	UserPos  SsoUserPosRepository
-	RoleMenu SsoRoleMenuRepository
-	PosRole  SsoPosRoleRepository
+	User          SsoUserRepository
+	Tenant        SsoTenantRepository
+	App           SsoAppRepository
+	Menu          SsoMenuRepository
+	Role          SsoRoleRepository
+	Org           SsoOrgRepository
+	OrgKind       SsoOrgKindRepository
+	OrgKindRole   SsoOrgKindRoleRepository
+	OrgMenu       SsoOrgMenuRepository
+	OrgRole       SsoOrgRoleRepository
+	OrgUser       SsoOrgUserRepository
+	RoleGroup     SsoRoleGroupRepository
+	UserGroup     SsoUserGroupRepository
+	RoleGroupRole SsoRoleGroupRoleRepository
+	UserGroupUser SsoUserGroupUserRepository
+	UserRoleGroup SsoUserRoleGroupRepository
+	Pos           SsoPosRepository
+	UserRole      SsoUserRoleRepository
+	UserPos       SsoUserPosRepository
+	RoleMenu      SsoRoleMenuRepository
+	PosRole       SsoPosRoleRepository
+	CasbinRule    SsoCasbinRuleRepository
 }
 
 // NewRepositories 创建用户模块仓库集合
 func NewRepositories(db *gorm.DB) *Repositories {
 	return &Repositories{
-		User:     NewSsoUserRepository(db),
-		Tenant:   NewSsoTenantRepository(db),
-		App:      NewSsoAppRepository(db),
-		Menu:     NewSsoMenuRepository(db),
-		Role:     NewSsoRoleRepository(db),
-		Org:      NewSsoOrgRepository(db),
-		Pos:      NewSsoPosRepository(db),
-		UserRole: NewSsoUserRoleRepository(db),
-		UserPos:  NewSsoUserPosRepository(db),
-		RoleMenu: NewSsoRoleMenuRepository(db),
-		PosRole:  NewSsoPosRoleRepository(db),
+		User:          NewSsoUserRepository(db),
+		Tenant:        NewSsoTenantRepository(db),
+		App:           NewSsoAppRepository(db),
+		Menu:          NewSsoMenuRepository(db),
+		Role:          NewSsoRoleRepository(db),
+		Org:           NewSsoOrgRepository(db),
+		OrgKind:       NewSsoOrgKindRepository(db),
+		OrgKindRole:   NewSsoOrgKindRoleRepository(db),
+		OrgMenu:       NewSsoOrgMenuRepository(db),
+		OrgRole:       NewSsoOrgRoleRepository(db),
+		OrgUser:       NewSsoOrgUserRepository(db),
+		RoleGroup:     NewSsoRoleGroupRepository(db),
+		UserGroup:     NewSsoUserGroupRepository(db),
+		RoleGroupRole: NewSsoRoleGroupRoleRepository(db),
+		UserGroupUser: NewSsoUserGroupUserRepository(db),
+		UserRoleGroup: NewSsoUserRoleGroupRepository(db),
+		Pos:           NewSsoPosRepository(db),
+		UserRole:      NewSsoUserRoleRepository(db),
+		UserPos:       NewSsoUserPosRepository(db),
+		RoleMenu:      NewSsoRoleMenuRepository(db),
+		PosRole:       NewSsoPosRoleRepository(db),
+		CasbinRule:    NewSsoCasbinRuleRepository(db),
 	}
 }

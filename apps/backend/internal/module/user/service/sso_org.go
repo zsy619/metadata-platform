@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
 	"metadata-platform/internal/utils"
@@ -9,12 +10,20 @@ import (
 
 // ssoOrgService 组织服务实现
 type ssoOrgService struct {
-	orgRepo repository.SsoOrgRepository
+	orgRepo     repository.SsoOrgRepository
+	orgUserRepo repository.SsoOrgUserRepository
+	orgRoleRepo repository.SsoOrgRoleRepository
+	orgMenuRepo repository.SsoOrgMenuRepository
 }
 
 // NewSsoOrgService 创建组织服务实例
-func NewSsoOrgService(orgRepo repository.SsoOrgRepository) SsoOrgService {
-	return &ssoOrgService{orgRepo: orgRepo}
+func NewSsoOrgService(orgRepo repository.SsoOrgRepository, orgUserRepo repository.SsoOrgUserRepository, orgRoleRepo repository.SsoOrgRoleRepository, orgMenuRepo repository.SsoOrgMenuRepository) SsoOrgService {
+	return &ssoOrgService{
+		orgRepo:     orgRepo,
+		orgUserRepo: orgUserRepo,
+		orgRoleRepo: orgRoleRepo,
+		orgMenuRepo: orgMenuRepo,
+	}
 }
 
 // CreateOrg 创建组织
@@ -84,6 +93,30 @@ func (s *ssoOrgService) DeleteOrg(id string) error {
 	// 检查是否为系统内置组织
 	if org.IsSystem {
 		return errors.New("系统内置组织不允许删除")
+	}
+
+	// 检查是否有子组织
+	hasChildren, err := s.orgRepo.HasChildren(id)
+	if err != nil {
+		return errors.New("检查子组织失败")
+	}
+	if hasChildren {
+		return errors.New("该组织下存在子组织，无法删除")
+	}
+
+	// 删除组织关联的用户
+	if err := s.orgUserRepo.DeleteOrgUserByOrgID(id); err != nil {
+		utils.SugarLogger.Errorw("删除组织用户关联失败", "orgID", id, "error", err)
+	}
+
+	// 删除组织关联的角色
+	if err := s.orgRoleRepo.DeleteOrgRoleByOrgID(id); err != nil {
+		utils.SugarLogger.Errorw("删除组织角色关联失败", "orgID", id, "error", err)
+	}
+
+	// 删除组织关联的菜单
+	if err := s.orgMenuRepo.DeleteOrgMenuByOrgID(id); err != nil {
+		utils.SugarLogger.Errorw("删除组织菜单关联失败", "orgID", id, "error", err)
 	}
 
 	return s.orgRepo.DeleteOrg(id)

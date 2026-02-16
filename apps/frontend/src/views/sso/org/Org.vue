@@ -14,6 +14,7 @@
         <el-card class="main-card">
             <div class="search-area">
                 <el-input v-model="searchQuery" placeholder="请输入组织名称搜索" clearable :prefix-icon="Search" style="width: 300px" @input="handleDebouncedSearch" />
+                <el-tree-select v-model="filterKindCode" :data="orgKindTreeData" check-strictly :render-after-expand="false" :default-expand-all="true" placeholder="筛选组织类型" clearable style="width: 200px; margin-left: 10px" @change="handleSearch" />
                 <el-select v-model="filterStatus" placeholder="筛选状态" style="width: 150px; margin-left: 10px" clearable @change="handleSearch">
                     <el-option label="全部" value="" />
                     <el-option label="有效" :value="1" />
@@ -36,7 +37,11 @@
                     </el-table-column>
                     <el-table-column prop="org_short" label="简称" width="120" show-overflow-tooltip />
                     <el-table-column prop="org_code" label="组织编码" width="150" />
-                    <el-table-column prop="kind_code" label="类型编码" width="120" />
+                    <el-table-column prop="kind_code" label="组织类型" width="120">
+                        <template #default="scope">
+                            {{ getKindName(scope.row.kind_code) }}
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="contact" label="联系人" width="120" />
                     <el-table-column prop="phone" label="联系电话" width="150" />
                     <el-table-column prop="status" label="状态" width="80">
@@ -50,17 +55,17 @@
                         <template #default="scope">
                             <el-button type="primary" size="small" :icon="Plus" @click="handleAddChild(scope.row)" text bg>新增子级</el-button>
                             <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
-                            <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
+                            <el-button type="danger" size="small" :icon="Delete" v-if="!scope.row.hasChildren" @click="handleDelete(scope.row)" text bg>删除</el-button>
                         </template>
                     </el-table-column>
                 </el-table>
             </div>
         </el-card>
-        <OrgForm v-model="dialogVisible" :data="formData" :org-tree-data="filteredOrgTreeData" :exclude-ids="excludeIds" @success="handleFormSuccess" />
+        <OrgForm v-model="dialogVisible" :data="formData" :all-data="allData" :all-org-kinds="allOrgKinds" :exclude-ids="excludeIds" @success="handleFormSuccess" />
     </div>
 </template>
 <script setup lang="ts">
-import { deleteUnit, getUnits } from '@/api/user'
+import { deleteUnit, getOrgKinds, getUnits } from '@/api/user'
 import TreeNameCell from '@/components/table/TreeNameCell.vue'
 import { Delete, Edit, Plus, RefreshLeft, School, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -71,8 +76,10 @@ const loading = ref(false)
 const loadingText = ref('加载中...')
 const searchQuery = ref('')
 const filterStatus = ref<number | ''>('')
+const filterKindCode = ref<string>('')
 
 const allData = ref<any[]>([])
+const allOrgKinds = ref<any[]>([])
 
 const dialogVisible = ref(false)
 const formData = ref<any>({})
@@ -130,8 +137,11 @@ const tableData = computed(() => {
     if (filterStatus.value !== '') {
         data = data.filter(item => item.status === filterStatus.value)
     }
+    if (filterKindCode.value) {
+        data = data.filter(item => item.kind_code === filterKindCode.value)
+    }
 
-    if (!searchQuery.value && filterStatus.value === '') {
+    if (!searchQuery.value && filterStatus.value === '' && !filterKindCode.value) {
         return buildTableTree(allData.value)
     }
 
@@ -149,30 +159,37 @@ const tableData = computed(() => {
         const pid = item.parent_id || ''
         if (pid && pid !== '') findAllParents(pid)
     })
-    const fullList = [...data, ...allData.value.filter(item => allParentIds.has(item.id))]
+    const dataIds = new Set(data.map(item => item.id))
+    const fullList = [...data, ...allData.value.filter(item => allParentIds.has(item.id) && !dataIds.has(item.id))]
     return buildTableTree(fullList)
 })
 
-const orgTreeData = computed(() => {
-    return buildTreeData(allData.value)
-})
+const buildOrgKindTreeData = (list: any[], parentId: string = ''): any[] => {
+    return list
+        .filter(item => (item.parent_id || '') === parentId)
+        .map(item => ({
+            value: item.id,
+            label: item.kind_name || item.kind_code,
+            children: buildOrgKindTreeData(list, item.id)
+        }))
+        .sort((a, b) => {
+            const itemA = list.find(i => i.id === a.value)
+            const itemB = list.find(i => i.id === b.value)
+            return (itemA?.sort || 0) - (itemB?.sort || 0)
+        })
+}
 
-const filteredOrgTreeData = computed(() => {
-    if (excludeIds.value.length === 0) {
-        return orgTreeData.value
-    }
-    const excludeSet = new Set(excludeIds.value)
-    return buildTreeData(allData.value, '', excludeSet)
-})
+const orgKindTreeData = computed(() => buildOrgKindTreeData(allOrgKinds.value))
 
 const loadData = async () => {
     loadingText.value = '加载中...'
     loading.value = true
     try {
-        const res: any = await getUnits()
-        allData.value = res.data || res
+        const [orgRes, kindRes]: any = await Promise.all([getUnits(), getOrgKinds()])
+        allData.value = orgRes.data || orgRes
+        allOrgKinds.value = kindRes.data || kindRes
     } catch (error) {
-        console.error('加载组织列表失败:', error)
+        console.error('加载列表失败:', error)
         ElMessage.error('加载列表失败')
     } finally {
         loading.value = false
@@ -181,7 +198,13 @@ const loadData = async () => {
 
 const handleSearch = () => { }
 const handleDebouncedSearch = () => { }
-const handleReset = () => { searchQuery.value = ''; filterStatus.value = '' }
+const handleReset = () => { searchQuery.value = ''; filterStatus.value = ''; filterKindCode.value = '' }
+
+const getKindName = (kindCode: string) => {
+    if (!kindCode) return '-'
+    const kind = allOrgKinds.value.find(k => k.id === kindCode)
+    return kind?.kind_name || kindCode
+}
 
 const handleCreate = () => {
     formData.value = { status: 1, sort: 0, parent_id: '' }

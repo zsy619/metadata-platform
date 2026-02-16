@@ -3,41 +3,53 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"metadata-platform/internal/module/audit/model"
-	"metadata-platform/internal/module/audit/service"
-	"metadata-platform/internal/utils"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/google/uuid"
+
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/service"
+	"metadata-platform/internal/utils"
 )
 
-// AuditMiddleware 审计日志中间件
-func AuditMiddleware(auditSvc service.AuditService) app.HandlerFunc {
+func AuditMiddleware(auditSvc service.AuditService, source string) app.HandlerFunc {
 	return func(c context.Context, ctx *app.RequestContext) {
 		start := time.Now()
 
-		// 生成 TraceID
-		traceID := uuid.New().String()
+		traceID := string(ctx.Request.Header.Get("X-Trace-ID"))
+		if traceID == "" {
+			traceID = string(ctx.Request.Header.Get("trace_id"))
+		}
+		if traceID == "" {
+			traceID = uuid.New().String()
+		}
 		ctx.Set("trace_id", traceID)
 
-		// 执行下一个 handler
 		ctx.Next(c)
+
+		if storedTraceID, exists := ctx.Get("trace_id"); exists {
+			traceID = storedTraceID.(string)
+		}
 
 		latency := time.Since(start).Milliseconds()
 		statusCode := ctx.Response.StatusCode()
 
-		// 暂时简单的 UserID 获取 (后续应结合 JWT Middleware)
-		userID := string(ctx.Request.Header.Get("X-User-ID"))
-		userAccount := string(ctx.Request.Header.Get("X-User-Account"))
-		fmt.Println(userID, userAccount)
+		userID := ""
+		if uid, exists := ctx.Get("user_id"); exists {
+			userID = uid.(string)
+		}
 
 		tenantID := string(ctx.Request.Header.Get("X-Tenant-ID"))
+		if tenantID == "" {
+			if tid, exists := ctx.Get("tenant_id"); exists {
+				tenantID = fmt.Sprintf("%v", tid)
+			}
+		}
 		if tenantID == "" {
 			tenantID = "1"
 		}
 
-		// 解析客户端信息
 		clientInfo := utils.ParseUserAgent(
 			string(ctx.Request.Header.UserAgent()),
 			ctx.ClientIP(),
@@ -61,11 +73,10 @@ func AuditMiddleware(auditSvc service.AuditService) app.HandlerFunc {
 			DeviceType:     clientInfo.DeviceType,
 			Language:       clientInfo.Language,
 			Platform:       clientInfo.Platform,
-			Source:         "metadata", // 明确标识来源为 metadata 模块
+			Source:         source,
 			CreateAt:       time.Now(),
 		}
 
-		// 记录错误信息 (如果有)
 		if statusCode >= 400 {
 			log.ErrorMessage = fmtResponseBody(ctx)
 		}
@@ -75,6 +86,5 @@ func AuditMiddleware(auditSvc service.AuditService) app.HandlerFunc {
 }
 
 func fmtResponseBody(ctx *app.RequestContext) string {
-	// 注意：读取 Response Body 可能会影响性能，仅在错误时读取
 	return string(ctx.Response.Body())
 }

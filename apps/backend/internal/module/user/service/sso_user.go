@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
 	"metadata-platform/internal/utils"
@@ -9,13 +10,24 @@ import (
 
 // ssoUserService 用户服务实现
 type ssoUserService struct {
-	userRepo repository.SsoUserRepository
-	orgRepo  repository.SsoOrgRepository
+	userRepo          repository.SsoUserRepository
+	orgRepo           repository.SsoOrgRepository
+	userRoleRepo      repository.SsoUserRoleRepository
+	userPosRepo       repository.SsoUserPosRepository
+	userGroupUserRepo repository.SsoUserGroupUserRepository
+	userRoleGroupRepo repository.SsoUserRoleGroupRepository
 }
 
 // NewSsoUserService 创建用户服务实例
-func NewSsoUserService(userRepo repository.SsoUserRepository, orgRepo repository.SsoOrgRepository) SsoUserService {
-	return &ssoUserService{userRepo: userRepo, orgRepo: orgRepo}
+func NewSsoUserService(userRepo repository.SsoUserRepository, orgRepo repository.SsoOrgRepository, userRoleRepo repository.SsoUserRoleRepository, userPosRepo repository.SsoUserPosRepository, userGroupUserRepo repository.SsoUserGroupUserRepository, userRoleGroupRepo repository.SsoUserRoleGroupRepository) SsoUserService {
+	return &ssoUserService{
+		userRepo:          userRepo,
+		orgRepo:           orgRepo,
+		userRoleRepo:      userRoleRepo,
+		userPosRepo:       userPosRepo,
+		userGroupUserRepo: userGroupUserRepo,
+		userRoleGroupRepo: userRoleGroupRepo,
+	}
 }
 
 // CreateUser 创建用户
@@ -94,6 +106,26 @@ func (s *ssoUserService) DeleteUser(id string) error {
 	_, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return errors.New("用户不存在")
+	}
+
+	// 删除用户关联的角色
+	if err := s.userRoleRepo.DeleteUserRolesByUserID(id); err != nil {
+		utils.SugarLogger.Errorw("删除用户角色关联失败", "userID", id, "error", err)
+	}
+
+	// 删除用户关联的职位
+	if err := s.userPosRepo.DeleteUserPosByUserID(id); err != nil {
+		utils.SugarLogger.Errorw("删除用户职位关联失败", "userID", id, "error", err)
+	}
+
+	// 删除用户关联的用户组
+	if err := s.userGroupUserRepo.DeleteUserGroupUsersByUserID(id); err != nil {
+		utils.SugarLogger.Errorw("删除用户组用户关联失败", "userID", id, "error", err)
+	}
+
+	// 删除用户关联的角色组
+	if err := s.userRoleGroupRepo.DeleteUserRoleGroupsByUserID(id); err != nil {
+		utils.SugarLogger.Errorw("删除用户角色组关联失败", "userID", id, "error", err)
 	}
 
 	// 删除用户

@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/cloudwego/hertz/pkg/app"
+
 	"metadata-platform/internal/module/audit/model"
 	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/service"
 	"metadata-platform/internal/utils"
-
-	"github.com/cloudwego/hertz/pkg/app"
-
 	userModel "metadata-platform/internal/module/user/model"
 )
 
@@ -97,7 +97,7 @@ func (h *SsoPosHandler) CreatePos(c context.Context, ctx *app.RequestContext) {
 	afterData, _ := json.Marshal(position)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:        utils.GetSnowflake().GenerateIDString(),
-		TraceID:   ctx.GetString("trace_id"),
+		TraceID:   headerUser.TraceID,
 		ModelID:   "pos",
 		RecordID:  position.ID,
 		Action:    "CREATE",
@@ -187,7 +187,7 @@ func (h *SsoPosHandler) UpdatePos(c context.Context, ctx *app.RequestContext) {
 	afterJSON, _ := json.Marshal(beforeData)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "pos",
 		RecordID:   id,
 		Action:     "UPDATE",
@@ -225,7 +225,7 @@ func (h *SsoPosHandler) DeletePos(c context.Context, ctx *app.RequestContext) {
 	// 记录数据变更日志
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "pos",
 		RecordID:   id,
 		Action:     "DELETE",

@@ -2,12 +2,13 @@ package api
 
 import (
 	"context"
-	"metadata-platform/internal/module/metadata/model"
-	"metadata-platform/internal/module/metadata/service"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
+
+	"metadata-platform/internal/module/metadata/model"
+	"metadata-platform/internal/module/metadata/service"
+	"metadata-platform/internal/utils"
 )
 
 // APIHandler API处理器结构体

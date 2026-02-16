@@ -16,9 +16,9 @@ type MockSsoAuthService struct {
 	mock.Mock
 }
 
-func (m *MockSsoAuthService) Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (string, string, error) {
+func (m *MockSsoAuthService) Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (string, string, *model.SsoUser, error) {
 	args := m.Called(account, password, tenantID, clientInfo)
-	return args.String(0), args.String(1), args.Error(2)
+	return args.String(0), args.String(1), args.Get(2).(*model.SsoUser), args.Error(3)
 }
 
 func (m *MockSsoAuthService) Logout(ctx context.Context, userID string, clientInfo utils.ClientInfo) error {
@@ -46,7 +46,8 @@ func (m *MockSsoAuthService) ChangePassword(userID string, oldPassword string, n
 
 func BenchmarkSsoAuthLogin(b *testing.B) {
 	mockSvc := new(MockSsoAuthService)
-	mockSvc.On("Login", "admin", "123456", mock.Anything, mock.Anything).Return("access-token", "refresh-token", nil)
+	user := &model.SsoUser{ID: "1", Account: "admin"}
+	mockSvc.On("Login", "admin", "123456", mock.Anything, mock.Anything).Return("access-token", "refresh-token", user, nil)
 
 	handler := NewSsoAuthHandler(mockSvc)
 

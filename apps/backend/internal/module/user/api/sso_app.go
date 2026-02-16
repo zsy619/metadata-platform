@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"metadata-platform/internal/module/audit/model"
-	"metadata-platform/internal/module/audit/queue"
-	"metadata-platform/internal/module/user/service"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 
+	"metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/audit/queue"
 	userModel "metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 )
 
 // SsoAppHandler 应用处理器结构体
@@ -19,21 +19,6 @@ type SsoAppHandler struct {
 	*utils.BaseHandler
 	appService service.SsoAppService
 	audit      AuditService
-}
-
-// AuditService 审计服务接口
-type AuditService interface {
-	RecordDataChange(ctx context.Context, log *model.SysDataChangeLog)
-}
-
-type auditServiceImpl struct {
-	queue *queue.AuditLogQueue
-}
-
-func (a *auditServiceImpl) RecordDataChange(ctx context.Context, log *model.SysDataChangeLog) {
-	if a.queue != nil {
-		a.queue.PushDataChange(log)
-	}
 }
 
 // NewSsoAppHandler 创建应用处理器实例
@@ -198,7 +183,7 @@ func (h *SsoAppHandler) UpdateApp(c context.Context, ctx *app.RequestContext) {
 	afterJSON, _ := json.Marshal(application)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "app",
 		RecordID:   id,
 		Action:     "UPDATE",
@@ -235,7 +220,7 @@ func (h *SsoAppHandler) DeleteApp(c context.Context, ctx *app.RequestContext) {
 	// 记录数据变更日志
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
-		TraceID:    ctx.GetString("trace_id"),
+		TraceID:    headerUser.TraceID,
 		ModelID:    "app",
 		RecordID:   id,
 		Action:     "DELETE",

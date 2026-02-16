@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
 	"metadata-platform/internal/utils"

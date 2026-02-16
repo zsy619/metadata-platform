@@ -1,11 +1,14 @@
 package api
 
 import (
-	"metadata-platform/internal/middleware"
 	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/service"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
+
+	globalMiddleware "metadata-platform/internal/middleware"
+
+	auditSvc "metadata-platform/internal/module/audit/service"
 )
 
 // SsoHandler 用户模块处理器集合
@@ -18,27 +21,45 @@ type SsoHandler struct {
 	UserHandler    *SsoUserHandler
 	PosHandler     *SsoPosHandler
 	AuthHandler    *SsoAuthHandler
-	OrgKindHandler *service.SsoOrgKindHandler
+	OrgKindHandler *SsoOrgKindHandler
+	AuditService   auditSvc.AuditService
 }
 
 // NewSsoHandler 创建用户模块处理器集合
 func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) *SsoHandler {
 	return &SsoHandler{
-		UserHandler:   NewSsoUserHandler(services.User),
-		TenantHandler: NewSsoTenantHandler(services.Tenant, auditQueue),
-		AppHandler:    NewSsoAppHandler(services.App, auditQueue),
-		MenuHandler:   NewSsoMenuHandler(services.Menu, auditQueue),
-		RoleHandler:   NewSsoRoleHandler(services.Role, auditQueue),
-		OrgHandler:    NewSsoOrgHandler(services.Org, auditQueue),
-		PosHandler:    NewSsoPosHandler(services.Pos, auditQueue),
-		AuthHandler:   NewSsoAuthHandler(services.Auth),
+		UserHandler:    NewSsoUserHandler(services.User),
+		TenantHandler:  NewSsoTenantHandler(services.Tenant, auditQueue),
+		AppHandler:     NewSsoAppHandler(services.App, auditQueue),
+		MenuHandler:    NewSsoMenuHandler(services.Menu, auditQueue),
+		RoleHandler:    NewSsoRoleHandler(services.Role, auditQueue),
+		OrgHandler:     NewSsoOrgHandler(services.Org, auditQueue),
+		PosHandler:     NewSsoPosHandler(services.Pos, auditQueue),
+		AuthHandler:    NewSsoAuthHandler(services.Auth),
+		OrgKindHandler: NewSsoOrgKindHandler(services.OrgKind, auditQueue),
+		AuditService:   services.Audit,
 	}
 }
 
 // RegisterRoutes 注册路由
-func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *service.SsoOrgKindHandler) {
+func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
+	// 认证相关路由
+	authRouter := router.Group("/api/auth")
+	{
+		authRouter.POST("/login", h.AuthHandler.Login)
+		authRouter.POST("/refresh", h.AuthHandler.Refresh)
+		authRouter.POST("/logout", globalMiddleware.AuthMiddleware(), h.AuthHandler.Logout)
+		authRouter.POST("/password", globalMiddleware.AuthMiddleware(), h.AuthHandler.ChangePassword)
+		authRouter.GET("/profile", globalMiddleware.AuthMiddleware(), h.AuthHandler.GetProfile)
+		authRouter.GET("/captcha", h.AuthHandler.GetCaptcha)
+	}
+
+	group := router.Group("/api/sso")
+	group.Use(globalMiddleware.TenantMiddleware())
+	group.Use(globalMiddleware.AuthMiddleware())
+	group.Use(globalMiddleware.AuditMiddleware(h.AuditService, "sso"))
 	// 用户相关路由
-	userRouter := router.Group("/api/user")
+	userRouter := group.Group("/user")
 	{
 		userRouter.POST("", h.UserHandler.CreateUser)
 		userRouter.GET("/:id", h.UserHandler.GetUserByID)
@@ -47,19 +68,8 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 		userRouter.GET("", h.UserHandler.GetAllUsers)
 	}
 
-	// 认证相关路由
-	authRouter := router.Group("/api/auth")
-	{
-		authRouter.POST("/login", h.AuthHandler.Login)
-		authRouter.POST("/refresh", h.AuthHandler.Refresh)
-		authRouter.POST("/logout", middleware.AuthMiddleware(), h.AuthHandler.Logout)
-		authRouter.POST("/password", middleware.AuthMiddleware(), h.AuthHandler.ChangePassword)
-		authRouter.GET("/profile", middleware.AuthMiddleware(), h.AuthHandler.GetProfile)
-		authRouter.GET("/captcha", h.AuthHandler.GetCaptcha)
-	}
-
 	// 租户相关路由
-	tenantRouter := router.Group("/api/tenant")
+	tenantRouter := group.Group("/tenant")
 	{
 		tenantRouter.POST("", h.TenantHandler.CreateTenant)
 		tenantRouter.GET("/:id", h.TenantHandler.GetTenantByID)
@@ -69,7 +79,7 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 	}
 
 	// 应用相关路由
-	appRouter := router.Group("/api/app")
+	appRouter := group.Group("/app")
 	{
 		appRouter.POST("", h.AppHandler.CreateApp)
 		appRouter.GET("/:id", h.AppHandler.GetAppByID)
@@ -79,7 +89,7 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 	}
 
 	// 菜单相关路由
-	menuRouter := router.Group("/api/menu")
+	menuRouter := group.Group("/menu")
 	{
 		menuRouter.POST("", h.MenuHandler.CreateMenu)
 		menuRouter.GET("/:id", h.MenuHandler.GetMenuByID)
@@ -89,7 +99,7 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 	}
 
 	// 角色相关路由
-	roleRouter := router.Group("/api/role")
+	roleRouter := group.Group("/role")
 	{
 		roleRouter.POST("", h.RoleHandler.CreateRole)
 		roleRouter.GET("/:id", h.RoleHandler.GetRoleByID)
@@ -99,7 +109,7 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 	}
 
 	// 组织相关路由
-	orgRouter := router.Group("/api/org")
+	orgRouter := group.Group("/org")
 	{
 		orgRouter.POST("", h.OrgHandler.CreateOrg)
 		orgRouter.GET("/:id", h.OrgHandler.GetOrgByID)
@@ -109,17 +119,17 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz, orgKindHandler *servic
 	}
 
 	// 组织类型相关路由
-	orgKindRouter := router.Group("/api/org-kind")
+	orgKindRouter := group.Group("/org-kind")
 	{
-		orgKindRouter.POST("", orgKindHandler.CreateOrgKind)
-		orgKindRouter.GET("/:id", orgKindHandler.GetOrgKindByID)
-		orgKindRouter.PUT("/:id", orgKindHandler.UpdateOrgKind)
-		orgKindRouter.DELETE("/:id", orgKindHandler.DeleteOrgKind)
-		orgKindRouter.GET("", orgKindHandler.GetAllOrgKinds)
+		orgKindRouter.POST("", h.OrgKindHandler.CreateOrgKind)
+		orgKindRouter.GET("/:id", h.OrgKindHandler.GetOrgKindByID)
+		orgKindRouter.PUT("/:id", h.OrgKindHandler.UpdateOrgKind)
+		orgKindRouter.DELETE("/:id", h.OrgKindHandler.DeleteOrgKind)
+		orgKindRouter.GET("", h.OrgKindHandler.GetAllOrgKinds)
 	}
 
 	// 职位相关路由
-	posRouter := router.Group("/api/pos")
+	posRouter := group.Group("/pos")
 	{
 		posRouter.POST("", h.PosHandler.CreatePos)
 		posRouter.GET("/:id", h.PosHandler.GetPosByID)

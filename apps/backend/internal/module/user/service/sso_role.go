@@ -9,12 +9,24 @@ import (
 
 // ssoRoleService 角色服务实现
 type ssoRoleService struct {
-	roleRepo repository.SsoRoleRepository
+	roleRepo          repository.SsoRoleRepository
+	roleMenuRepo      repository.SsoRoleMenuRepository
+	userRoleRepo      repository.SsoUserRoleRepository
+	posRoleRepo       repository.SsoPosRoleRepository
+	orgRoleRepo       repository.SsoOrgRoleRepository
+	roleGroupRoleRepo repository.SsoRoleGroupRoleRepository
 }
 
 // NewSsoRoleService 创建角色服务实例
-func NewSsoRoleService(roleRepo repository.SsoRoleRepository) SsoRoleService {
-	return &ssoRoleService{roleRepo: roleRepo}
+func NewSsoRoleService(roleRepo repository.SsoRoleRepository, roleMenuRepo repository.SsoRoleMenuRepository, userRoleRepo repository.SsoUserRoleRepository, posRoleRepo repository.SsoPosRoleRepository, orgRoleRepo repository.SsoOrgRoleRepository, roleGroupRoleRepo repository.SsoRoleGroupRoleRepository) SsoRoleService {
+	return &ssoRoleService{
+		roleRepo:          roleRepo,
+		roleMenuRepo:      roleMenuRepo,
+		userRoleRepo:      userRoleRepo,
+		posRoleRepo:       posRoleRepo,
+		orgRoleRepo:       orgRoleRepo,
+		roleGroupRoleRepo: roleGroupRoleRepo,
+	}
 }
 
 // CreateRole 创建角色
@@ -89,6 +101,31 @@ func (s *ssoRoleService) DeleteRole(id string) error {
 	// 检查是否为系统内置角色
 	if role.IsSystem {
 		return errors.New("系统内置角色不允许删除")
+	}
+
+	// 删除角色关联的菜单
+	if err := s.roleMenuRepo.DeleteRoleMenusByRoleID(id); err != nil {
+		utils.SugarLogger.Errorw("删除角色菜单关联失败", "roleID", id, "error", err)
+	}
+
+	// 删除角色关联的用户
+	if err := s.userRoleRepo.DeleteUserRolesByRoleID(id); err != nil {
+		utils.SugarLogger.Errorw("删除用户角色关联失败", "roleID", id, "error", err)
+	}
+
+	// 删除角色关联的职位
+	if err := s.posRoleRepo.DeletePosRolesByRoleID(id); err != nil {
+		utils.SugarLogger.Errorw("删除职位角色关联失败", "roleID", id, "error", err)
+	}
+
+	// 删除角色关联的组织
+	if err := s.orgRoleRepo.DeleteOrgRolesByRoleID(id); err != nil {
+		utils.SugarLogger.Errorw("删除组织角色关联失败", "roleID", id, "error", err)
+	}
+
+	// 删除角色关联的角色组
+	if err := s.roleGroupRoleRepo.DeleteRoleGroupRolesByRoleID(id); err != nil {
+		utils.SugarLogger.Errorw("删除角色组角色关联失败", "roleID", id, "error", err)
 	}
 
 	// 删除角色

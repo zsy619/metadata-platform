@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"metadata-platform/configs"
-	"metadata-platform/internal/api"
-	"metadata-platform/internal/middleware"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"gorm.io/gorm"
 
+	"metadata-platform/configs"
+	"metadata-platform/internal/api"
+	"metadata-platform/internal/middleware"
+	"metadata-platform/internal/utils"
 	audit "metadata-platform/internal/module/audit"
 	auditQueuePkg "metadata-platform/internal/module/audit/queue"
 	metadata "metadata-platform/internal/module/metadata"
@@ -62,16 +62,16 @@ func main() {
 
 	// ...
 
-	// 6. 初始化中间件加载器
+	// 7. 初始化中间件加载器
 	middlewareLoader := middleware.NewMiddlewareLoader()
 	middlewareLoader.RegisterDefaultMiddlewares()
 	middlewareLoader.LoadMiddlewareConfig(middleware.GetDefaultMiddlewareConfig())
 	middlewareLoader.UseMiddlewareChain(r)
 
-	// 7. 注册模块化路由
+	// 8. 注册模块化路由
 	api.RegisterModuleRoutes(r, metadataDB, userDB, auditDB, auditLogQueue)
 
-	// 8. 启动服务器
+	// 9. 启动服务器
 	addr := fmt.Sprintf("%s:%d", cfg.ServerHost, cfg.ServerPort)
 	utils.SugarLogger.Infof("Server is running on %s", addr)
 	utils.SugarLogger.Infof("Application started successfully in %s mode", cfg.AppMode)
@@ -119,7 +119,7 @@ func seedUserDatabase(db *gorm.DB) {
 func syncCasbinPolicies(db *gorm.DB, auditDB *gorm.DB, auditQueue *auditQueuePkg.AuditLogQueue) {
 	// 初始化内部服务来执行同步
 	repos := user.GetRepositories(db)
-	services := user.GetServices(repos, auditDB, auditQueue)
+	services := user.GetServices(repos, db, auditDB, auditQueue)
 	if err := services.CasbinSync.SyncAll(); err != nil {
 		utils.SugarLogger.Errorf("Failed to sync Casbin policies: %v", err)
 	}
