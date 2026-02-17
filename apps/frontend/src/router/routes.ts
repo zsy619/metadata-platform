@@ -19,32 +19,32 @@ const routes: RouteRecordRaw[] = [
                 path: 'home/dashboard',
                 name: 'Dashboard',
                 component: () => import('@/views/home/Dashboard.vue'),
-                meta: { title: '首页', icon: 'Odometer', affix: true }
+                meta: { title: '首页', icon: 'fa-gauge-high', affix: true }
             }
         ]
     },
     {
         path: '/metadata',
         component: Layout,
-        meta: { title: '元数据管理', icon: 'FolderOpened' },
+        meta: { title: '元数据管理', icon: 'fa-folder-open' },
         redirect: '/metadata/datasource/list',
         children: [
             {
                 path: 'datasource',
                 component: RouterView,
-                meta: { title: '数据源管理', icon: 'Connection' },
+                meta: { title: '数据源管理', icon: 'fa-network-wired' },
                 children: [
                     {
                         path: 'list',
                         name: 'DataSourceList',
                         component: () => import('@/views/metadata/datasource/List.vue'),
-                        meta: { title: '数据源列表', icon: 'List' }
+                        meta: { title: '数据源列表', icon: 'fa-list' }
                     },
                     {
                         path: 'create',
                         name: 'DataSourceCreate',
                         component: () => import('@/views/metadata/datasource/Create.vue'),
-                        meta: { title: '添加数据源', icon: 'Plus' }
+                        meta: { title: '添加数据源', icon: 'fa-plus' }
                     },
                     {
                         path: ':id/edit',
@@ -57,31 +57,31 @@ const routes: RouteRecordRaw[] = [
             {
                 path: 'maintenance',
                 component: RouterView,
-                meta: { title: '元数据维护', icon: 'Tools' },
+                meta: { title: '元数据维护', icon: 'fa-wrench' },
                 children: [
                     {
                         path: 'table',
                         component: RouterView,
-                        meta: { title: '表与视图', icon: 'Grid' },
+                        meta: { title: '表与视图', icon: 'fa-table-cells' },
                         children: [
                             {
                                 path: 'list',
                                 name: 'MetadataTableList',
                                 component: () => import('@/views/metadata/table/List.vue'),
-                                meta: { title: '表视图列表', icon: 'List' }
+                                meta: { title: '表视图列表', icon: 'fa-list' }
                             }
                         ]
                     },
                     {
                         path: 'field',
                         component: RouterView,
-                        meta: { title: '字段列表', icon: 'Tickets' },
+                        meta: { title: '字段列表', icon: 'fa-ticket' },
                         children: [
                             {
                                 path: 'list',
                                 name: 'MetadataFieldList',
                                 component: () => import('@/views/metadata/field/List.vue'),
-                                meta: { title: '字段列表', icon: 'List' }
+                                meta: { title: '字段列表', icon: 'fa-list' }
                             }
                         ]
                     }
@@ -90,20 +90,20 @@ const routes: RouteRecordRaw[] = [
             {
                 path: 'model',
                 component: RouterView,
-                meta: { title: '模型维护', icon: 'Document' },
+                meta: { title: '模型维护', icon: 'fa-file' },
                 redirect: '/metadata/model/list',
                 children: [
                     {
                         path: 'list',
                         name: 'ModelList',
                         component: () => import('@/views/model/List.vue'),
-                        meta: { title: '模型列表', icon: 'List' }
+                        meta: { title: '模型列表', icon: 'fa-list' }
                     },
                     {
                         path: 'sql-test',
                         name: 'ModelSqlTest',
                         component: () => import('@/views/model/SqlTest.vue'),
-                        meta: { title: 'SQL模型测试', icon: 'Monitor' }
+                        meta: { title: 'SQL模型测试', icon: 'fa-desktop' }
                     },
                     {
                         path: 'create',
@@ -154,20 +154,20 @@ const routes: RouteRecordRaw[] = [
     {
         path: '/monitor',
         component: Layout,
-        meta: { title: '系统监控', icon: 'Monitor' },
+        meta: { title: '系统监控', icon: 'fa-desktop' },
         redirect: '/monitor/dashboard',
         children: [
             {
                 path: 'dashboard',
                 name: 'MonitorDashboard',
                 component: () => import('@/views/monitor/Dashboard.vue'),
-                meta: { title: '监控仪表盘', icon: 'Odometer' }
+                meta: { title: '监控仪表盘', icon: 'fa-gauge-high' }
             },
             {
                 path: 'performance',
                 name: 'MonitorPerformance',
                 component: () => import('@/views/monitor/Performance.vue'),
-                meta: { title: '性能分析', icon: 'TrendCharts' }
+                meta: { title: '性能分析', icon: 'fa-chart-line' }
             }
         ]
     },
@@ -188,14 +188,14 @@ const routes: RouteRecordRaw[] = [
     {
         path: '/api',
         component: Layout,
-        meta: { title: '接口管理', icon: 'Share' },
+        meta: { title: '接口管理', icon: 'fa-share-nodes' },
         redirect: '/api/list',
         children: [
             {
                 path: 'list',
                 name: 'APIList',
                 component: () => import('@/views/api/List.vue'),
-                meta: { title: '接口列表', icon: 'List' }
+                meta: { title: '接口列表', icon: 'fa-list' }
             },
             {
                 path: 'create',
@@ -214,112 +214,112 @@ const routes: RouteRecordRaw[] = [
     {
         path: '/sso',
         component: Layout,
-        meta: { title: 'SSO管理', icon: 'Key' },
+        meta: { title: 'SSO管理', icon: 'fa-key' },
         redirect: '/sso/tenant',
         children: [
             {
                 path: 'tenant',
                 name: 'SSOTenant',
                 component: () => import('@/views/sso/tenant/Tenant.vue'),
-                meta: { title: '租户管理', icon: 'OfficeBuilding' }
+                meta: { title: '租户管理', icon: 'fa-building' }
             },
             {
                 path: 'app',
                 name: 'SSOApp',
                 component: () => import('@/views/sso/app/App.vue'),
-                meta: { title: '应用列表', icon: 'Monitor' }
+                meta: { title: '应用列表', icon: 'fa-desktop' }
             },
             {
                 path: 'org',
                 name: 'SSOOrg',
                 component: () => import('@/views/sso/org/Org.vue'),
-                meta: { title: '组织管理', icon: 'School' }
+                meta: { title: '组织管理', icon: 'fa-school' }
             },
             {
                 path: 'orgKind',
                 name: 'SSOOrgKind',
                 component: () => import('@/views/sso/org/OrgKind.vue'),
-                meta: { title: '组织类型', icon: 'Collection' }
+                meta: { title: '组织类型', icon: 'fa-layer-group' }
             },
             {
                 path: 'menu',
                 name: 'SSOMenu',
                 component: () => import('@/views/sso/menu/Menu.vue'),
-                meta: { title: '菜单管理', icon: 'Menu' }
+                meta: { title: '菜单管理', icon: 'fa-bars' }
             },
             {
                 path: 'pos',
                 name: 'SSOPos',
                 component: () => import('@/views/sso/pos/Pos.vue'),
-                meta: { title: '职位管理', icon: 'Briefcase' }
+                meta: { title: '职位管理', icon: 'fa-briefcase' }
             },
             {
                 path: 'role',
                 name: 'SSORole',
                 component: () => import('@/views/sso/role/Role.vue'),
-                meta: { title: '角色管理', icon: 'UserFilled' }
+                meta: { title: '角色管理', icon: 'fa-user' }
             },
             {
                 path: 'roleGroup',
                 name: 'SSORoleGroup',
                 component: () => import('@/views/sso/role/RoleGroup.vue'),
-                meta: { title: '角色组', icon: 'Folder' }
+                meta: { title: '角色组', icon: 'fa-folder' }
             },
             {
                 path: 'userGroup',
                 name: 'SSOUserGroup',
                 component: () => import('@/views/sso/user/UserGroup.vue'),
-                meta: { title: '用户组', icon: 'User' }
+                meta: { title: '用户组', icon: 'fa-users' }
             },
             {
                 path: 'user',
                 name: 'SSOUser',
                 component: () => import('@/views/sso/user/User.vue'),
-                meta: { title: '用户管理', icon: 'Avatar' }
+                meta: { title: '用户管理', icon: 'fa-user-astronaut' }
             }
         ]
     },
     {
         path: '/system',
         component: Layout,
-        meta: { title: '系统设置', icon: 'Setting' },
+        meta: { title: '系统设置', icon: 'fa-gear' },
         redirect: '/system/settings',
         children: [
             {
                 path: 'settings',
                 name: 'SystemSettings',
                 component: () => import('@/views/system/Settings.vue'),
-                meta: { title: '系统配置', icon: 'Tools' }
+                meta: { title: '系统配置', icon: 'fa-wrench' }
             },
             {
                 path: 'audit',
                 component: RouterView,
                 redirect: '/system/audit/login',
-                meta: { title: '审计日志', icon: 'Clock' },
+                meta: { title: '审计日志', icon: 'fa-clock' },
                 children: [
                     {
                         path: 'login',
                         name: 'AuditLoginLog',
                         component: () => import('@/views/system/audit/LoginLog.vue'),
-                        meta: { title: '登录日志', icon: 'UserFilled' }
+                        meta: { title: '登录日志', icon: 'fa-user' }
                     },
                     {
                         path: 'operation',
                         name: 'AuditOperationLog',
                         component: () => import('@/views/system/audit/OperationLog.vue'),
-                        meta: { title: '操作日志', icon: 'List' }
+                        meta: { title: '操作日志', icon: 'fa-list' }
                     },
                     {
                         path: 'data',
                         name: 'AuditDataChangeLog',
                         component: () => import('@/views/system/audit/DataChangeLog.vue'),
-                        meta: { title: '数据变更', icon: 'Edit' }
+                        meta: { title: '数据变更', icon: 'fa-pen-to-square' }
                     },
                     {
                         path: 'access',
                         name: 'AuditAccessLog',
                         component: () => import('@/views/system/audit/AccessLog.vue'),
-                        meta: { title: '访问日志', icon: 'Monitor' }
+                        meta: { title: '访问日志', icon: 'fa-desktop' }
                     }
                 ]
             }

@@ -8,37 +8,37 @@ import (
 
 // DBConfig 数据库配置结构体
 type DBConfig struct {
-	Host          string `mapstructure:"HOST"`
-	Port          int    `mapstructure:"PORT"`
-	User          string `mapstructure:"USER"`
-	Password      string `mapstructure:"PASSWORD"`
-	Name          string `mapstructure:"NAME"`
-	MaxIdleConns  int    `mapstructure:"MAX_IDLE_CONNS"`
-	MaxOpenConns  int    `mapstructure:"MAX_OPEN_CONNS"`
+	Host         string `mapstructure:"HOST"`
+	Port         int    `mapstructure:"PORT"`
+	User         string `mapstructure:"USER"`
+	Password     string `mapstructure:"PASSWORD"`
+	Name         string `mapstructure:"NAME"`
+	MaxIdleConns int    `mapstructure:"MAX_IDLE_CONNS"`
+	MaxOpenConns int    `mapstructure:"MAX_OPEN_CONNS"`
 }
 
 // Config 应用配置结构体
 type Config struct {
 	// 应用基本配置
-	AppName         string `mapstructure:"APP_NAME"`
-	AppMode         string `mapstructure:"APP_MODE"`
-	ServerHost      string `mapstructure:"SERVER_HOST"`
-	ServerPort      int    `mapstructure:"SERVER_PORT"`
+	AppName    string `mapstructure:"APP_NAME"`
+	AppMode    string `mapstructure:"APP_MODE"`
+	ServerHost string `mapstructure:"SERVER_HOST"`
+	ServerPort int    `mapstructure:"SERVER_PORT"`
 
 	// 元数据数据库配置
-	MetadataDB      DBConfig `mapstructure:"METADATA_DB"`
+	MetadataDB DBConfig `mapstructure:"METADATA_DB"`
 	// 用户管理数据库配置
-	UserDB          DBConfig `mapstructure:"USER_DB"`
+	UserDB DBConfig `mapstructure:"USER_DB"`
 	// 审计日志数据库配置
-	AuditDB         DBConfig `mapstructure:"AUDIT_DB"`
+	AuditDB DBConfig `mapstructure:"AUDIT_DB"`
 
 	// JWT配置
-	JWTSecret       string `mapstructure:"JWT_SECRET"`
-	JWTExpireHours  int    `mapstructure:"JWT_EXPIRE_HOURS"`
+	JWTSecret      string `mapstructure:"JWT_SECRET"`
+	JWTExpireHours int    `mapstructure:"JWT_EXPIRE_HOURS"`
 
 	// 日志配置
-	LogLevel        string `mapstructure:"LOG_LEVEL"`
-	LogFilePath     string `mapstructure:"LOG_FILE_PATH"`
+	LogLevel    string `mapstructure:"LOG_LEVEL"`
+	LogFilePath string `mapstructure:"LOG_FILE_PATH"`
 }
 
 // LoadConfig 从环境变量或配置文件加载配置
@@ -109,4 +109,5 @@ func setDefaults() {
 	// 日志配置
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("LOG_FILE_PATH", "logs/app.log")
+	// viper.SetDefault("LOG_FILE_PATH", "/tmp/metadata_platform/app.log")
 }

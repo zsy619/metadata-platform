@@ -46,9 +46,9 @@ func (r *ssoMenuRepository) UpdateMenu(menu *model.SsoMenu) error {
 	return r.db.Save(menu).Error
 }
 
-// DeleteMenu 删除菜单
+// DeleteMenu 删除菜单（物理删除）
 func (r *ssoMenuRepository) DeleteMenu(id string) error {
-	return r.db.Model(&model.SsoMenu{}).Where("id = ?", id).Update("is_deleted", true).Error
+	return r.db.Where("id = ?", id).Delete(&model.SsoMenu{}).Error
 }
 
 // GetAllMenus 获取所有菜单

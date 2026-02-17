@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"gorm.io/gorm"
@@ -19,59 +20,78 @@ import (
 // ... comments ...
 
 func main() {
+	fmt.Fprintln(os.Stderr, "DEBUG: Starting main function...")
 	// 1. 加载配置
+	fmt.Fprintln(os.Stderr, "DEBUG: Loading config...")
 	cfg, err := configs.LoadConfig()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to load config: %v", err))
 	}
 
 	// 2. 初始化日志
+	fmt.Fprintln(os.Stderr, "DEBUG: Config loaded. Initializing logger...")
 	utils.InitLogger(cfg.LogLevel, cfg.LogFilePath)
 	defer utils.SyncLogger()
 
 	// 3. 初始化数据库管理器
+	fmt.Fprintln(os.Stderr, "DEBUG: Logger initialized. Creating DB manager...")
 	dbManager, err := utils.NewDBManager(cfg)
 	if err != nil {
 		utils.SugarLogger.Fatalf("Failed to initialize database manager: %v", err)
 	}
 
 	// 4. 获取各个数据库连接
+	fmt.Fprintln(os.Stderr, "DEBUG: DB Manager created. Getting DB connections...")
 	metadataDB := dbManager.GetMetadataDB()
 	userDB := dbManager.GetUserDB()
 	auditDB := dbManager.GetAuditDB()
 
 	// 5. 执行数据库迁移和种子数据
+	fmt.Fprintln(os.Stderr, "DEBUG: DB connections retrieved. Starting migrations...")
 	migrateMetadataDatabase(metadataDB)
 	migrateUserDatabase(userDB)
 	migrateAuditDatabase(auditDB)
 
+	// 5.1 初始化 Casbin 权限管理
+	fmt.Fprintln(os.Stderr, "DEBUG: Migrations completed. Initializing Casbin...")
+	if err := middleware.InitCasbin(userDB, "./configs/rbac_model.conf"); err != nil {
+		utils.SugarLogger.Warnf("Failed to initialize Casbin: %v, continuing without RBAC", err)
+	}
+
+	fmt.Fprintln(os.Stderr, "DEBUG: Seeding completed. Starting seeding...")
 	seedMetadataDatabase(metadataDB)
 	seedUserDatabase(userDB)
 	// 6. 初始化Hertz引擎
+	fmt.Fprintln(os.Stderr, "DEBUG: Seeding completed. Initializing Hertz server...")
 	r := server.Default(
 		server.WithHostPorts(fmt.Sprintf("%s:%d", cfg.ServerHost, cfg.ServerPort)),
 	)
 
 	// 6.4 初始化审计日志队列
+	fmt.Fprintln(os.Stderr, "DEBUG: Hertz initialized. Starting audit log queue...")
 	auditLogQueue := auditQueuePkg.NewAuditLogQueue(auditDB, 1000, 5)
 	auditLogQueue.Start()
 	defer auditLogQueue.Stop()
 
 	// 6.5 执行权限同步
+	fmt.Fprintln(os.Stderr, "DEBUG: Audit queue started. Syncing Casbin policies...")
 	syncCasbinPolicies(userDB, auditDB, auditLogQueue)
 
 	// ...
 
 	// 7. 初始化中间件加载器
+	fmt.Fprintln(os.Stderr, "DEBUG: Casbin synced. Loading middlewares...")
 	middlewareLoader := middleware.NewMiddlewareLoader()
 	middlewareLoader.RegisterDefaultMiddlewares()
 	middlewareLoader.LoadMiddlewareConfig(middleware.GetDefaultMiddlewareConfig())
 	middlewareLoader.UseMiddlewareChain(r)
 
 	// 8. 注册模块化路由
+	fmt.Fprintln(os.Stderr, "DEBUG: Middlewares loaded. Registering routes...")
 	api.RegisterModuleRoutes(r, metadataDB, userDB, auditDB, auditLogQueue)
 
 	// 9. 启动服务器
+	fmt.Fprintln(os.Stderr, "DEBUG: Routes registered. Starting server run loop...")
 	addr := fmt.Sprintf("%s:%d", cfg.ServerHost, cfg.ServerPort)
 	utils.SugarLogger.Infof("Server is running on %s", addr)
 	utils.SugarLogger.Infof("Application started successfully in %s mode", cfg.AppMode)

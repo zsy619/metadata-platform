@@ -1,14 +1,12 @@
 package api
 
 import (
-	"metadata-platform/internal/module/audit/queue"
-	"metadata-platform/internal/module/user/service"
-
 	"github.com/cloudwego/hertz/pkg/app/server"
 
 	globalMiddleware "metadata-platform/internal/middleware"
-
+	"metadata-platform/internal/module/audit/queue"
 	auditSvc "metadata-platform/internal/module/audit/service"
+	"metadata-platform/internal/module/user/service"
 )
 
 // SsoHandler 用户模块处理器集合
@@ -45,6 +43,7 @@ func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) 
 func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 	// 认证相关路由
 	authRouter := router.Group("/api/auth")
+	// authRouter.Use(globalMiddleware.CORSMiddleware())
 	{
 		authRouter.POST("/login", h.AuthHandler.Login)
 		authRouter.POST("/refresh", h.AuthHandler.Refresh)

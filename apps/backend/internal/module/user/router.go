@@ -1,6 +1,8 @@
 package user
 
 import (
+	"fmt"
+
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"gorm.io/gorm"
 
@@ -12,6 +14,8 @@ import (
 
 // RegisterRoutes 注册用户管理模块路由
 func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) {
+	fmt.Println(">>> Initializing User Routes...")
+
 	// 初始化仓库集合
 	repos := repository.NewRepositories(db)
 

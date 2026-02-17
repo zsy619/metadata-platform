@@ -3,9 +3,7 @@
         <template v-if="hasOneShowingChild(item.children, item) && (!onlyOneChild.children || onlyOneChild.noShowingChildren) && !item.meta?.alwaysShow">
             <app-link v-if="onlyOneChild.meta" :to="resolvePath(onlyOneChild.path)">
                 <el-menu-item :index="resolvePath(onlyOneChild.path)" :class="{ 'submenu-title-noDropdown': !isNest }">
-                    <el-icon v-if="onlyOneChild.meta.icon || (item.meta && item.meta.icon)" class="menu-icon">
-                        <component :is="onlyOneChild.meta.icon || item.meta.icon" />
-                    </el-icon>
+                    <font-awesome-icon :icon="parseIcon(onlyOneChild.meta.icon || item.meta?.icon)" v-if="onlyOneChild.meta.icon || item.meta?.icon" class="menu-icon" />
                     <template #title>
                         <span class="menu-title">{{ onlyOneChild.meta?.title }}</span>
                     </template>
@@ -14,9 +12,7 @@
         </template>
         <el-sub-menu v-else :index="resolvePath(item.path)" popper-append-to-body>
             <template #title>
-                <el-icon v-if="item.meta && item.meta.icon" class="menu-icon">
-                    <component :is="item.meta.icon" />
-                </el-icon>
+                <font-awesome-icon :icon="parseIcon(item.meta?.icon)" v-if="item.meta?.icon" class="menu-icon" />
                 <span class="menu-title">{{ item.meta?.title }}</span>
             </template>
             <sidebar-item v-for="child in item.children" :key="child.path" :is-nest="true" :item="child" :base-path="resolvePath(child.path)" class="nest-menu" />
@@ -43,6 +39,20 @@ const props = defineProps({
 })
 
 const onlyOneChild = ref<any>(null)
+
+const parseIcon = (iconName: string) => {
+    if (!iconName) return null
+    
+    if (iconName.startsWith('fa-solid ') || iconName.startsWith('fa-regular ') || iconName.startsWith('fa-brands ')) {
+        return iconName
+    }
+    
+    if (iconName.startsWith('fa-')) {
+        return `fa-solid ${iconName}`
+    }
+    
+    return null
+}
 
 const hasOneShowingChild = (children: any[] = [], parent: any) => {
     const showingChildren = children.filter(item => {
@@ -76,12 +86,10 @@ const resolvePath = (routePath: string) => {
         return props.basePath
     }
 
-    // Handle absolute paths
     if (routePath.startsWith('/')) {
         return routePath
     }
 
-    // Join basePath and routePath, avoiding double slashes
     const base = props.basePath.replace(/\/+$/, '')
     const path = routePath.replace(/^\/+/, '')
 
@@ -91,8 +99,13 @@ const resolvePath = (routePath: string) => {
 <style scoped>
 .menu-icon {
     font-size: 18px;
+    width: 18px;
+    height: 18px;
     margin-right: 8px;
     vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .menu-title {

@@ -23,13 +23,13 @@
           <el-option v-for="item in DATA_RANGE_OPTIONS" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="状&#12288;&#12288;态" prop="status">
         <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
       </el-form-item>
-      <el-form-item label="序号" prop="sort">
+      <el-form-item label="序&#12288;&#12288;号" prop="sort">
         <el-input-number v-model="formData.sort" :min="0" style="width: 100%" />
       </el-form-item>
-      <el-form-item label="备注" prop="remark">
+      <el-form-item label="备&#12288;&#12288;注" prop="remark">
         <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注" />
       </el-form-item>
     </el-form>

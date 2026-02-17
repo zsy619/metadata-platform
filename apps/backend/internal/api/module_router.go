@@ -1,6 +1,9 @@
 package api
 
 import (
+	"context"
+
+	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"gorm.io/gorm"
 
@@ -24,6 +27,12 @@ func RegisterModuleRoutes(h *server.Hertz, metadataDB, userDB, auditDB *gorm.DB,
 
 	// Register Monitor Module
 	monitor.RegisterRoutes(h)
+
+	// 打印所有已注册的路由
+	h.GET("/debug/routes", func(c context.Context, ctx *app.RequestContext) {
+		routes := h.Routes()
+		ctx.JSON(200, routes)
+	})
 }
 
 // registerMetadataRoutes 注册元数据模块路由

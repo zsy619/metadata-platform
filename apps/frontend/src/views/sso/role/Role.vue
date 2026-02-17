@@ -66,7 +66,7 @@
           </el-table-column>
           <el-table-column prop="remark" label="备注" show-overflow-tooltip />
           <el-table-column prop="sort" label="序号" width="80" />
-          <el-table-column label="操作" width="250" fixed="right">
+          <el-table-column label="操作" width="260" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" :icon="Plus" @click="handleAddChild(scope.row)" text bg>新增子级</el-button>
               <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
