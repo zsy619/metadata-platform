@@ -11,31 +11,33 @@ import (
 
 // SsoHandler 用户模块处理器集合
 type SsoHandler struct {
-	TenantHandler  *SsoTenantHandler
-	AppHandler     *SsoAppHandler
-	MenuHandler    *SsoMenuHandler
-	RoleHandler    *SsoRoleHandler
-	OrgHandler     *SsoOrgHandler
-	UserHandler    *SsoUserHandler
-	PosHandler     *SsoPosHandler
-	AuthHandler    *SsoAuthHandler
-	OrgKindHandler *SsoOrgKindHandler
-	AuditService   auditSvc.AuditService
+	TenantHandler    *SsoTenantHandler
+	AppHandler       *SsoAppHandler
+	MenuHandler      *SsoMenuHandler
+	RoleHandler      *SsoRoleHandler
+	OrgHandler       *SsoOrgHandler
+	UserHandler      *SsoUserHandler
+	PosHandler       *SsoPosHandler
+	AuthHandler      *SsoAuthHandler
+	OrgKindHandler   *SsoOrgKindHandler
+	RoleGroupHandler *SsoRoleGroupHandler
+	AuditService     auditSvc.AuditService
 }
 
 // NewSsoHandler 创建用户模块处理器集合
 func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) *SsoHandler {
 	return &SsoHandler{
-		UserHandler:    NewSsoUserHandler(services.User),
-		TenantHandler:  NewSsoTenantHandler(services.Tenant, auditQueue),
-		AppHandler:     NewSsoAppHandler(services.App, auditQueue),
-		MenuHandler:    NewSsoMenuHandler(services.Menu, auditQueue),
-		RoleHandler:    NewSsoRoleHandler(services.Role, auditQueue),
-		OrgHandler:     NewSsoOrgHandler(services.Org, auditQueue),
-		PosHandler:     NewSsoPosHandler(services.Pos, auditQueue),
-		AuthHandler:    NewSsoAuthHandler(services.Auth),
-		OrgKindHandler: NewSsoOrgKindHandler(services.OrgKind, auditQueue),
-		AuditService:   services.Audit,
+		UserHandler:      NewSsoUserHandler(services.User),
+		TenantHandler:    NewSsoTenantHandler(services.Tenant, auditQueue),
+		AppHandler:       NewSsoAppHandler(services.App, auditQueue),
+		MenuHandler:      NewSsoMenuHandler(services.Menu, auditQueue),
+		RoleHandler:      NewSsoRoleHandler(services.Role, auditQueue),
+		OrgHandler:       NewSsoOrgHandler(services.Org, auditQueue),
+		PosHandler:       NewSsoPosHandler(services.Pos, auditQueue),
+		AuthHandler:      NewSsoAuthHandler(services.Auth),
+		OrgKindHandler:   NewSsoOrgKindHandler(services.OrgKind, auditQueue),
+		RoleGroupHandler: NewSsoRoleGroupHandler(services.RoleGroup, auditQueue),
+		AuditService:     services.Audit,
 	}
 }
 
@@ -135,5 +137,15 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		posRouter.PUT("/:id", h.PosHandler.UpdatePos)
 		posRouter.DELETE("/:id", h.PosHandler.DeletePos)
 		posRouter.GET("", h.PosHandler.GetAllPoss)
+	}
+
+	// 角色分组相关路由
+	roleGroupRouter := group.Group("/role-group")
+	{
+		roleGroupRouter.POST("", h.RoleGroupHandler.CreateRoleGroup)
+		roleGroupRouter.GET("/:id", h.RoleGroupHandler.GetRoleGroupByID)
+		roleGroupRouter.PUT("/:id", h.RoleGroupHandler.UpdateRoleGroup)
+		roleGroupRouter.DELETE("/:id", h.RoleGroupHandler.DeleteRoleGroup)
+		roleGroupRouter.GET("", h.RoleGroupHandler.GetAllRoleGroups)
 	}
 }

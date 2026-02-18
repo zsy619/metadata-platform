@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"github.com/cloudwego/hertz/pkg/app"
-
 	"metadata-platform/internal/module/audit/model"
 	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/service"
 	"metadata-platform/internal/utils"
+
+	"github.com/cloudwego/hertz/pkg/app"
+
 	userModel "metadata-platform/internal/module/user/model"
 )
 
@@ -32,28 +32,32 @@ func NewSsoPosHandler(posService service.SsoPosService, auditQueue *queue.AuditL
 
 // SsoCreatePosRequest 创建职位请求结构
 type SsoCreatePosRequest struct {
-	ParentID string `json:"parent_id" form:"parent_id"`
-	AppCode  string `json:"app_code" form:"app_code"`
-	OrgID    string `json:"org_id" form:"org_id"`
-	KindCode string `json:"kind_code" form:"kind_code" binding:"required"`
-	PosName  string `json:"pos_name" form:"pos_name" binding:"required"`
-	PosCode  string `json:"pos_code" form:"pos_code" binding:"required"`
-	Status   int    `json:"state" form:"state"`
-	Remark   string `json:"remark" form:"remark"`
-	Sort     int    `json:"sort" form:"sort"`
+	ParentID  string `json:"parent_id" form:"parent_id"`
+	AppCode   string `json:"app_code" form:"app_code"`
+	OrgID     string `json:"org_id" form:"org_id"`
+	KindCode  string `json:"kind_code" form:"kind_code" binding:"required"`
+	PosName   string `json:"pos_name" form:"pos_name" binding:"required"`
+	PosCode   string `json:"pos_code" form:"pos_code" binding:"required"`
+	DataRange string `json:"data_range" form:"data_range"`
+	DataScope string `json:"data_scope" form:"data_scope"`
+	Status    int    `json:"status" form:"status"`
+	Remark    string `json:"remark" form:"remark"`
+	Sort      int    `json:"sort" form:"sort"`
 }
 
 // SsoUpdatePosRequest 更新职位请求结构
 type SsoUpdatePosRequest struct {
-	ParentID *string `json:"parent_id" form:"parent_id"`
-	AppCode  *string `json:"app_code" form:"app_code"`
-	OrgID    *string `json:"org_id" form:"org_id"`
-	KindCode *string `json:"kind_code" form:"kind_code"`
-	PosName  *string `json:"pos_name" form:"pos_name"`
-	PosCode  *string `json:"pos_code" form:"pos_code"`
-	Status   *int    `json:"state" form:"state"`
-	Remark   *string `json:"remark" form:"remark"`
-	Sort     *int    `json:"sort" form:"sort"`
+	ParentID  string `json:"parent_id" form:"parent_id"`
+	AppCode   string `json:"app_code" form:"app_code"`
+	OrgID     string `json:"org_id" form:"org_id"`
+	DataRange string `json:"data_range" form:"data_range"`
+	DataScope string `json:"data_scope" form:"data_scope"`
+	KindCode  string `json:"kind_code" form:"kind_code"`
+	PosName   string `json:"pos_name" form:"pos_name"`
+	PosCode   string `json:"pos_code" form:"pos_code"`
+	Status    int    `json:"status" form:"status"`
+	Remark    string `json:"remark" form:"remark"`
+	Sort      int    `json:"sort" form:"sort"`
 }
 
 // CreatePosition 创建职位
@@ -70,18 +74,20 @@ func (h *SsoPosHandler) CreatePos(c context.Context, ctx *app.RequestContext) {
 
 	// 创建职位模型
 	position := &userModel.SsoPos{
-		ParentID: req.ParentID,
-		AppCode:  req.AppCode,
-		OrgID:    req.OrgID,
-		KindCode: req.KindCode,
-		PosName:  req.PosName,
-		PosCode:  req.PosCode,
-		Status:   req.Status,
-		Remark:   req.Remark,
-		Sort:     req.Sort,
-		CreateID: headerUser.UserID,
-		CreateBy: headerUser.UserAccount,
-		TenantID: headerUser.TenantID,
+		ParentID:  req.ParentID,
+		AppCode:   req.AppCode,
+		OrgID:     req.OrgID,
+		KindCode:  req.KindCode,
+		DataRange: req.DataRange,
+		DataScope: req.DataScope,
+		PosName:   req.PosName,
+		PosCode:   req.PosCode,
+		Status:    req.Status,
+		Remark:    req.Remark,
+		Sort:      req.Sort,
+		CreateID:  headerUser.UserID,
+		CreateBy:  headerUser.UserAccount,
+		TenantID:  headerUser.TenantID,
 	}
 
 	// 生成职位ID
@@ -144,47 +150,41 @@ func (h *SsoPosHandler) UpdatePos(c context.Context, ctx *app.RequestContext) {
 	}
 	beforeJSON, _ := json.Marshal(beforeData)
 
-	// 更新职位字段
-	if req.ParentID != nil {
-		beforeData.ParentID = *req.ParentID
-	}
-	if req.AppCode != nil {
-		beforeData.AppCode = *req.AppCode
-	}
-	if req.OrgID != nil {
-		beforeData.OrgID = *req.OrgID
-	}
-	if req.KindCode != nil {
-		beforeData.KindCode = *req.KindCode
-	}
-	if req.PosName != nil {
-		beforeData.PosName = *req.PosName
-	}
-	if req.PosCode != nil {
-		beforeData.PosCode = *req.PosCode
-	}
-	if req.Status != nil {
-		beforeData.Status = *req.Status
-	}
-	if req.Remark != nil {
-		beforeData.Remark = *req.Remark
-	}
-	if req.Sort != nil {
-		beforeData.Sort = *req.Sort
+	// 构建更新字段（只更新传递的字段）
+	// 使用 map 方式实现部分字段更新，避免全量更新
+	fields := map[string]any{
+		"update_id": headerUser.UserID,
+		"update_by": headerUser.UserAccount,
 	}
 
-	// 设置更新人信息
-	beforeData.UpdateID = headerUser.UserID
-	beforeData.UpdateBy = headerUser.UserAccount
+	// 根据请求中的字段构建更新 map
+	fields["parent_id"] = req.ParentID
+	fields["app_code"] = req.AppCode
+	fields["org_id"] = req.OrgID
+	fields["kind_code"] = req.KindCode
+	fields["pos_name"] = req.PosName
+	fields["pos_code"] = req.PosCode
+	fields["status"] = req.Status
+	fields["data_range"] = req.DataRange
+	fields["data_scope"] = req.DataScope
+	fields["remark"] = req.Remark
+	fields["sort"] = req.Sort
 
-	// 调用服务层更新职位
-	if err := h.posService.UpdatePos(beforeData); err != nil {
+	// 调用服务层更新职位（使用 map 方式）
+	if err := h.posService.UpdatePosFields(id, fields); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
 
+	// 获取更新后的职位数据
+	afterData, err := h.posService.GetPosByID(id)
+	if err != nil {
+		ctx.JSON(200, map[string]string{"message": "更新成功"})
+		return
+	}
+
 	// 记录数据变更日志
-	afterJSON, _ := json.Marshal(beforeData)
+	afterJSON, _ := json.Marshal(afterData)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
 		TraceID:    headerUser.TraceID,
@@ -197,7 +197,7 @@ func (h *SsoPosHandler) UpdatePos(c context.Context, ctx *app.RequestContext) {
 		Source:     "pos_service",
 	})
 
-	ctx.JSON(200, beforeData)
+	ctx.JSON(200, afterData)
 }
 
 // DeletePos 删除职位

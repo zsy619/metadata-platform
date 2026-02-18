@@ -64,6 +64,27 @@ func (s *ssoPosService) UpdatePos(pos *model.SsoPos) error {
 	return s.posRepo.UpdatePos(pos)
 }
 
+// UpdatePosFields 更新职位指定字段
+// 使用 map 方式只更新指定的字段，避免全量更新
+// 会检查职位是否存在，以及如果更新了职位编码，会检查新编码是否已存在
+func (s *ssoPosService) UpdatePosFields(id string, fields map[string]any) error {
+	// 检查职位是否存在
+	_, err := s.posRepo.GetPosByID(id)
+	if err != nil {
+		return errors.New("职位不存在")
+	}
+
+	// 如果更新了职位编码，检查新编码是否已存在
+	if posCode, ok := fields["pos_code"]; ok && posCode != "" {
+		anotherPos, err := s.posRepo.GetPosByCode(posCode.(string))
+		if err == nil && anotherPos != nil && anotherPos.ID != id {
+			return errors.New("职位编码已存在")
+		}
+	}
+
+	return s.posRepo.UpdatePosFields(id, fields)
+}
+
 // DeletePos 删除职位
 func (s *ssoPosService) DeletePos(id string) error {
 	// 检查职位是否存在

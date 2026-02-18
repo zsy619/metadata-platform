@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
-
-	"gorm.io/gorm"
-
 	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
 	"metadata-platform/internal/utils"
+
+	"gorm.io/gorm"
+
 	auditService "metadata-platform/internal/module/audit/service"
 )
 
@@ -50,6 +50,7 @@ type SsoMenuService interface {
 	GetMenuByID(id string) (*model.SsoMenu, error)
 	GetMenuByCode(code string) (*model.SsoMenu, error)
 	UpdateMenu(menu *model.SsoMenu) error
+	UpdateMenuFields(id string, fields map[string]any) error
 	DeleteMenu(id string) error
 	GetAllMenus() ([]model.SsoMenu, error)
 }
@@ -92,8 +93,20 @@ type SsoPosService interface {
 	GetPosByID(id string) (*model.SsoPos, error)
 	GetPosByCode(code string) (*model.SsoPos, error)
 	UpdatePos(pos *model.SsoPos) error
+	UpdatePosFields(id string, fields map[string]any) error
 	DeletePos(id string) error
 	GetAllPoss() ([]model.SsoPos, error)
+}
+
+// SsoRoleGroupService 角色分组服务接口
+type SsoRoleGroupService interface {
+	CreateRoleGroup(item *model.SsoRoleGroup) error
+	GetRoleGroupByID(id string) (*model.SsoRoleGroup, error)
+	GetRoleGroupByCode(code string) (*model.SsoRoleGroup, error)
+	UpdateRoleGroup(item *model.SsoRoleGroup) error
+	UpdateRoleGroupFields(id string, fields map[string]any) error
+	DeleteRoleGroup(id string) error
+	GetAllRoleGroups() ([]model.SsoRoleGroup, error)
 }
 
 // SsoAuthService 认证服务接口
@@ -116,6 +129,7 @@ type Services struct {
 	Pos        SsoPosService
 	Auth       SsoAuthService
 	OrgKind    SsoOrgKindService
+	RoleGroup  SsoRoleGroupService
 	CasbinSync SsoCasbinSyncService
 	Audit      auditService.AuditService
 }
@@ -124,15 +138,16 @@ type Services struct {
 func NewServices(repos *repository.Repositories, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *Services {
 	auditSvc := auditService.NewAuditService(auditDB, auditQueue)
 	return &Services{
-		User:    NewSsoUserService(repos.User, repos.Org, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup),
-		Tenant:  NewSsoTenantService(repos.Tenant),
-		App:     NewSsoAppService(repos.App),
-		Menu:    NewSsoMenuService(repos.Menu),
-		Role:    NewSsoRoleService(repos.Role, repos.RoleMenu, repos.UserRole, repos.PosRole, repos.OrgRole, repos.RoleGroupRole),
-		Org:     NewSsoOrgService(repos.Org, repos.OrgUser, repos.OrgRole, repos.OrgMenu),
-		Pos:     NewSsoPosService(repos.Pos),
-		Auth:    NewSsoAuthService(repos.User, repos.Role, repos.UserRole, auditSvc),
-		OrgKind: NewSsoOrgKindService(repos.OrgKind),
+		User:      NewSsoUserService(repos.User, repos.Org, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup),
+		Tenant:    NewSsoTenantService(repos.Tenant),
+		App:       NewSsoAppService(repos.App),
+		Menu:      NewSsoMenuService(repos.Menu),
+		Role:      NewSsoRoleService(repos.Role, repos.RoleMenu, repos.UserRole, repos.PosRole, repos.OrgRole, repos.RoleGroupRole),
+		Org:       NewSsoOrgService(repos.Org, repos.OrgUser, repos.OrgRole, repos.OrgMenu),
+		Pos:       NewSsoPosService(repos.Pos),
+		Auth:      NewSsoAuthService(repos.User, repos.Role, repos.UserRole, auditSvc),
+		OrgKind:   NewSsoOrgKindService(repos.OrgKind),
+		RoleGroup: NewSsoRoleGroupService(repos.RoleGroup, repos.RoleGroupRole),
 		CasbinSync: NewSsoCasbinSyncService(
 			repos.UserRole,
 			repos.RoleMenu,

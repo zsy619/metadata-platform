@@ -40,13 +40,7 @@
           </template>
           <el-table-column prop="role_name" label="角色名称" min-width="200">
             <template #default="scope">
-              <div class="role-name-cell">
-                <el-icon v-if="scope.row.children && scope.row.children.length > 0" class="tree-icon folder-icon">
-                  <Folder />
-                </el-icon>
-                <el-icon v-else class="tree-icon leaf-icon"><User /></el-icon>
-                <span class="role-name-text">{{ scope.row.role_name }}</span>
-              </div>
+              <TreeNameCell :row="scope.row" name-field="role_name" />
             </template>
           </el-table-column>
           <el-table-column prop="role_code" label="角色编码" width="150" />
@@ -70,21 +64,22 @@
             <template #default="scope">
               <el-button type="primary" size="small" :icon="Plus" @click="handleAddChild(scope.row)" text bg>新增子级</el-button>
               <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
-              <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
+              <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg v-if="!scope.row.is_system && !hasChildren(scope.row.id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
     </el-card>
 
-    <RoleForm v-model="dialogVisible" :data="formData" :all-roles="allData" @success="loadData" />
+    <RoleForm v-model="dialogVisible" :data="formData" :all-roles="allData" :exclude-ids="excludeIds" :org-list="orgList" @success="loadData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { deleteRole, getRoles } from '@/api/user'
+import { deleteRole, getRoles, getUnits } from '@/api/user'
+import TreeNameCell from '@/components/table/TreeNameCell.vue'
 import { DATA_RANGE, DATA_RANGE_LABELS } from '@/utils/constants'
-import { Delete, Edit, Folder, Plus, RefreshLeft, Search, User, UserFilled } from '@element-plus/icons-vue'
+import { Delete, Edit, Plus, RefreshLeft, Search, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import RoleForm from './RoleForm.vue'
@@ -96,9 +91,41 @@ const filterStatus = ref<number | ''>('')
 
 const allData = ref<any[]>([])
 const treeData = ref<any[]>([])
+const orgList = ref<any[]>([])
 
 const dialogVisible = ref(false)
 const formData = ref<any>({})
+
+/**
+ * 编辑时需要排除的节点ID列表（包含自己及所有子节点）
+ * 用于上级角色选择器，防止循环引用
+ */
+const excludeIds = ref<string[]>([])
+
+/**
+ * 获取指定节点的所有子节点ID（递归）
+ * @param items 所有数据列表
+ * @param parentId 父节点ID
+ * @returns 所有子节点ID列表
+ */
+const getAllChildrenIds = (items: any[], parentId: string): string[] => {
+  const children = items.filter(item => (item.parent_id || '') === parentId)
+  let ids: string[] = []
+  for (const child of children) {
+    ids.push(child.id)
+    ids = ids.concat(getAllChildrenIds(items, child.id))
+  }
+  return ids
+}
+
+/**
+ * 检查指定节点是否有子节点
+ * @param id 节点ID
+ * @returns 是否有子节点
+ */
+const hasChildren = (id: string): boolean => {
+  return allData.value.some(item => (item.parent_id || '') === id)
+}
 
 /**
  * 将扁平数据转换为树形结构
@@ -131,10 +158,14 @@ const loadData = async () => {
   loadingText.value = '加载中...'
   loading.value = true
   try {
-    const res: any = await getRoles()
-    const flatData = res.data || res || []
+    const [roleRes, orgRes]: [any, any] = await Promise.all([
+      getRoles(),
+      getUnits()
+    ])
+    const flatData = roleRes.data || roleRes || []
     allData.value = flatData
     treeData.value = buildTree(flatData)
+    orgList.value = orgRes.data || orgRes
   } catch (error) {
     console.error('加载角色列表失败:', error)
     ElMessage.error('加载列表失败')
@@ -194,6 +225,7 @@ const handleReset = () => {
  */
 const handleCreate = () => {
   formData.value = { parent_id: '', status: 1, sort: 0, data_range: DATA_RANGE.ALL }
+  excludeIds.value = []
   dialogVisible.value = true
 }
 
@@ -203,6 +235,7 @@ const handleCreate = () => {
  */
 const handleAddChild = (row: any) => {
   formData.value = { parent_id: row.id, status: 1, sort: 0, data_range: DATA_RANGE.ALL }
+  excludeIds.value = []
   dialogVisible.value = true
 }
 
@@ -212,6 +245,7 @@ const handleAddChild = (row: any) => {
  */
 const handleEdit = (row: any) => {
   formData.value = { ...row }
+  excludeIds.value = [row.id, ...getAllChildrenIds(allData.value, row.id)]
   dialogVisible.value = true
 }
 
@@ -220,14 +254,8 @@ const handleEdit = (row: any) => {
  * @param row 角色数据
  */
 const handleDelete = async (row: any) => {
-  // 检查是否存在子节点
-  const hasChildren = allData.value.some(item => item.parent_id === row.id)
-  const msg = hasChildren
-    ? `该角色下存在子级角色，删除将同时删除所有子级角色。确定要删除角色 "${row.role_name}" 吗？`
-    : `确定要删除角色 "${row.role_name}" 吗？`
-  
   try {
-    await ElMessageBox.confirm(msg, '提示', { type: 'warning' })
+    await ElMessageBox.confirm(`确定要删除角色 "${row.role_name}" 吗？`, '提示', { type: 'warning' })
     await deleteRole(row.id)
     ElMessage.success('删除成功')
     loadData()
@@ -242,24 +270,6 @@ onMounted(() => loadData())
 </script>
 
 <style scoped>
-.role-name-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.role-name-text {
-  font-weight: 500;
-}
-.tree-icon {
-  font-size: 16px;
-  flex-shrink: 0;
-}
-.folder-icon {
-  color: var(--el-color-warning);
-}
-.leaf-icon {
-  color: var(--el-text-color-secondary);
-}
 .main-card { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 :deep(.el-card__body) { height: 100%; display: flex; flex-direction: column; padding: 20px; overflow: hidden; box-sizing: border-box; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }

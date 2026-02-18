@@ -48,6 +48,7 @@ type SsoMenuRepository interface {
 	GetMenuByID(id string) (*model.SsoMenu, error)
 	GetMenuByCode(code string) (*model.SsoMenu, error)
 	UpdateMenu(menu *model.SsoMenu) error
+	UpdateMenuFields(id string, fields map[string]any) error
 	DeleteMenu(id string) error
 	GetAllMenus() ([]model.SsoMenu, error)
 	GetMaxSort() (int, error)
@@ -95,6 +96,7 @@ type SsoPosRepository interface {
 	GetPosByID(id string) (*model.SsoPos, error)
 	GetPosByCode(code string) (*model.SsoPos, error)
 	UpdatePos(pos *model.SsoPos) error
+	UpdatePosFields(id string, fields map[string]any) error
 	DeletePos(id string) error
 	GetAllPoss() ([]model.SsoPos, error)
 	GetMaxSort() (int, error)

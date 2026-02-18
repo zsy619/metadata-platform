@@ -25,6 +25,9 @@
           <el-option v-for="item in DATA_RANGE_OPTIONS" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
+      <el-form-item label="数据权限" prop="data_scope" v-if="formData.data_range === '2'">
+        <el-tree-select v-model="selectedOrgIds" :data="orgTreeData" multiple check-strictly default-expand-all :render-after-expand="true" placeholder="请选择数据范围（组织）" clearable collapse-tags collapse-tags-tooltip style="width: 100%" />
+      </el-form-item>
       <el-form-item label="状　　态" prop="status">
         <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
       </el-form-item>
@@ -53,6 +56,8 @@ const props = defineProps<{
   modelValue: boolean
   data: any
   allRoles: any[]
+  excludeIds?: string[]
+  orgList?: any[]
 }>()
 
 const emit = defineEmits<{
@@ -85,32 +90,6 @@ const formRules: FormRules = {
 }
 
 /**
- * 获取当前节点及其所有子节点的ID列表
- * 用于在选择上级角色时排除这些节点，避免循环引用
- * @returns 需要排除的节点ID数组
- */
-const getDisabledIds = (): string[] => {
-  if (!formData.value.id) return []
-  const disabledIds = [formData.value.id]
-  
-  /**
-   * 递归查找所有子节点
-   * @param pid 父节点ID
-   */
-  const addChildren = (pid: string) => {
-    props.allRoles.forEach(item => {
-      const itemPid = item.parent_id || ''
-      if (itemPid === pid) {
-        disabledIds.push(item.id)
-        addChildren(item.id)
-      }
-    })
-  }
-  addChildren(formData.value.id)
-  return disabledIds
-}
-
-/**
  * 构建树形选择器数据
  * 排除当前节点及其所有子节点，防止循环引用
  * @param list 扁平数据列表
@@ -138,11 +117,54 @@ const buildTreeSelectData = (list: any[], parentId: string = '', excludeIds: str
 
 /**
  * 树形选择器数据（计算属性）
- * 自动排除当前编辑节点及其所有子节点
+ * 使用 props 传入的 excludeIds 排除当前编辑节点及其所有子节点
  */
 const treeSelectData = computed(() => {
-  const excludeIds = getDisabledIds()
+  const excludeIds = props.excludeIds || []
   return buildTreeSelectData(props.allRoles, '', excludeIds)
+})
+
+/**
+ * 构建组织树形数据
+ * @param list 组织列表
+ * @param parentId 父ID
+ * @returns 树形数据
+ */
+const buildOrgTreeData = (list: any[], parentId: string = ''): any[] => {
+  return list
+    .filter(item => (item.parent_id || '') === parentId)
+    .map(item => ({
+      value: item.id,
+      label: item.org_name || item.org_code,
+      children: buildOrgTreeData(list, item.id)
+    }))
+    .sort((a, b) => {
+      const itemA = list.find(i => i.id === a.value)
+      const itemB = list.find(i => i.id === b.value)
+      return (itemA?.sort || 0) - (itemB?.sort || 0)
+    })
+}
+
+/**
+ * 组织树形数据（用于数据权限选择）
+ */
+const orgTreeData = computed(() => {
+  if (!props.orgList) return []
+  return buildOrgTreeData(props.orgList)
+})
+
+/**
+ * 选中的组织ID（用于数据权限）
+ */
+const selectedOrgIds = computed({
+  get: () => {
+    if (!formData.value.data_scope) return []
+    if (Array.isArray(formData.value.data_scope)) return formData.value.data_scope
+    return formData.value.data_scope.split(',').filter(Boolean)
+  },
+  set: (val: string[]) => {
+    formData.value.data_scope = val.join(',')
+  }
 })
 
 /**
@@ -183,9 +205,8 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       // 验证上级角色选择是否合法（不能选择自己或自己的子节点作为上级）
-      if (formData.value.id && formData.value.parent_id) {
-        const disabledIds = getDisabledIds()
-        if (disabledIds.includes(formData.value.parent_id)) {
+      if (formData.value.id && formData.value.parent_id && props.excludeIds) {
+        if (props.excludeIds.includes(formData.value.parent_id)) {
           ElMessage.error('不能选择当前角色或其下级角色作为上级角色')
           return
         }
@@ -193,11 +214,23 @@ const handleSubmit = async () => {
       
       loading.value = true
       try {
+        // 构造提交数据
+        const submitData = {
+          parent_id: formData.value.parent_id || '',
+          role_name: formData.value.role_name || '',
+          role_code: formData.value.role_code || '',
+          data_range: formData.value.data_range,
+          data_scope: formData.value.data_scope || '',
+          status: formData.value.status,
+          sort: formData.value.sort,
+          remark: formData.value.remark || ''
+        }
+        
         if (formData.value.id) {
-          await updateRole(formData.value.id, formData.value)
+          await updateRole(formData.value.id, submitData)
           ElMessage.success('更新成功')
         } else {
-          await createRole(formData.value)
+          await createRole(submitData)
           ElMessage.success('创建成功')
         }
         handleClose()

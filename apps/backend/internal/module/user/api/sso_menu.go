@@ -9,9 +9,9 @@ import (
 
 	"metadata-platform/internal/module/audit/model"
 	"metadata-platform/internal/module/audit/queue"
-	userModel "metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/service"
 	"metadata-platform/internal/utils"
+	userModel "metadata-platform/internal/module/user/model"
 )
 
 // SsoMenuHandler 菜单处理器结构体
@@ -33,10 +33,10 @@ func NewSsoMenuHandler(menuService service.SsoMenuService, auditQueue *queue.Aud
 // SsoCreateMenuRequest 创建菜单请求结构
 type SsoCreateMenuRequest struct {
 	ParentID  string `json:"parent_id" form:"parent_id"`
-	AppCode   string `json:"application_code" form:"application_code"`
+	AppCode   string `json:"app_code" form:"app_code"`
 	MenuName  string `json:"menu_name" form:"menu_name" binding:"required"`
 	MenuCode  string `json:"menu_code" form:"menu_code" binding:"required"`
-	Status    int    `json:"state" form:"state"`
+	Status    int    `json:"status" form:"status"`
 	DataRange string `json:"data_range" form:"data_range"`
 	DataScope string `json:"data_scope" form:"data_scope"`
 	IsVisible bool   `json:"is_visible" form:"is_visible"`
@@ -52,22 +52,22 @@ type SsoCreateMenuRequest struct {
 
 // SsoUpdateMenuRequest 更新菜单请求结构
 type SsoUpdateMenuRequest struct {
-	ParentID  *string `json:"parent_id" form:"parent_id"`
-	AppCode   *string `json:"application_code" form:"application_code"`
-	MenuName  *string `json:"menu_name" form:"menu_name"`
-	MenuCode  *string `json:"menu_code" form:"menu_code"`
-	Status    *int    `json:"state" form:"state"`
-	DataRange *string `json:"data_range" form:"data_range"`
-	DataScope *string `json:"data_scope" form:"data_scope"`
-	IsVisible *bool   `json:"is_visible" form:"is_visible"`
-	MenuType  *string `json:"menu_type" form:"menu_type"`
-	Icon      *string `json:"icon" form:"icon"`
-	URL       *string `json:"url" form:"url"`
-	Method    *string `json:"method" form:"method"`
-	Target    *string `json:"target" form:"target"`
-	Remark    *string `json:"remark" form:"remark"`
-	Sort      *int    `json:"sort" form:"sort"`
-	Tier      *int    `json:"tier" form:"tier"`
+	ParentID  string `json:"parent_id" form:"parent_id"`
+	AppCode   string `json:"app_code" form:"app_code"`
+	MenuName  string `json:"menu_name" form:"menu_name"`
+	MenuCode  string `json:"menu_code" form:"menu_code"`
+	Status    int    `json:"status" form:"status"`
+	DataRange string `json:"data_range" form:"data_range"`
+	DataScope string `json:"data_scope" form:"data_scope"`
+	IsVisible bool   `json:"is_visible" form:"is_visible"`
+	MenuType  string `json:"menu_type" form:"menu_type"`
+	Icon      string `json:"icon" form:"icon"`
+	URL       string `json:"url" form:"url"`
+	Method    string `json:"method" form:"method"`
+	Target    string `json:"target" form:"target"`
+	Remark    string `json:"remark" form:"remark"`
+	Sort      int    `json:"sort" form:"sort"`
+	Tier      int    `json:"tier" form:"tier"`
 }
 
 // CreateMenu 创建菜单
@@ -162,68 +162,46 @@ func (h *SsoMenuHandler) UpdateMenu(c context.Context, ctx *app.RequestContext) 
 	}
 	beforeJSON, _ := json.Marshal(beforeData)
 
-	// 更新菜单字段
-	if req.ParentID != nil {
-		beforeData.ParentID = *req.ParentID
-	}
-	if req.AppCode != nil {
-		beforeData.AppCode = *req.AppCode
-	}
-	if req.MenuName != nil {
-		beforeData.MenuName = *req.MenuName
-	}
-	if req.MenuCode != nil {
-		beforeData.MenuCode = *req.MenuCode
-	}
-	if req.Status != nil {
-		beforeData.Status = *req.Status
-	}
-	if req.DataRange != nil {
-		beforeData.DataRange = *req.DataRange
-	}
-	if req.DataScope != nil {
-		beforeData.DataScope = *req.DataScope
-	}
-	if req.IsVisible != nil {
-		beforeData.IsVisible = *req.IsVisible
-	}
-	if req.MenuType != nil {
-		beforeData.MenuType = *req.MenuType
-	}
-	if req.Icon != nil {
-		beforeData.Icon = *req.Icon
-	}
-	if req.URL != nil {
-		beforeData.URL = *req.URL
-	}
-	if req.Method != nil {
-		beforeData.Method = *req.Method
-	}
-	if req.Target != nil {
-		beforeData.Target = *req.Target
-	}
-	if req.Remark != nil {
-		beforeData.Remark = *req.Remark
-	}
-	if req.Sort != nil {
-		beforeData.Sort = *req.Sort
-	}
-	if req.Tier != nil {
-		beforeData.Tier = *req.Tier
+	// 构建更新字段（只更新传递的字段）
+	// 使用 map 方式实现部分字段更新，避免全量更新
+	fields := map[string]any{
+		"update_id": headerUser.UserID,
+		"update_by": headerUser.UserAccount,
 	}
 
-	// 设置更新人信息
-	beforeData.UpdateID = headerUser.UserID
-	beforeData.UpdateBy = headerUser.UserAccount
+	// 根据请求中的字段构建更新 map
+	fields["parent_id"] = req.ParentID
+	fields["app_code"] = req.AppCode
+	fields["menu_name"] = req.MenuName
+	fields["menu_code"] = req.MenuCode
+	fields["status"] = req.Status
+	fields["data_range"] = req.DataRange
+	fields["data_scope"] = req.DataScope
+	fields["is_visible"] = req.IsVisible
+	fields["menu_type"] = req.MenuType
+	fields["icon"] = req.Icon
+	fields["url"] = req.URL
+	fields["method"] = req.Method
+	fields["target"] = req.Target
+	fields["remark"] = req.Remark
+	fields["sort"] = req.Sort
+	fields["tier"] = req.Tier
 
-	// 调用服务层更新菜单
-	if err := h.menuService.UpdateMenu(beforeData); err != nil {
+	// 调用服务层更新菜单（使用 map 方式）
+	if err := h.menuService.UpdateMenuFields(id, fields); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
 
+	// 获取更新后的菜单数据
+	afterData, err := h.menuService.GetMenuByID(id)
+	if err != nil {
+		ctx.JSON(200, map[string]string{"message": "更新成功"})
+		return
+	}
+
 	// 记录数据变更日志
-	afterJSON, _ := json.Marshal(beforeData)
+	afterJSON, _ := json.Marshal(afterData)
 	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
 		ID:         utils.GetSnowflake().GenerateIDString(),
 		TraceID:    headerUser.TraceID,
@@ -236,7 +214,7 @@ func (h *SsoMenuHandler) UpdateMenu(c context.Context, ctx *app.RequestContext) 
 		Source:     "menu_service",
 	})
 
-	ctx.JSON(200, beforeData)
+	ctx.JSON(200, afterData)
 }
 
 // DeleteMenu 删除菜单

@@ -79,6 +79,27 @@ func (s *ssoMenuService) UpdateMenu(menu *model.SsoMenu) error {
 	return s.menuRepo.UpdateMenu(menu)
 }
 
+// UpdateMenuFields 更新菜单指定字段
+// 使用 map 方式只更新指定的字段，避免全量更新
+// 会检查菜单是否存在，以及如果更新了菜单编码，会检查新编码是否已存在
+func (s *ssoMenuService) UpdateMenuFields(id string, fields map[string]any) error {
+	// 检查菜单是否存在
+	_, err := s.menuRepo.GetMenuByID(id)
+	if err != nil {
+		return errors.New("菜单不存在")
+	}
+
+	// 如果更新了菜单编码，检查新编码是否已存在
+	if menuCode, ok := fields["menu_code"]; ok && menuCode != "" {
+		anotherMenu, err := s.menuRepo.GetMenuByCode(menuCode.(string))
+		if err == nil && anotherMenu != nil && anotherMenu.ID != id {
+			return errors.New("菜单编码已存在")
+		}
+	}
+
+	return s.menuRepo.UpdateMenuFields(id, fields)
+}
+
 // DeleteMenu 删除菜单
 func (s *ssoMenuService) DeleteMenu(id string) error {
 	// 检查菜单是否存在

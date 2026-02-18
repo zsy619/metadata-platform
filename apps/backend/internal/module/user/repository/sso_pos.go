@@ -46,6 +46,12 @@ func (r *ssoPosRepository) UpdatePos(pos *model.SsoPos) error {
 	return r.db.Save(pos).Error
 }
 
+// UpdatePosFields 更新职位指定字段
+// 使用 map 方式只更新指定的字段，避免全量更新
+func (r *ssoPosRepository) UpdatePosFields(id string, fields map[string]any) error {
+	return r.db.Model(&model.SsoPos{}).Where("id = ?", id).Updates(fields).Error
+}
+
 // DeletePosition 删除职位
 func (r *ssoPosRepository) DeletePos(id string) error {
 	return r.db.Model(&model.SsoPos{}).Where("id = ?", id).Update("is_deleted", true).Error
