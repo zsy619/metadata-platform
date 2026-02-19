@@ -68,6 +68,138 @@ export const deleteUser = async (id: string): Promise<void> => {
   })
 }
 
+// ==================== 用户关联API ====================
+
+/**
+ * 获取用户的角色ID列表
+ * @param userId 用户ID
+ * @returns 角色ID列表
+ */
+export const getUserRoles = async (userId: string): Promise<{ user_id: string; role_ids: string[] }> => {
+  return request({
+    url: `/api/sso/user/${userId}/roles`,
+    method: 'get'
+  })
+}
+
+/**
+ * 更新用户的角色关联
+ * @param userId 用户ID
+ * @param roleIds 角色ID列表
+ * @returns 更新结果
+ */
+export const updateUserRoles = async (userId: string, roleIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/user/${userId}/roles`,
+    method: 'put',
+    data: { role_ids: roleIds }
+  })
+}
+
+/**
+ * 获取用户的职位ID列表
+ * @param userId 用户ID
+ * @returns 职位ID列表
+ */
+export const getUserPos = async (userId: string): Promise<{ user_id: string; pos_ids: string[] }> => {
+  return request({
+    url: `/api/sso/user/${userId}/pos`,
+    method: 'get'
+  })
+}
+
+/**
+ * 更新用户的职位关联
+ * @param userId 用户ID
+ * @param posIds 职位ID列表
+ * @returns 更新结果
+ */
+export const updateUserPos = async (userId: string, posIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/user/${userId}/pos`,
+    method: 'put',
+    data: { pos_ids: posIds }
+  })
+}
+
+/**
+ * 获取用户的用户组ID列表
+ * @param userId 用户ID
+ * @returns 用户组ID列表
+ */
+export const getUserGroups = async (userId: string): Promise<{ user_id: string; group_ids: string[] }> => {
+  return request({
+    url: `/api/sso/user/${userId}/groups`,
+    method: 'get'
+  })
+}
+
+/**
+ * 更新用户的用户组关联
+ * @param userId 用户ID
+ * @param groupIds 用户组ID列表
+ * @returns 更新结果
+ */
+export const updateUserGroups = async (userId: string, groupIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/user/${userId}/groups`,
+    method: 'put',
+    data: { group_ids: groupIds }
+  })
+}
+
+/**
+ * 获取用户的角色组ID列表
+ * @param userId 用户ID
+ * @returns 角色组ID列表
+ */
+export const getUserRoleGroups = async (userId: string): Promise<{ user_id: string; role_group_ids: string[] }> => {
+  return request({
+    url: `/api/sso/user/${userId}/role-groups`,
+    method: 'get'
+  })
+}
+
+/**
+ * 更新用户的角色组关联
+ * @param userId 用户ID
+ * @param roleGroupIds 角色组ID列表
+ * @returns 更新结果
+ */
+export const updateUserRoleGroups = async (userId: string, roleGroupIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/user/${userId}/role-groups`,
+    method: 'put',
+    data: { role_group_ids: roleGroupIds }
+  })
+}
+
+/**
+ * 获取用户的组织ID列表
+ * @param userId 用户ID
+ * @returns 组织ID列表
+ */
+export const getUserOrgs = async (userId: string): Promise<{ user_id: string; org_ids: string[] }> => {
+  return request({
+    url: `/api/sso/user/${userId}/orgs`,
+    method: 'get'
+  })
+}
+
+/**
+ * 更新用户的组织关联
+ * @param userId 用户ID
+ * @param orgIds 组织ID列表
+ * @returns 更新结果
+ */
+export const updateUserOrgs = async (userId: string, orgIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/user/${userId}/orgs`,
+    method: 'put',
+    data: { org_ids: orgIds }
+  })
+}
+
 /**
  * 用户登录
  * @param data 登录信息
@@ -491,6 +623,87 @@ export const deletePos = async (id: string): Promise<void> => {
   })
 }
 
+/**
+ * 获取职位的角色ID列表
+ * @param posId 职位ID
+ * @returns 角色ID列表
+ */
+export const getPosRoles = async (posId: string): Promise<string[]> => {
+  const res: any = await request({
+    url: `/api/sso/pos/${posId}/roles`,
+    method: 'get'
+  })
+  return res.role_ids || []
+}
+
+/**
+ * 更新职位的角色关联
+ * @param posId 职位ID
+ * @param roleIds 角色ID列表
+ * @returns 更新结果
+ */
+export const updatePosRoles = async (posId: string, roleIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/pos/${posId}/roles`,
+    method: 'put',
+    data: { role_ids: roleIds }
+  })
+}
+
+/**
+ * 获取角色组的角色ID列表
+ * @param groupId 角色组ID
+ * @returns 角色ID列表
+ */
+export const getRoleGroupRoles = async (groupId: string): Promise<string[]> => {
+  const res: any = await request({
+    url: `/api/sso/role-group/${groupId}/roles`,
+    method: 'get'
+  })
+  return res.role_ids || []
+}
+
+/**
+ * 更新角色组的角色关联
+ * @param groupId 角色组ID
+ * @param roleIds 角色ID列表
+ * @returns 更新结果
+ */
+export const updateRoleGroupRoles = async (groupId: string, roleIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/role-group/${groupId}/roles`,
+    method: 'put',
+    data: { role_ids: roleIds }
+  })
+}
+
+/**
+ * 获取用户组的角色ID列表
+ * @param groupId 用户组ID
+ * @returns 角色ID列表
+ */
+export const getUserGroupRoles = async (groupId: string): Promise<string[]> => {
+  const res: any = await request({
+    url: `/api/sso/user-group/${groupId}/roles`,
+    method: 'get'
+  })
+  return res.role_ids || []
+}
+
+/**
+ * 更新用户组的角色关联
+ * @param groupId 用户组ID
+ * @param roleIds 角色ID列表
+ * @returns 更新结果
+ */
+export const updateUserGroupRoles = async (groupId: string, roleIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/user-group/${groupId}/roles`,
+    method: 'put',
+    data: { role_ids: roleIds }
+  })
+}
+
 // ==================== 组织类型相关API ====================
 
 export const getOrgKinds = async (): Promise<any[]> => {
@@ -533,7 +746,7 @@ export const deleteRoleGroup = async (id: string): Promise<void> => {
 
 // ==================== 用户组相关API ====================
 
-export const getUserGroups = async (): Promise<any[]> => {
+export const getAllUserGroups = async (): Promise<any[]> => {
     return request({ url: '/api/sso/user-group', method: 'get' })
 }
 

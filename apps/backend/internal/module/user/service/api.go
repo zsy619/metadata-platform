@@ -2,14 +2,14 @@ package service
 
 import (
 	"context"
-	"metadata-platform/internal/module/audit/queue"
-	"metadata-platform/internal/module/user/model"
-	"metadata-platform/internal/module/user/repository"
-	"metadata-platform/internal/utils"
 
 	"gorm.io/gorm"
 
+	"metadata-platform/internal/module/audit/queue"
 	auditService "metadata-platform/internal/module/audit/service"
+	"metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/utils"
 )
 
 // SsoUserService 用户服务接口
@@ -21,6 +21,17 @@ type SsoUserService interface {
 	DeleteUser(id string) error
 	GetAllUsers() ([]model.SsoUser, error)
 	Login(account, password string) (string, error)
+	// 用户关联相关
+	GetUserRoles(userID string) ([]string, error)
+	UpdateUserRoles(userID string, roleIDs []string, createBy string) error
+	GetUserPos(userID string) ([]string, error)
+	UpdateUserPos(userID string, posIDs []string, createBy string) error
+	GetUserGroups(userID string) ([]string, error)
+	UpdateUserGroups(userID string, groupIDs []string, createBy string) error
+	GetUserRoleGroups(userID string) ([]string, error)
+	UpdateUserRoleGroups(userID string, roleGroupIDs []string, createBy string) error
+	GetUserOrgs(userID string) ([]string, error)
+	UpdateUserOrgs(userID string, orgIDs []string, createBy string) error
 }
 
 // SsoTenantService 租户服务接口
@@ -63,6 +74,7 @@ type SsoRoleService interface {
 	UpdateRole(role *model.SsoRole) error
 	DeleteRole(id string) error
 	GetAllRoles() ([]model.SsoRole, error)
+	HasChildren(parentID string) (bool, error)
 	// 角色菜单相关
 	GetRoleMenus(roleID string) ([]string, error)
 	UpdateRoleMenus(roleID string, menuIDs []string, createBy string) error
@@ -99,6 +111,9 @@ type SsoPosService interface {
 	UpdatePosFields(id string, fields map[string]any) error
 	DeletePos(id string) error
 	GetAllPoss() ([]model.SsoPos, error)
+	// 职位角色关联相关
+	GetPosRoles(posID string) ([]string, error)
+	UpdatePosRoles(posID string, roleIDs []string, createBy string) error
 }
 
 // SsoRoleGroupService 角色分组服务接口
@@ -110,6 +125,9 @@ type SsoRoleGroupService interface {
 	UpdateRoleGroupFields(id string, fields map[string]any) error
 	DeleteRoleGroup(id string) error
 	GetAllRoleGroups() ([]model.SsoRoleGroup, error)
+	// 角色组角色关联相关
+	GetRoleGroupRoles(groupID string) ([]string, error)
+	UpdateRoleGroupRoles(groupID string, roleIDs []string, createBy string) error
 }
 
 // SsoUserGroupService 用户组服务接口
@@ -121,6 +139,9 @@ type SsoUserGroupService interface {
 	UpdateUserGroupFields(id string, fields map[string]any) error
 	DeleteUserGroup(id string) error
 	GetAllUserGroups() ([]model.SsoUserGroup, error)
+	// 用户组角色关联相关
+	GetUserGroupRoles(groupID string) ([]string, error)
+	UpdateUserGroupRoles(groupID string, roleIDs []string, createBy string) error
 }
 
 // SsoAuthService 认证服务接口
@@ -153,17 +174,17 @@ type Services struct {
 func NewServices(repos *repository.Repositories, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *Services {
 	auditSvc := auditService.NewAuditService(auditDB, auditQueue)
 	return &Services{
-		User:      NewSsoUserService(repos.User, repos.Org, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup),
+		User:      NewSsoUserService(repos.User, repos.Org, repos.OrgUser, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup),
 		Tenant:    NewSsoTenantService(repos.Tenant),
 		App:       NewSsoAppService(repos.App),
 		Menu:      NewSsoMenuService(repos.Menu),
-		Role:      NewSsoRoleService(repos.Role, repos.RoleMenu, repos.UserRole, repos.PosRole, repos.OrgRole, repos.RoleGroupRole),
+		Role:      NewSsoRoleService(repos.Role, repos.RoleMenu, repos.UserRole, repos.PosRole, repos.OrgRole, repos.RoleGroupRole, repos.UserGroupRole, repos.OrgKindRole),
 		Org:       NewSsoOrgService(repos.Org, repos.OrgUser, repos.OrgRole, repos.OrgMenu),
-		Pos:       NewSsoPosService(repos.Pos),
+		Pos:       NewSsoPosService(repos.Pos, repos.PosRole, repos.UserPos),
 		Auth:      NewSsoAuthService(repos.User, repos.Role, repos.UserRole, auditSvc),
 		OrgKind:   NewSsoOrgKindService(repos.OrgKind),
 		RoleGroup: NewSsoRoleGroupService(repos.RoleGroup, repos.RoleGroupRole),
-		UserGroup: NewSsoUserGroupService(repos.UserGroup, repos.UserGroupUser),
+		UserGroup: NewSsoUserGroupService(repos.UserGroup, repos.UserGroupUser, repos.UserGroupRole),
 		CasbinSync: NewSsoCasbinSyncService(
 			repos.UserRole,
 			repos.RoleMenu,

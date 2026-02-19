@@ -40,10 +40,24 @@
           <el-table-column prop="create_at" label="创建时间" width="200">
             <template #default="scope">{{ formatDateTime(scope.row.create_at) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="180" fixed="right">
+          <el-table-column label="操作" width="280" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
               <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
+              <el-dropdown trigger="click" @command="(cmd: string) => handleSetting(cmd, scope.row)">
+                <el-button type="info" size="small" text bg>
+                  设置<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="roles">设置角色</el-dropdown-item>
+                    <el-dropdown-item command="pos">设置职位</el-dropdown-item>
+                    <el-dropdown-item command="groups">设置用户组</el-dropdown-item>
+                    <el-dropdown-item command="role-groups">设置角色组</el-dropdown-item>
+                    <el-dropdown-item command="orgs">设置组织</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </template>
           </el-table-column>
         </el-table>
@@ -79,12 +93,15 @@
         <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
       </template>
     </el-dialog>
+
+    <UserSettingDialog v-model="settingDialogVisible" :user-id="currentUserId" :user-name="currentUserName" :setting-type="currentSettingType" @success="loadData" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { createUser, deleteUser, getUsers, updateUser } from '@/api/user'
-import { Avatar, Delete, Edit, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
+import { ArrowDown, Avatar, Delete, Edit, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
+import UserSettingDialog from './UserSettingDialog.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
@@ -175,6 +192,19 @@ const handleSubmit = async () => {
       finally { submitLoading.value = false }
     }
   })
+}
+
+// 设置弹窗相关
+const settingDialogVisible = ref(false)
+const currentUserId = ref('')
+const currentUserName = ref('')
+const currentSettingType = ref<'roles' | 'pos' | 'groups' | 'role-groups' | 'orgs'>('roles')
+
+const handleSetting = (command: string, row: any) => {
+  currentUserId.value = row.id
+  currentUserName.value = row.name || row.account
+  currentSettingType.value = command as 'roles' | 'pos' | 'groups' | 'role-groups' | 'orgs'
+  settingDialogVisible.value = true
 }
 
 onMounted(() => loadData())

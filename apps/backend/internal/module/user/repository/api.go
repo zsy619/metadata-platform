@@ -64,6 +64,7 @@ type SsoRoleRepository interface {
 	GetAllRoles() ([]model.SsoRole, error)
 	GetMaxSort() (int, error)
 	GetRolesByUserID(userID string) ([]model.SsoRole, error)
+	HasChildren(parentID string) (bool, error)
 }
 
 // SsoOrgRepository 组织仓库接口
@@ -192,6 +193,16 @@ type SsoUserGroupUserRepository interface {
 	DeleteUserGroupUsersByUserID(userID string) error
 }
 
+type SsoUserGroupRoleRepository interface {
+	CreateUserGroupRole(item *model.SsoUserGroupRole) error
+	GetUserGroupRoleByID(id string) (*model.SsoUserGroupRole, error)
+	GetUserGroupRolesByGroupID(groupID string) ([]model.SsoUserGroupRole, error)
+	GetUserGroupRolesByRoleID(roleID string) ([]model.SsoUserGroupRole, error)
+	DeleteUserGroupRole(id string) error
+	DeleteUserGroupRolesByGroupID(groupID string) error
+	DeleteUserGroupRolesByRoleID(roleID string) error
+}
+
 type SsoUserRoleGroupRepository interface {
 	CreateUserRoleGroup(item *model.SsoUserRoleGroup) error
 	GetUserRoleGroupByID(id string) (*model.SsoUserRoleGroup, error)
@@ -220,6 +231,7 @@ type SsoOrgKindRoleRepository interface {
 	GetOrgKindRoleByRoleID(roleID string) ([]model.SsoOrgKindRole, error)
 	DeleteOrgKindRole(id string) error
 	DeleteOrgKindRoleByKindCode(kindCode string) error
+	DeleteOrgKindRoleByRoleID(roleID string) error
 	GetAllOrgKindRoles() ([]model.SsoOrgKindRole, error)
 }
 
@@ -251,59 +263,62 @@ type SsoOrgUserRepository interface {
 	GetOrgUsersByUserID(userID string) ([]model.SsoOrgUser, error)
 	DeleteOrgUser(id string) error
 	DeleteOrgUserByOrgID(orgID string) error
+	DeleteOrgUsersByUserID(userID string) error
 	GetAllOrgUsers() ([]model.SsoOrgUser, error)
 }
 
 // Repositories 用户模块仓库集合
 type Repositories struct {
-	User          SsoUserRepository
-	Tenant        SsoTenantRepository
-	App           SsoAppRepository
-	Menu          SsoMenuRepository
-	Role          SsoRoleRepository
-	Org           SsoOrgRepository
-	OrgKind       SsoOrgKindRepository
-	OrgKindRole   SsoOrgKindRoleRepository
-	OrgMenu       SsoOrgMenuRepository
-	OrgRole       SsoOrgRoleRepository
-	OrgUser       SsoOrgUserRepository
-	RoleGroup     SsoRoleGroupRepository
-	UserGroup     SsoUserGroupRepository
-	RoleGroupRole SsoRoleGroupRoleRepository
-	UserGroupUser SsoUserGroupUserRepository
-	UserRoleGroup SsoUserRoleGroupRepository
-	Pos           SsoPosRepository
-	UserRole      SsoUserRoleRepository
-	UserPos       SsoUserPosRepository
-	RoleMenu      SsoRoleMenuRepository
-	PosRole       SsoPosRoleRepository
-	CasbinRule    SsoCasbinRuleRepository
+	User           SsoUserRepository
+	Tenant         SsoTenantRepository
+	App            SsoAppRepository
+	Menu           SsoMenuRepository
+	Role           SsoRoleRepository
+	Org            SsoOrgRepository
+	OrgKind        SsoOrgKindRepository
+	OrgKindRole    SsoOrgKindRoleRepository
+	OrgMenu        SsoOrgMenuRepository
+	OrgRole        SsoOrgRoleRepository
+	OrgUser        SsoOrgUserRepository
+	RoleGroup      SsoRoleGroupRepository
+	UserGroup      SsoUserGroupRepository
+	RoleGroupRole  SsoRoleGroupRoleRepository
+	UserGroupUser  SsoUserGroupUserRepository
+	UserGroupRole  SsoUserGroupRoleRepository
+	UserRoleGroup  SsoUserRoleGroupRepository
+	Pos            SsoPosRepository
+	UserRole       SsoUserRoleRepository
+	UserPos        SsoUserPosRepository
+	RoleMenu       SsoRoleMenuRepository
+	PosRole        SsoPosRoleRepository
+	CasbinRule     SsoCasbinRuleRepository
 }
 
 // NewRepositories 创建用户模块仓库集合
 func NewRepositories(db *gorm.DB) *Repositories {
 	return &Repositories{
-		User:          NewSsoUserRepository(db),
-		Tenant:        NewSsoTenantRepository(db),
-		App:           NewSsoAppRepository(db),
-		Menu:          NewSsoMenuRepository(db),
-		Role:          NewSsoRoleRepository(db),
-		Org:           NewSsoOrgRepository(db),
-		OrgKind:       NewSsoOrgKindRepository(db),
-		OrgKindRole:   NewSsoOrgKindRoleRepository(db),
-		OrgMenu:       NewSsoOrgMenuRepository(db),
-		OrgRole:       NewSsoOrgRoleRepository(db),
-		OrgUser:       NewSsoOrgUserRepository(db),
-		RoleGroup:     NewSsoRoleGroupRepository(db),
-		UserGroup:     NewSsoUserGroupRepository(db),
-		RoleGroupRole: NewSsoRoleGroupRoleRepository(db),
-		UserGroupUser: NewSsoUserGroupUserRepository(db),
-		UserRoleGroup: NewSsoUserRoleGroupRepository(db),
-		Pos:           NewSsoPosRepository(db),
-		UserRole:      NewSsoUserRoleRepository(db),
-		UserPos:       NewSsoUserPosRepository(db),
-		RoleMenu:      NewSsoRoleMenuRepository(db),
-		PosRole:       NewSsoPosRoleRepository(db),
-		CasbinRule:    NewSsoCasbinRuleRepository(db),
+		User:           NewSsoUserRepository(db),
+		Tenant:         NewSsoTenantRepository(db),
+		App:            NewSsoAppRepository(db),
+		Menu:           NewSsoMenuRepository(db),
+		Role:           NewSsoRoleRepository(db),
+		Org:            NewSsoOrgRepository(db),
+		OrgKind:        NewSsoOrgKindRepository(db),
+		OrgKindRole:    NewSsoOrgKindRoleRepository(db),
+		OrgMenu:        NewSsoOrgMenuRepository(db),
+		OrgRole:        NewSsoOrgRoleRepository(db),
+		OrgUser:        NewSsoOrgUserRepository(db),
+		RoleGroup:      NewSsoRoleGroupRepository(db),
+		UserGroup:      NewSsoUserGroupRepository(db),
+		RoleGroupRole:  NewSsoRoleGroupRoleRepository(db),
+		UserGroupUser:  NewSsoUserGroupUserRepository(db),
+		UserGroupRole:  NewSsoUserGroupRoleRepository(db),
+		UserRoleGroup:  NewSsoUserRoleGroupRepository(db),
+		Pos:            NewSsoPosRepository(db),
+		UserRole:       NewSsoUserRoleRepository(db),
+		UserPos:        NewSsoUserPosRepository(db),
+		RoleMenu:       NewSsoRoleMenuRepository(db),
+		PosRole:        NewSsoPosRoleRepository(db),
+		CasbinRule:     NewSsoCasbinRuleRepository(db),
 	}
 }

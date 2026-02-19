@@ -2,14 +2,14 @@ package service
 
 import (
 	"context"
-	"metadata-platform/internal/module/user/model"
-	"metadata-platform/internal/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	auditModel "metadata-platform/internal/module/audit/model"
+	"metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/utils"
 )
 
 // MockSsoUserRepository is a mock implementation of repository.SsoUserRepository
@@ -162,6 +162,11 @@ func (m *MockSsoRoleRepository) GetMaxSort() (int, error) {
 func (m *MockSsoRoleRepository) GetRolesByUserID(userID string) ([]model.SsoRole, error) {
 	args := m.Called(userID)
 	return args.Get(0).([]model.SsoRole), args.Error(1)
+}
+
+func (m *MockSsoRoleRepository) HasChildren(parentID string) (bool, error) {
+	args := m.Called(parentID)
+	return args.Bool(0), args.Error(1)
 }
 
 // MockSsoUserRoleRepository is a mock implementation of repository.SsoUserRoleRepository

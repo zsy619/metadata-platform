@@ -53,6 +53,10 @@ func (r *ssoOrgKindRoleRepository) DeleteOrgKindRoleByKindCode(kindCode string) 
 	return r.db.Model(&model.SsoOrgKindRole{}).Where("kind_code = ?", kindCode).Update("is_deleted", true).Error
 }
 
+func (r *ssoOrgKindRoleRepository) DeleteOrgKindRoleByRoleID(roleID string) error {
+	return r.db.Model(&model.SsoOrgKindRole{}).Where("role_id = ?", roleID).Update("is_deleted", true).Error
+}
+
 func (r *ssoOrgKindRoleRepository) GetAllOrgKindRoles() ([]model.SsoOrgKindRole, error) {
 	var items []model.SsoOrgKindRole
 	result := r.db.Where("is_deleted = false").Find(&items)

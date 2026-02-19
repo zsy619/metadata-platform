@@ -15,10 +15,12 @@ type ssoRoleService struct {
 	posRoleRepo       repository.SsoPosRoleRepository
 	orgRoleRepo       repository.SsoOrgRoleRepository
 	roleGroupRoleRepo repository.SsoRoleGroupRoleRepository
+	userGroupRoleRepo repository.SsoUserGroupRoleRepository
+	orgKindRoleRepo   repository.SsoOrgKindRoleRepository
 }
 
 // NewSsoRoleService 创建角色服务实例
-func NewSsoRoleService(roleRepo repository.SsoRoleRepository, roleMenuRepo repository.SsoRoleMenuRepository, userRoleRepo repository.SsoUserRoleRepository, posRoleRepo repository.SsoPosRoleRepository, orgRoleRepo repository.SsoOrgRoleRepository, roleGroupRoleRepo repository.SsoRoleGroupRoleRepository) SsoRoleService {
+func NewSsoRoleService(roleRepo repository.SsoRoleRepository, roleMenuRepo repository.SsoRoleMenuRepository, userRoleRepo repository.SsoUserRoleRepository, posRoleRepo repository.SsoPosRoleRepository, orgRoleRepo repository.SsoOrgRoleRepository, roleGroupRoleRepo repository.SsoRoleGroupRoleRepository, userGroupRoleRepo repository.SsoUserGroupRoleRepository, orgKindRoleRepo repository.SsoOrgKindRoleRepository) SsoRoleService {
 	return &ssoRoleService{
 		roleRepo:          roleRepo,
 		roleMenuRepo:      roleMenuRepo,
@@ -26,6 +28,8 @@ func NewSsoRoleService(roleRepo repository.SsoRoleRepository, roleMenuRepo repos
 		posRoleRepo:       posRoleRepo,
 		orgRoleRepo:       orgRoleRepo,
 		roleGroupRoleRepo: roleGroupRoleRepo,
+		userGroupRoleRepo: userGroupRoleRepo,
+		orgKindRoleRepo:   orgKindRoleRepo,
 	}
 }
 
@@ -128,6 +132,16 @@ func (s *ssoRoleService) DeleteRole(id string) error {
 		utils.SugarLogger.Errorw("删除角色组角色关联失败", "roleID", id, "error", err)
 	}
 
+	// 删除角色关联的用户组
+	if err := s.userGroupRoleRepo.DeleteUserGroupRolesByRoleID(id); err != nil {
+		utils.SugarLogger.Errorw("删除用户组角色关联失败", "roleID", id, "error", err)
+	}
+
+	// 删除角色关联的组织类型
+	if err := s.orgKindRoleRepo.DeleteOrgKindRoleByRoleID(id); err != nil {
+		utils.SugarLogger.Errorw("删除组织类型角色关联失败", "roleID", id, "error", err)
+	}
+
 	// 删除角色
 	return s.roleRepo.DeleteRole(id)
 }
@@ -135,6 +149,11 @@ func (s *ssoRoleService) DeleteRole(id string) error {
 // GetAllRoles 获取所有角色
 func (s *ssoRoleService) GetAllRoles() ([]model.SsoRole, error) {
 	return s.roleRepo.GetAllRoles()
+}
+
+// HasChildren 检查角色是否有子角色
+func (s *ssoRoleService) HasChildren(parentID string) (bool, error) {
+	return s.roleRepo.HasChildren(parentID)
 }
 
 // GetRoleMenus 获取角色的菜单ID列表

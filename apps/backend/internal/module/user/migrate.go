@@ -74,6 +74,9 @@ func Migrate(db *gorm.DB) error {
 	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='用户组用户关联'").AutoMigrate(&model.SsoUserGroupUser{}); err != nil {
 		return err
 	}
+	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='用户组角色关联'").AutoMigrate(&model.SsoUserGroupRole{}); err != nil {
+		return err
+	}
 	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='用户职位关联'").AutoMigrate(&model.SsoUserPos{}); err != nil {
 		return err
 	}

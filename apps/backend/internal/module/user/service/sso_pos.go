@@ -10,12 +10,18 @@ import (
 
 // ssoPosService 职位服务实现
 type ssoPosService struct {
-	posRepo repository.SsoPosRepository
+	posRepo     repository.SsoPosRepository
+	posRoleRepo repository.SsoPosRoleRepository
+	userPosRepo repository.SsoUserPosRepository
 }
 
 // NewSsoPosService 创建职位服务实例
-func NewSsoPosService(posRepo repository.SsoPosRepository) SsoPosService {
-	return &ssoPosService{posRepo: posRepo}
+func NewSsoPosService(posRepo repository.SsoPosRepository, posRoleRepo repository.SsoPosRoleRepository, userPosRepo repository.SsoUserPosRepository) SsoPosService {
+	return &ssoPosService{
+		posRepo:     posRepo,
+		posRoleRepo: posRoleRepo,
+		userPosRepo: userPosRepo,
+	}
 }
 
 // CreatePos 创建职位
@@ -98,10 +104,72 @@ func (s *ssoPosService) DeletePos(id string) error {
 		return errors.New("系统内置职位不允许删除")
 	}
 
+	// 删除职位关联的角色
+	if err := s.posRoleRepo.DeletePosRolesByPosID(id); err != nil {
+		utils.SugarLogger.Errorw("删除职位角色关联失败", "posID", id, "error", err)
+	}
+
+	// 删除职位关联的用户
+	if err := s.userPosRepo.DeleteUserPosByPosID(id); err != nil {
+		utils.SugarLogger.Errorw("删除用户职位关联失败", "posID", id, "error", err)
+	}
+
 	return s.posRepo.DeletePos(id)
 }
 
 // GetAllPos 获取所有职位
 func (s *ssoPosService) GetAllPoss() ([]model.SsoPos, error) {
 	return s.posRepo.GetAllPoss()
+}
+
+// GetPosRoles 获取职位的角色ID列表
+func (s *ssoPosService) GetPosRoles(posID string) ([]string, error) {
+	// 检查职位是否存在
+	_, err := s.posRepo.GetPosByID(posID)
+	if err != nil {
+		return nil, errors.New("职位不存在")
+	}
+
+	// 获取职位角色关联
+	posRoles, err := s.posRoleRepo.GetPosRolesByPosID(posID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 提取角色ID列表
+	roleIDs := make([]string, 0, len(posRoles))
+	for _, pr := range posRoles {
+		roleIDs = append(roleIDs, pr.RoleID)
+	}
+
+	return roleIDs, nil
+}
+
+// UpdatePosRoles 更新职位的角色关联
+func (s *ssoPosService) UpdatePosRoles(posID string, roleIDs []string, createBy string) error {
+	// 检查职位是否存在
+	_, err := s.posRepo.GetPosByID(posID)
+	if err != nil {
+		return errors.New("职位不存在")
+	}
+
+	// 删除原有的职位角色关联
+	if err := s.posRoleRepo.DeletePosRolesByPosID(posID); err != nil {
+		return err
+	}
+
+	// 创建新的职位角色关联
+	for _, roleID := range roleIDs {
+		posRole := &model.SsoPosRole{
+			ID:       utils.GetSnowflake().GenerateIDString(),
+			PosID:    posID,
+			RoleID:   roleID,
+			CreateBy: createBy,
+		}
+		if err := s.posRoleRepo.CreatePosRole(posRole); err != nil {
+			utils.SugarLogger.Errorw("创建职位角色关联失败", "posID", posID, "roleID", roleID, "error", err)
+		}
+	}
+
+	return nil
 }

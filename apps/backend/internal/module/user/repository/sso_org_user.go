@@ -53,6 +53,10 @@ func (r *ssoOrgUserRepository) DeleteOrgUserByOrgID(orgID string) error {
 	return r.db.Model(&model.SsoOrgUser{}).Where("org_id = ?", orgID).Update("is_deleted", true).Error
 }
 
+func (r *ssoOrgUserRepository) DeleteOrgUsersByUserID(userID string) error {
+	return r.db.Model(&model.SsoOrgUser{}).Where("user_id = ?", userID).Update("is_deleted", true).Error
+}
+
 func (r *ssoOrgUserRepository) GetAllOrgUsers() ([]model.SsoOrgUser, error) {
 	var items []model.SsoOrgUser
 	result := r.db.Where("is_deleted = false").Find(&items)

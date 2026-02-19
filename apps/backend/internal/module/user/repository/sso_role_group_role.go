@@ -15,6 +15,14 @@ func NewSsoRoleGroupRoleRepository(db *gorm.DB) SsoRoleGroupRoleRepository {
 }
 
 func (r *ssoRoleGroupRoleRepository) CreateRoleGroupRole(item *model.SsoRoleGroupRole) error {
+	var existing model.SsoRoleGroupRole
+	result := r.db.Where("group_id = ? AND role_id = ?", item.GroupID, item.RoleID).First(&existing)
+	if result.Error == nil {
+		return r.db.Model(&existing).Updates(map[string]interface{}{
+			"is_deleted": false,
+			"create_by":  item.CreateBy,
+		}).Error
+	}
 	return r.db.Create(item).Error
 }
 

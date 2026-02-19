@@ -245,3 +245,64 @@ func (h *SsoRoleGroupHandler) GetAllRoleGroups(c context.Context, ctx *app.Reque
 
 	ctx.JSON(200, roleGroups)
 }
+
+// GetRoleGroupRoles 获取角色组的角色列表
+func (h *SsoRoleGroupHandler) GetRoleGroupRoles(c context.Context, ctx *app.RequestContext) {
+	groupID := ctx.Param("id")
+
+	// 调用服务层获取角色组的角色ID列表
+	roleIDs, err := h.roleGroupService.GetRoleGroupRoles(groupID)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, map[string]any{"role_ids": roleIDs})
+}
+
+// UpdateRoleGroupRolesRequest 更新角色组角色请求结构
+type UpdateRoleGroupRolesRequest struct {
+	RoleIDs []string `json:"role_ids"`
+}
+
+// UpdateRoleGroupRoles 更新角色组的角色关联
+func (h *SsoRoleGroupHandler) UpdateRoleGroupRoles(c context.Context, ctx *app.RequestContext) {
+	groupID := ctx.Param("id")
+	var req UpdateRoleGroupRolesRequest
+	if err := ctx.BindAndValidate(&req); err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 获取当前用户信息
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+
+	// 获取更新前的角色列表（用于审计日志）
+	beforeRoleIDs, _ := h.roleGroupService.GetRoleGroupRoles(groupID)
+	beforeData, _ := json.Marshal(map[string]any{"role_ids": beforeRoleIDs})
+
+	// 调用服务层更新角色组角色关联
+	if err := h.roleGroupService.UpdateRoleGroupRoles(groupID, req.RoleIDs, headerUser.UserAccount); err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 获取更新后的角色列表（用于审计日志）
+	afterRoleIDs, _ := h.roleGroupService.GetRoleGroupRoles(groupID)
+	afterData, _ := json.Marshal(map[string]any{"role_ids": afterRoleIDs})
+
+	// 记录数据变更日志
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    headerUser.TraceID,
+		ModelID:    "role_group_role",
+		RecordID:   groupID,
+		Action:     "UPDATE_ROLES",
+		BeforeData: string(beforeData),
+		AfterData:  string(afterData),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "role_group_service",
+	})
+
+	ctx.JSON(200, map[string]string{"message": "更新成功"})
+}

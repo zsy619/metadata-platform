@@ -18,13 +18,13 @@
       <el-form-item label="用户组编码" prop="group_code">
         <el-input v-model="formData.group_code" placeholder="请输入用户组编码" />
       </el-form-item>
-      <el-form-item label="状&#12288;&#12288;态" prop="status">
+      <el-form-item label="状&#12288;&#12288;&#12288;态" prop="status">
         <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
       </el-form-item>
-      <el-form-item label="序&#12288;&#12288;号" prop="sort">
+      <el-form-item label="序&#12288;&#12288;&#12288;号" prop="sort">
         <el-input-number v-model="formData.sort" :min="0" style="width: 100%" />
       </el-form-item>
-      <el-form-item label="备&#12288;&#12288;注" prop="remark">
+      <el-form-item label="备&#12288;&#12288;&#12288;注" prop="remark">
         <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注" />
       </el-form-item>
     </el-form>
@@ -89,7 +89,8 @@ const formData = ref<any>({
   group_name: '',
   group_code: '',
   status: 1,
-  sort: 0
+  sort: 0,
+  remark: ''
 })
 
 const formRules: FormRules = {
@@ -101,9 +102,9 @@ watch(
   () => props.modelValue,
   (val) => {
     if (val && props.data) {
-      formData.value = { ...props.data }
+      formData.value = { ...props.data, remark: props.data.remark || '' }
     } else if (val) {
-      formData.value = { parent_id: '', group_name: '', group_code: '', status: 1, sort: 0 }
+      formData.value = { parent_id: '', group_name: '', group_code: '', status: 1, sort: 0, remark: '' }
     }
   }
 )
@@ -119,11 +120,19 @@ const handleSubmit = async () => {
     if (valid) {
       loading.value = true
       try {
+        const submitData = {
+          parent_id: formData.value.parent_id || '',
+          group_name: formData.value.group_name,
+          group_code: formData.value.group_code,
+          status: formData.value.status,
+          sort: formData.value.sort,
+          remark: formData.value.remark || ''
+        }
         if (formData.value.id) {
-          await updateUserGroup(formData.value.id, formData.value)
+          await updateUserGroup(formData.value.id, submitData)
           ElMessage.success('更新成功')
         } else {
-          await createUserGroup(formData.value)
+          await createUserGroup(submitData)
           ElMessage.success('创建成功')
         }
         handleClose()

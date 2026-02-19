@@ -46,10 +46,11 @@
                     </el-table-column>
                     <el-table-column prop="sort" label="排序" width="80" />
                     <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
-                    <el-table-column label="操作" width="260" fixed="right">
+                    <el-table-column label="操作" width="320" fixed="right">
                         <template #default="scope">
                             <el-button type="primary" size="small" :icon="Plus" @click="handleCreateChild(scope.row)" text bg>新增子级</el-button>
                             <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
+                            <el-button type="warning" size="small" @click="handleManageRoles(scope.row)" text bg>关联角色</el-button>
                             <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg v-if="!scope.row.is_system && !scope.row.hasChildren">删除</el-button>
                         </template>
                     </el-table-column>
@@ -57,6 +58,7 @@
             </div>
         </el-card>
         <PosForm v-model="dialogVisible" :data="formData" :pos-tree-data="posTreeSelectData" :exclude-ids="excludeIds" :org-list="orgList" @success="loadData" />
+        <PosRoleDialog v-model="roleDialogVisible" :pos-id="currentPosId" :pos-name="currentPosName" @success="loadData" />
     </div>
 </template>
 <script setup lang="ts">
@@ -67,6 +69,7 @@ import { Briefcase, Delete, Edit, Plus, RefreshLeft, Search } from '@element-plu
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
 import PosForm from './PosForm.vue'
+import PosRoleDialog from './PosRoleDialog.vue'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
@@ -78,6 +81,11 @@ const orgList = ref<any[]>([])
 const dialogVisible = ref(false)
 const formData = ref<any>({})
 const excludeIds = ref<string[]>([])
+
+// 职位角色弹窗相关
+const roleDialogVisible = ref(false)
+const currentPosId = ref('')
+const currentPosName = ref('')
 
 const getAllDescendantIds = (parentId: string): string[] => {
     const ids: string[] = [parentId]
@@ -224,6 +232,16 @@ const handleDelete = async (row: any) => {
         ElMessage.success('删除成功')
         loadData()
     } catch (error: any) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') }
+}
+
+/**
+ * 管理职位角色
+ * @param row 职位数据
+ */
+const handleManageRoles = (row: any) => {
+    currentPosId.value = row.id
+    currentPosName.value = row.pos_name
+    roleDialogVisible.value = true
 }
 
 onMounted(() => loadData())

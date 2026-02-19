@@ -248,3 +248,64 @@ func (h *SsoPosHandler) GetAllPoss(c context.Context, ctx *app.RequestContext) {
 
 	ctx.JSON(200, positions)
 }
+
+// GetPosRoles 获取职位的角色列表
+func (h *SsoPosHandler) GetPosRoles(c context.Context, ctx *app.RequestContext) {
+	posID := ctx.Param("id")
+
+	// 调用服务层获取职位的角色ID列表
+	roleIDs, err := h.posService.GetPosRoles(posID)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, map[string]any{"role_ids": roleIDs})
+}
+
+// UpdatePosRolesRequest 更新职位角色请求结构
+type UpdatePosRolesRequest struct {
+	RoleIDs []string `json:"role_ids"`
+}
+
+// UpdatePosRoles 更新职位的角色关联
+func (h *SsoPosHandler) UpdatePosRoles(c context.Context, ctx *app.RequestContext) {
+	posID := ctx.Param("id")
+	var req UpdatePosRolesRequest
+	if err := ctx.BindAndValidate(&req); err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 获取当前用户信息
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+
+	// 获取更新前的角色列表（用于审计日志）
+	beforeRoleIDs, _ := h.posService.GetPosRoles(posID)
+	beforeData, _ := json.Marshal(map[string]any{"role_ids": beforeRoleIDs})
+
+	// 调用服务层更新职位角色关联
+	if err := h.posService.UpdatePosRoles(posID, req.RoleIDs, headerUser.UserAccount); err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 获取更新后的角色列表（用于审计日志）
+	afterRoleIDs, _ := h.posService.GetPosRoles(posID)
+	afterData, _ := json.Marshal(map[string]any{"role_ids": afterRoleIDs})
+
+	// 记录数据变更日志
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    headerUser.TraceID,
+		ModelID:    "pos_role",
+		RecordID:   posID,
+		Action:     "UPDATE_ROLES",
+		BeforeData: string(beforeData),
+		AfterData:  string(afterData),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "pos_service",
+	})
+
+	ctx.JSON(200, map[string]string{"message": "更新成功"})
+}

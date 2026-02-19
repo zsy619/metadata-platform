@@ -80,3 +80,10 @@ func (r *ssoRoleRepository) GetRolesByUserID(userID string) ([]model.SsoRole, er
 		Find(&roles).Error
 	return roles, err
 }
+
+// HasChildren 检查角色是否有子角色
+func (r *ssoRoleRepository) HasChildren(parentID string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.SsoRole{}).Where("parent_id = ? AND is_deleted = false", parentID).Count(&count).Error
+	return count > 0, err
+}

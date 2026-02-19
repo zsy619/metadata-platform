@@ -79,3 +79,55 @@ func (s *ssoRoleGroupService) DeleteRoleGroup(id string) error {
 func (s *ssoRoleGroupService) GetAllRoleGroups() ([]model.SsoRoleGroup, error) {
 	return s.roleGroupRepo.GetAllRoleGroups()
 }
+
+// GetRoleGroupRoles 获取角色组的角色ID列表
+func (s *ssoRoleGroupService) GetRoleGroupRoles(groupID string) ([]string, error) {
+	// 检查角色组是否存在
+	_, err := s.roleGroupRepo.GetRoleGroupByID(groupID)
+	if err != nil {
+		return nil, errors.New("角色组不存在")
+	}
+
+	// 获取角色组角色关联
+	groupRoles, err := s.roleGroupRoleRepo.GetRoleGroupRolesByGroupID(groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 提取角色ID列表
+	roleIDs := make([]string, 0, len(groupRoles))
+	for _, gr := range groupRoles {
+		roleIDs = append(roleIDs, gr.RoleID)
+	}
+
+	return roleIDs, nil
+}
+
+// UpdateRoleGroupRoles 更新角色组的角色关联
+func (s *ssoRoleGroupService) UpdateRoleGroupRoles(groupID string, roleIDs []string, createBy string) error {
+	// 检查角色组是否存在
+	_, err := s.roleGroupRepo.GetRoleGroupByID(groupID)
+	if err != nil {
+		return errors.New("角色组不存在")
+	}
+
+	// 删除原有的角色组角色关联
+	if err := s.roleGroupRoleRepo.DeleteRoleGroupRolesByGroupID(groupID); err != nil {
+		return err
+	}
+
+	// 创建新的角色组角色关联
+	for _, roleID := range roleIDs {
+		groupRole := &model.SsoRoleGroupRole{
+			ID:       utils.GetSnowflake().GenerateIDString(),
+			GroupID:  groupID,
+			RoleID:   roleID,
+			CreateBy: createBy,
+		}
+		if err := s.roleGroupRoleRepo.CreateRoleGroupRole(groupRole); err != nil {
+			utils.SugarLogger.Errorw("创建角色组角色关联失败", "groupID", groupID, "roleID", roleID, "error", err)
+		}
+	}
+
+	return nil
+}

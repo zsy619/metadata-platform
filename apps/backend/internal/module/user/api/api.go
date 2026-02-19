@@ -28,7 +28,7 @@ type SsoHandler struct {
 // NewSsoHandler 创建用户模块处理器集合
 func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) *SsoHandler {
 	return &SsoHandler{
-		UserHandler:      NewSsoUserHandler(services.User),
+		UserHandler:      NewSsoUserHandler(services.User, auditQueue),
 		TenantHandler:    NewSsoTenantHandler(services.Tenant, auditQueue),
 		AppHandler:       NewSsoAppHandler(services.App, auditQueue),
 		MenuHandler:      NewSsoMenuHandler(services.Menu, auditQueue),
@@ -47,7 +47,6 @@ func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) 
 func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 	// 认证相关路由
 	authRouter := router.Group("/api/auth")
-	// authRouter.Use(globalMiddleware.CORSMiddleware())
 	{
 		authRouter.POST("/login", h.AuthHandler.Login)
 		authRouter.POST("/refresh", h.AuthHandler.Refresh)
@@ -69,6 +68,17 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		userRouter.PUT("/:id", h.UserHandler.UpdateUser)
 		userRouter.DELETE("/:id", h.UserHandler.DeleteUser)
 		userRouter.GET("", h.UserHandler.GetAllUsers)
+		// 用户关联路由
+		userRouter.GET("/:id/roles", h.UserHandler.GetUserRoles)
+		userRouter.PUT("/:id/roles", h.UserHandler.UpdateUserRoles)
+		userRouter.GET("/:id/pos", h.UserHandler.GetUserPos)
+		userRouter.PUT("/:id/pos", h.UserHandler.UpdateUserPos)
+		userRouter.GET("/:id/groups", h.UserHandler.GetUserGroups)
+		userRouter.PUT("/:id/groups", h.UserHandler.UpdateUserGroups)
+		userRouter.GET("/:id/role-groups", h.UserHandler.GetUserRoleGroups)
+		userRouter.PUT("/:id/role-groups", h.UserHandler.UpdateUserRoleGroups)
+		userRouter.GET("/:id/orgs", h.UserHandler.GetUserOrgs)
+		userRouter.PUT("/:id/orgs", h.UserHandler.UpdateUserOrgs)
 	}
 
 	// 租户相关路由
@@ -142,6 +152,9 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		posRouter.PUT("/:id", h.PosHandler.UpdatePos)
 		posRouter.DELETE("/:id", h.PosHandler.DeletePos)
 		posRouter.GET("", h.PosHandler.GetAllPoss)
+		// 职位角色关联路由
+		posRouter.GET("/:id/roles", h.PosHandler.GetPosRoles)
+		posRouter.PUT("/:id/roles", h.PosHandler.UpdatePosRoles)
 	}
 
 	// 角色分组相关路由
@@ -152,6 +165,9 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		roleGroupRouter.PUT("/:id", h.RoleGroupHandler.UpdateRoleGroup)
 		roleGroupRouter.DELETE("/:id", h.RoleGroupHandler.DeleteRoleGroup)
 		roleGroupRouter.GET("", h.RoleGroupHandler.GetAllRoleGroups)
+		// 角色组角色关联路由
+		roleGroupRouter.GET("/:id/roles", h.RoleGroupHandler.GetRoleGroupRoles)
+		roleGroupRouter.PUT("/:id/roles", h.RoleGroupHandler.UpdateRoleGroupRoles)
 	}
 
 	// 用户组相关路由
@@ -162,5 +178,8 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		userGroupRouter.PUT("/:id", h.UserGroupHandler.UpdateUserGroup)
 		userGroupRouter.DELETE("/:id", h.UserGroupHandler.DeleteUserGroup)
 		userGroupRouter.GET("", h.UserGroupHandler.GetAllUserGroups)
+		// 用户组角色关联路由
+		userGroupRouter.GET("/:id/roles", h.UserGroupHandler.GetUserGroupRoles)
+		userGroupRouter.PUT("/:id/roles", h.UserGroupHandler.UpdateUserGroupRoles)
 	}
 }

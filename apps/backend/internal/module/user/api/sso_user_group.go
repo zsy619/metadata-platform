@@ -218,3 +218,64 @@ func (h *SsoUserGroupHandler) GetAllUserGroups(c context.Context, ctx *app.Reque
 
 	ctx.JSON(200, items)
 }
+
+// GetUserGroupRoles 获取用户组的角色列表
+func (h *SsoUserGroupHandler) GetUserGroupRoles(c context.Context, ctx *app.RequestContext) {
+	groupID := ctx.Param("id")
+
+	// 调用服务层获取用户组的角色ID列表
+	roleIDs, err := h.userGroupService.GetUserGroupRoles(groupID)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, map[string]any{"role_ids": roleIDs})
+}
+
+// UpdateUserGroupRolesRequest 更新用户组角色请求结构
+type UpdateUserGroupRolesRequest struct {
+	RoleIDs []string `json:"role_ids"`
+}
+
+// UpdateUserGroupRoles 更新用户组的角色关联
+func (h *SsoUserGroupHandler) UpdateUserGroupRoles(c context.Context, ctx *app.RequestContext) {
+	groupID := ctx.Param("id")
+	var req UpdateUserGroupRolesRequest
+	if err := ctx.BindAndValidate(&req); err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 获取当前用户信息
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+
+	// 获取更新前的角色列表（用于审计日志）
+	beforeRoleIDs, _ := h.userGroupService.GetUserGroupRoles(groupID)
+	beforeData, _ := json.Marshal(map[string]any{"role_ids": beforeRoleIDs})
+
+	// 调用服务层更新用户组角色关联
+	if err := h.userGroupService.UpdateUserGroupRoles(groupID, req.RoleIDs, headerUser.UserAccount); err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 获取更新后的角色列表（用于审计日志）
+	afterRoleIDs, _ := h.userGroupService.GetUserGroupRoles(groupID)
+	afterData, _ := json.Marshal(map[string]any{"role_ids": afterRoleIDs})
+
+	// 记录数据变更日志
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    headerUser.TraceID,
+		ModelID:    "user_group_role",
+		RecordID:   groupID,
+		Action:     "UPDATE_ROLES",
+		BeforeData: string(beforeData),
+		AfterData:  string(afterData),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "user_group_service",
+	})
+
+	ctx.JSON(200, map[string]string{"message": "更新成功"})
+}

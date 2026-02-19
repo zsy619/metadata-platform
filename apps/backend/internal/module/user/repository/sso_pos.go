@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"metadata-platform/internal/module/user/model"
-
 	"gorm.io/gorm"
+
+	"metadata-platform/internal/module/user/model"
 )
 
 // ssoPosRepository 职位仓库实现
@@ -54,7 +54,7 @@ func (r *ssoPosRepository) UpdatePosFields(id string, fields map[string]any) err
 
 // DeletePosition 删除职位
 func (r *ssoPosRepository) DeletePos(id string) error {
-	return r.db.Model(&model.SsoPos{}).Where("id = ?", id).Update("is_deleted", true).Error
+	return r.db.Model(&model.SsoPos{}).Delete("id = ?", id).Error
 }
 
 // GetAllPoss 获取所有职位

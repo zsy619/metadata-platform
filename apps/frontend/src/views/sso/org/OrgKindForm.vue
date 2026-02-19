@@ -157,11 +157,19 @@ const handleSubmit = async () => {
       }
       loading.value = true
       try {
+        const submitData = {
+          parent_id: formData.value.parent_id || '',
+          kind_name: formData.value.name,
+          kind_code: formData.value.code,
+          status: formData.value.status,
+          sort: formData.value.sort,
+          remark: formData.value.remark || ''
+        }
         if (formData.value.id) {
-          await updateOrgKind(formData.value.id, formData.value)
+          await updateOrgKind(formData.value.id, submitData)
           ElMessage.success('更新成功')
         } else {
-          await createOrgKind(formData.value)
+          await createOrgKind(submitData)
           ElMessage.success('创建成功')
         }
         handleClose()
