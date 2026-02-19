@@ -337,6 +337,32 @@ export const deleteRole = async (id: string): Promise<void> => {
   })
 }
 
+/**
+ * 获取角色的菜单ID列表
+ * @param roleId 角色ID
+ * @returns 菜单ID列表
+ */
+export const getRoleMenus = async (roleId: string): Promise<{ role_id: string; menu_ids: string[] }> => {
+  return request({
+    url: `/api/sso/role/${roleId}/menus`,
+    method: 'get'
+  })
+}
+
+/**
+ * 更新角色的菜单关联
+ * @param roleId 角色ID
+ * @param menuIds 菜单ID列表
+ * @returns 更新结果
+ */
+export const updateRoleMenus = async (roleId: string, menuIds: string[]): Promise<void> => {
+  return request({
+    url: `/api/sso/role/${roleId}/menus`,
+    method: 'put',
+    data: { menu_ids: menuIds }
+  })
+}
+
 // ==================== 组织相关API ====================
 
 /**

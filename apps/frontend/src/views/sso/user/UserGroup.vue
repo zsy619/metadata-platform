@@ -16,13 +16,23 @@
         <el-button @click="handleReset" :icon="RefreshLeft">重置</el-button>
       </div>
       <div class="table-area">
-        <el-table v-loading="loading" :element-loading-text="loadingText" :data="filteredData" border stripe style="width: 100%; height: 100%;">
+        <el-table
+          v-loading="loading"
+          :element-loading-text="loadingText"
+          :data="treeData"
+          border
+          stripe
+          row-key="id"
+          :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+          default-expand-all
+          style="width: 100%; height: 100%;"
+        >
           <template #empty>
             <el-empty :description="searchQuery ? '未搜索到相关用户组' : '暂无用户组'">
               <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增用户组</el-button>
             </el-empty>
           </template>
-          <el-table-column prop="group_name" label="用户组名称" width="200" />
+          <el-table-column prop="group_name" label="用户组名称" width="220" show-overflow-tooltip />
           <el-table-column prop="group_code" label="用户组编码" width="150" />
           <el-table-column prop="status" label="状态" width="80">
             <template #default="scope">
@@ -31,48 +41,27 @@
             </template>
           </el-table-column>
           <el-table-column prop="sort" label="排序" width="80" />
-          <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-          <el-table-column label="操作" width="180" fixed="right">
+          <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
+          <el-table-column label="操作" width="250" fixed="right">
             <template #default="scope">
+              <el-button type="primary" size="small" :icon="Plus" @click="handleCreateChild(scope.row)" text bg>新增子级</el-button>
               <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
-              <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
+              <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg v-if="!hasChildren(scope.row.id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
     </el-card>
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" label-position="right">
-        <el-form-item label="用户组名称" prop="group_name">
-          <el-input v-model="formData.group_name" placeholder="请输入用户组名称" />
-        </el-form-item>
-        <el-form-item label="用户组编码" prop="group_code">
-          <el-input v-model="formData.group_code" placeholder="请输入用户组编码" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-switch v-model="formData.status" :active-value="1" :inactive-value="0" />
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="formData.sort" :min="0" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
-      </template>
-    </el-dialog>
+    <UserGroupForm v-model="dialogVisible" :data="formData" :group-tree-data="groupTreeSelectData" :exclude-ids="excludeIds" @success="loadData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { createUserGroup, deleteUserGroup, getUserGroups, updateUserGroup } from '@/api/user'
+import { deleteUserGroup, getUserGroups } from '@/api/user'
 import { Delete, Edit, Plus, RefreshLeft, Search, User } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
+import UserGroupForm from './UserGroupForm.vue'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
@@ -80,21 +69,67 @@ const searchQuery = ref('')
 
 const allData = ref<any[]>([])
 
-const filteredData = computed(() => {
-  let data = allData.value
+/**
+ * 构建树型数据结构
+ */
+const buildTree = (items: any[], parentId = ''): any[] => {
+  return items
+    .filter(item => (item.parent_id || '') === parentId)
+    .map(item => ({
+      ...item,
+      children: buildTree(items, item.id)
+    }))
+}
+
+/**
+ * 树型表格数据
+ */
+const treeData = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    data = data.filter(item => (item.group_name || '').toLowerCase().includes(query))
+    return allData.value.filter(item => (item.group_name || '').toLowerCase().includes(query))
   }
-  return data
+  return buildTree(allData.value)
 })
 
+/**
+ * 构建树型选择器数据结构
+ */
+const buildTreeSelectData = (items: any[], parentId = '', excludeIds: string[] = []): any[] => {
+  return items
+    .filter(item => (item.parent_id || '') === parentId && !excludeIds.includes(item.id))
+    .map(item => ({
+      value: item.id,
+      label: item.group_name,
+      children: buildTreeSelectData(items, item.id, excludeIds)
+    }))
+}
+
+/**
+ * 获取指定节点的所有子节点ID（递归）
+ */
+const getAllChildrenIds = (items: any[], parentId: string): string[] => {
+  const children = items.filter(item => (item.parent_id || '') === parentId)
+  let ids: string[] = []
+  for (const child of children) {
+    ids.push(child.id)
+    ids = ids.concat(getAllChildrenIds(items, child.id))
+  }
+  return ids
+}
+
+/**
+ * 树型选择器数据
+ */
+const groupTreeSelectData = computed(() => buildTreeSelectData(allData.value))
+
+/**
+ * 编辑时需要排除的节点ID列表
+ */
+const excludeIds = ref<string[]>([])
+
 const dialogVisible = ref(false)
-const dialogTitle = ref('')
-const formRef = ref<FormInstance>()
 const formData = ref<any>({})
-const submitLoading = ref(false)
-const formRules: FormRules = { group_name: [{ required: true, message: '请输入用户组名称', trigger: 'blur' }] }
 
 const loadData = async () => {
   loadingText.value = '加载中...'
@@ -115,15 +150,25 @@ const handleDebouncedSearch = () => {}
 const handleReset = () => { searchQuery.value = '' }
 
 const handleCreate = () => {
-  dialogTitle.value = '新增用户组'
-  formData.value = { status: 1, sort: 0 }
+  formData.value = { status: 1, sort: 0, parent_id: '' }
+  excludeIds.value = []
+  dialogVisible.value = true
+}
+
+const handleCreateChild = (row: any) => {
+  formData.value = { status: 1, sort: 0, parent_id: row.id }
+  excludeIds.value = []
   dialogVisible.value = true
 }
 
 const handleEdit = (row: any) => {
-  dialogTitle.value = '编辑用户组'
   formData.value = { ...row }
+  excludeIds.value = [row.id, ...getAllChildrenIds(allData.value, row.id)]
   dialogVisible.value = true
+}
+
+const hasChildren = (id: string): boolean => {
+  return allData.value.some(item => (item.parent_id || '') === id)
 }
 
 const handleDelete = async (row: any) => {
@@ -135,27 +180,10 @@ const handleDelete = async (row: any) => {
   } catch (error: any) { if (error !== 'cancel') ElMessage.error(error.message || '删除失败') }
 }
 
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      submitLoading.value = true
-      try {
-        formData.value.id ? await updateUserGroup(formData.value.id, formData.value) : await createUserGroup(formData.value)
-        ElMessage.success(formData.value.id ? '更新成功' : '创建成功')
-        dialogVisible.value = false
-        loadData()
-      } catch (error: any) { ElMessage.error(error.message || '操作失败') }
-      finally { submitLoading.value = false }
-    }
-  })
-}
-
 onMounted(() => loadData())
 </script>
 
 <style scoped>
-.sso-page { height: 100%; display: flex; flex-direction: column; }
 .main-card { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 :deep(.el-card__body) { height: 100%; display: flex; flex-direction: column; padding: 20px; overflow: hidden; box-sizing: border-box; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }

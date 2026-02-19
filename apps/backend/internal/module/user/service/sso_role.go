@@ -136,3 +136,55 @@ func (s *ssoRoleService) DeleteRole(id string) error {
 func (s *ssoRoleService) GetAllRoles() ([]model.SsoRole, error) {
 	return s.roleRepo.GetAllRoles()
 }
+
+// GetRoleMenus 获取角色的菜单ID列表
+func (s *ssoRoleService) GetRoleMenus(roleID string) ([]string, error) {
+	// 检查角色是否存在
+	_, err := s.roleRepo.GetRoleByID(roleID)
+	if err != nil {
+		return nil, errors.New("角色不存在")
+	}
+
+	// 获取角色菜单关联
+	roleMenus, err := s.roleMenuRepo.GetRoleMenusByRoleID(roleID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 提取菜单ID列表
+	menuIDs := make([]string, 0, len(roleMenus))
+	for _, rm := range roleMenus {
+		menuIDs = append(menuIDs, rm.MenuID)
+	}
+
+	return menuIDs, nil
+}
+
+// UpdateRoleMenus 更新角色的菜单关联
+func (s *ssoRoleService) UpdateRoleMenus(roleID string, menuIDs []string, createBy string) error {
+	// 检查角色是否存在
+	_, err := s.roleRepo.GetRoleByID(roleID)
+	if err != nil {
+		return errors.New("角色不存在")
+	}
+
+	// 删除原有的角色菜单关联
+	if err := s.roleMenuRepo.DeleteRoleMenusByRoleID(roleID); err != nil {
+		return err
+	}
+
+	// 创建新的角色菜单关联
+	for _, menuID := range menuIDs {
+		roleMenu := &model.SsoRoleMenu{
+			ID:       utils.GetSnowflake().GenerateIDString(),
+			RoleID:   roleID,
+			MenuID:   menuID,
+			CreateBy: createBy,
+		}
+		if err := s.roleMenuRepo.CreateRoleMenu(roleMenu); err != nil {
+			utils.SugarLogger.Errorw("创建角色菜单关联失败", "roleID", roleID, "menuID", menuID, "error", err)
+		}
+	}
+
+	return nil
+}

@@ -18,7 +18,7 @@
                 <el-button @click="handleReset" :icon="RefreshLeft">重置</el-button>
             </div>
             <div class="table-area">
-                <el-table class="tree-table" v-loading="loading" :element-loading-text="loadingText" :data="treeData" border stripe row-key="id" :tree-props="{ children: 'children', hasChildren: 'hasChildren' }" :indent="24" default-expand-all style="width: 100%; height: 100%;">
+                <el-table class="tree-table" v-loading="loading" :element-loading-text="loadingText" :data="tableData" border stripe row-key="id" :tree-props="{ children: 'children', hasChildren: 'hasChildren' }" :indent="24" default-expand-all style="width: 100%; height: 100%;">
                     <template #empty>
                         <el-empty :description="searchQuery ? '未搜索到相关职位' : '暂无职位'">
                             <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增职位</el-button>
@@ -50,7 +50,7 @@
                         <template #default="scope">
                             <el-button type="primary" size="small" :icon="Plus" @click="handleCreateChild(scope.row)" text bg>新增子级</el-button>
                             <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
-                            <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg v-if="!scope.row.is_system && !hasChildren(scope.row.id)">删除</el-button>
+                            <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg v-if="!scope.row.is_system && !scope.row.hasChildren">删除</el-button>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -75,78 +75,107 @@ const searchQuery = ref('')
 const allData = ref<any[]>([])
 const orgList = ref<any[]>([])
 
-/**
- * 构建树型数据结构
- * @param items 扁平数据列表
- * @param parentId 父节点ID，默认为空字符串表示根节点
- * @returns 树型结构数据
- */
-const buildTree = (items: any[], parentId = ''): any[] => {
-    return items
-        .filter(item => (item.parent_id || '') === parentId)
-        .map(item => ({
-            ...item,
-            children: buildTree(items, item.id)
-        }))
-}
+const dialogVisible = ref(false)
+const formData = ref<any>({})
+const excludeIds = ref<string[]>([])
 
-/**
- * 树型表格数据 - 用于表格展示
- * 支持搜索时返回扁平化结果
- */
-const treeData = computed(() => {
-    if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
-        return allData.value.filter(item => (item.pos_name || '').toLowerCase().includes(query))
+const getAllDescendantIds = (parentId: string): string[] => {
+    const ids: string[] = [parentId]
+    const findChildren = (pid: string) => {
+        allData.value
+            .filter(item => {
+                const itemPid = item.parent_id || ''
+                return itemPid === pid
+            })
+            .forEach(item => {
+                ids.push(item.id)
+                findChildren(item.id)
+            })
     }
-    return buildTree(allData.value)
-})
-
-/**
- * 构建树型选择器数据结构
- * @param items 扁平数据列表
- * @param parentId 父节点ID
- * @param excludeIds 需要排除的节点ID列表（用于编辑时排除自己及子节点）
- * @returns 树型选择器数据
- */
-const buildTreeSelectData = (items: any[], parentId = '', excludeIds: string[] = []): any[] => {
-    return items
-        .filter(item => (item.parent_id || '') === parentId && !excludeIds.includes(item.id))
-        .map(item => ({
-            value: item.id,
-            label: item.pos_name,
-            children: buildTreeSelectData(items, item.id, excludeIds)
-        }))
-}
-
-/**
- * 获取指定节点的所有子节点ID（递归）
- * @param items 所有数据列表
- * @param parentId 父节点ID
- * @returns 所有子节点ID列表
- */
-const getAllChildrenIds = (items: any[], parentId: string): string[] => {
-    const children = items.filter(item => (item.parent_id || '') === parentId)
-    let ids: string[] = []
-    for (const child of children) {
-        ids.push(child.id)
-        ids = ids.concat(getAllChildrenIds(items, child.id))
-    }
+    findChildren(parentId)
     return ids
 }
 
-/**
- * 树型选择器数据 - 用于上级职位选择
- */
-const posTreeSelectData = computed(() => buildTreeSelectData(allData.value))
+const buildTreeData = (items: any[], parentId = '', excludeIdSet: Set<string> = new Set()): any[] => {
+    // 判断是否为根节点（兼容 '' 和 '0' 两种情况）
+    const isRoot = (pid: string) => !pid || pid === '' || pid === '0'
+    
+    return items
+        .filter(item => {
+            if (excludeIdSet.has(item.id)) return false
+            const itemPid = item.parent_id || ''
+            if (isRoot(parentId)) {
+                return isRoot(itemPid)
+            }
+            return itemPid === parentId
+        })
+        .map(item => ({
+            value: item.id,
+            label: item.pos_name,
+            disabled: excludeIdSet.has(item.id),
+            children: buildTreeData(items, item.id, excludeIdSet)
+        }))
+}
 
-/**
- * 编辑时需要排除的节点ID列表（包含自己及所有子节点）
- */
-const excludeIds = ref<string[]>([])
+const tableData = computed(() => {
+    // 判断是否为根节点（兼容 '' 和 '0' 两种情况）
+    const isRoot = (pid: string) => !pid || pid === '' || pid === '0'
+    
+    const buildTableTree = (items: any[], parentId: string, level = 0): any[] => {
+        return items
+            .filter(item => {
+                const itemPid = item.parent_id || ''
+                // 根节点匹配
+                if (isRoot(parentId)) {
+                    return isRoot(itemPid)
+                }
+                // 子节点精确匹配
+                return itemPid === parentId
+            })
+            .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+            .map(item => {
+                const children = buildTableTree(items, item.id, level + 1)
+                const result: any = { ...item, level }
+                if (children.length > 0) {
+                    result.children = children
+                    result.hasChildren = true
+                } else {
+                    result.hasChildren = false
+                }
+                return result
+            })
+    }
 
-const dialogVisible = ref(false)
-const formData = ref<any>({})
+    let data = allData.value
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        data = data.filter(item => (item.pos_name || '').toLowerCase().includes(query))
+    }
+
+    if (!searchQuery.value) {
+        return buildTableTree(allData.value, '')
+    }
+
+    const allParentIds = new Set<string>()
+    const findAllParents = (pid: string) => {
+        if (!pid || pid === '' || pid === '0' || allParentIds.has(pid)) return
+        allParentIds.add(pid)
+        const parent = allData.value.find(item => item.id === pid)
+        if (parent) {
+            const parentPid = parent.parent_id || ''
+            if (parentPid && parentPid !== '' && parentPid !== '0') findAllParents(parentPid)
+        }
+    }
+    data.forEach(item => {
+        const pid = item.parent_id || ''
+        if (pid && pid !== '' && pid !== '0') findAllParents(pid)
+    })
+    const dataIds = new Set(data.map(item => item.id))
+    const fullList = [...data, ...allData.value.filter(item => allParentIds.has(item.id) && !dataIds.has(item.id))]
+    return buildTableTree(fullList, '')
+})
+
+const posTreeSelectData = computed(() => buildTreeData(allData.value))
 
 const loadData = async () => {
     loadingText.value = '加载中...'
@@ -184,12 +213,8 @@ const handleCreateChild = (row: any) => {
 
 const handleEdit = (row: any) => {
     formData.value = { ...row }
-    excludeIds.value = [row.id, ...getAllChildrenIds(allData.value, row.id)]
+    excludeIds.value = getAllDescendantIds(row.id)
     dialogVisible.value = true
-}
-
-const hasChildren = (id: string): boolean => {
-    return allData.value.some(item => (item.parent_id || '') === id)
 }
 
 const handleDelete = async (row: any) => {
@@ -203,94 +228,4 @@ const handleDelete = async (row: any) => {
 
 onMounted(() => loadData())
 </script>
-<style scoped>
-.main-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
 
-:deep(.el-card__body) {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-}
-
-.page-title {
-    font-size: 20px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.title-icon {
-    font-size: 24px;
-    color: var(--el-color-primary);
-}
-
-.header-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.search-area {
-    display: flex;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-}
-
-.table-area {
-    flex: 1;
-    overflow: hidden;
-}
-
-.text-primary {
-    color: var(--el-text-color-primary);
-}
-
-:deep(.el-table__row) {
-    transition: background-color 0.15s ease;
-}
-
-:deep(.el-table__row--level-0) {
-    background-color: var(--el-fill-color-lighter);
-}
-
-:deep(.el-table__row--level-0 > td:first-child) {
-    font-weight: 600;
-}
-
-:deep(.el-table__indent) {
-    padding-left: 0 !important;
-}
-
-:deep(.el-table__expand-icon) {
-    color: var(--el-color-primary);
-    font-size: 14px;
-}
-
-:deep(.el-table__expand-icon--expanded) {
-    transform: rotate(90deg);
-}
-
-:deep(.el-table .el-table__cell) {
-    padding: 12px 0;
-}
-
-:deep(.el-table .el-table__body tr:hover > td) {
-    background-color: var(--el-color-primary-light-9) !important;
-}
-</style>

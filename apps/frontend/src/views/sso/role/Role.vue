@@ -24,7 +24,7 @@
         <el-table
           v-loading="loading"
           :element-loading-text="loadingText"
-          :data="treeData"
+          :data="tableData"
           border
           stripe
           style="width: 100%; height: 100%;"
@@ -60,11 +60,12 @@
           </el-table-column>
           <el-table-column prop="remark" label="备注" show-overflow-tooltip />
           <el-table-column prop="sort" label="序号" width="80" />
-          <el-table-column label="操作" width="260" fixed="right">
+          <el-table-column label="操作" width="360" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" :icon="Plus" @click="handleAddChild(scope.row)" text bg>新增子级</el-button>
               <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
-              <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg v-if="!scope.row.is_system && !hasChildren(scope.row.id)">删除</el-button>
+              <el-button type="warning" size="small" @click="handleConfigMenu(scope.row)" text bg>配置菜单</el-button>
+              <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg v-if="!scope.row.is_system && !scope.row.hasChildren">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -72,6 +73,7 @@
     </el-card>
 
     <RoleForm v-model="dialogVisible" :data="formData" :all-roles="allData" :exclude-ids="excludeIds" :org-list="orgList" @success="loadData" />
+    <RoleMenuSelect v-model="menuDialogVisible" :role-id="currentRoleId" :role-name="currentRoleName" @success="loadData" />
   </div>
 </template>
 
@@ -81,8 +83,9 @@ import TreeNameCell from '@/components/table/TreeNameCell.vue'
 import { DATA_RANGE, DATA_RANGE_LABELS } from '@/utils/constants'
 import { Delete, Edit, Plus, RefreshLeft, Search, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import RoleForm from './RoleForm.vue'
+import RoleMenuSelect from './RoleMenuSelect.vue'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')
@@ -90,7 +93,6 @@ const searchQuery = ref('')
 const filterStatus = ref<number | ''>('')
 
 const allData = ref<any[]>([])
-const treeData = ref<any[]>([])
 const orgList = ref<any[]>([])
 
 const dialogVisible = ref(false)
@@ -104,129 +106,123 @@ const excludeIds = ref<string[]>([])
 
 /**
  * 获取指定节点的所有子节点ID（递归）
- * @param items 所有数据列表
  * @param parentId 父节点ID
  * @returns 所有子节点ID列表
  */
-const getAllChildrenIds = (items: any[], parentId: string): string[] => {
-  const children = items.filter(item => (item.parent_id || '') === parentId)
-  let ids: string[] = []
-  for (const child of children) {
-    ids.push(child.id)
-    ids = ids.concat(getAllChildrenIds(items, child.id))
-  }
-  return ids
-}
-
-/**
- * 检查指定节点是否有子节点
- * @param id 节点ID
- * @returns 是否有子节点
- */
-const hasChildren = (id: string): boolean => {
-  return allData.value.some(item => (item.parent_id || '') === id)
-}
-
-/**
- * 将扁平数据转换为树形结构
- * @param list 扁平数据列表
- * @param parentId 父ID，默认为空字符串（顶级节点）
- * @returns 树形结构数据
- */
-const buildTree = (list: any[], parentId: string = ''): any[] => {
-  const items = list
-    .filter(item => {
-      const pid = item.parent_id || ''
-      return pid === parentId
-    })
-    .sort((a, b) => (a.sort || 0) - (b.sort || 0))
-  
-  return items.map(item => {
-    const children = buildTree(list, item.id)
-    const result: any = { ...item }
-    if (children.length > 0) {
-      result.children = children
+const getAllDescendantIds = (parentId: string): string[] => {
+    const ids: string[] = [parentId]
+    const findChildren = (pid: string) => {
+        allData.value
+            .filter(item => {
+                const itemPid = item.parent_id || ''
+                return itemPid === pid
+            })
+            .forEach(item => {
+                ids.push(item.id)
+                findChildren(item.id)
+            })
     }
-    return result
-  })
+    findChildren(parentId)
+    return ids
 }
+
+/**
+ * 树型表格数据 - 用于表格展示
+ * 支持搜索时保持树形结构完整
+ */
+const tableData = computed(() => {
+    // 判断是否为根节点（兼容 '' 和 '0' 两种情况）
+    const isRoot = (pid: string) => !pid || pid === '' || pid === '0'
+    
+    const buildTableTree = (items: any[], parentId: string, level = 0): any[] => {
+        return items
+            .filter(item => {
+                const itemPid = item.parent_id || ''
+                // 根节点匹配
+                if (isRoot(parentId)) {
+                    return isRoot(itemPid)
+                }
+                // 子节点精确匹配
+                return itemPid === parentId
+            })
+            .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+            .map(item => {
+                const children = buildTableTree(items, item.id, level + 1)
+                const result: any = { ...item, level }
+                if (children.length > 0) {
+                    result.children = children
+                    result.hasChildren = true
+                } else {
+                    result.hasChildren = false
+                }
+                return result
+            })
+    }
+
+    let data = allData.value
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        data = data.filter(item => (item.role_name || '').toLowerCase().includes(query))
+    }
+    if (filterStatus.value !== '') {
+        data = data.filter(item => item.status === filterStatus.value)
+    }
+
+    if (!searchQuery.value && filterStatus.value === '') {
+        return buildTableTree(allData.value, '')
+    }
+
+    const allParentIds = new Set<string>()
+    const findAllParents = (pid: string) => {
+        if (!pid || pid === '' || pid === '0' || allParentIds.has(pid)) return
+        allParentIds.add(pid)
+        const parent = allData.value.find(item => item.id === pid)
+        if (parent) {
+            const parentPid = parent.parent_id || ''
+            if (parentPid && parentPid !== '' && parentPid !== '0') findAllParents(parentPid)
+        }
+    }
+    data.forEach(item => {
+        const pid = item.parent_id || ''
+        if (pid && pid !== '' && pid !== '0') findAllParents(pid)
+    })
+    const dataIds = new Set(data.map(item => item.id))
+    const fullList = [...data, ...allData.value.filter(item => allParentIds.has(item.id) && !dataIds.has(item.id))]
+    return buildTableTree(fullList, '')
+})
 
 /**
  * 加载角色列表数据
  */
 const loadData = async () => {
-  loadingText.value = '加载中...'
-  loading.value = true
-  try {
-    const [roleRes, orgRes]: [any, any] = await Promise.all([
-      getRoles(),
-      getUnits()
-    ])
-    const flatData = roleRes.data || roleRes || []
-    allData.value = flatData
-    treeData.value = buildTree(flatData)
-    orgList.value = orgRes.data || orgRes
-  } catch (error) {
-    console.error('加载角色列表失败:', error)
-    ElMessage.error('加载列表失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-/**
- * 搜索处理
- */
-const handleSearch = () => {
-  if (!searchQuery.value && filterStatus.value === '') {
-    treeData.value = buildTree(allData.value)
-    return
-  }
-  
-  const query = searchQuery.value.toLowerCase()
-  const filterList = allData.value.filter(item => {
-    const nameMatch = (item.role_name || '').toLowerCase().includes(query)
-    const statusMatch = filterStatus.value === '' || item.status === filterStatus.value
-    return nameMatch && statusMatch
-  })
-  
-  // 收集所有父节点ID，确保搜索结果能显示完整路径
-  const allParentIds = new Set<string>()
-  const findAllParents = (pid: string) => {
-    if (!pid || allParentIds.has(pid)) return
-    allParentIds.add(pid)
-    const parent = allData.value.find(item => item.id === pid)
-    if (parent) {
-      const parentPid = parent.parent_id || ''
-      if (parentPid) findAllParents(parentPid)
+    loadingText.value = '加载中...'
+    loading.value = true
+    try {
+        const [roleRes, orgRes]: [any, any] = await Promise.all([
+            getRoles(),
+            getUnits()
+        ])
+        allData.value = roleRes.data || roleRes || []
+        orgList.value = orgRes.data || orgRes
+    } catch (error) {
+        console.error('加载角色列表失败:', error)
+        ElMessage.error('加载列表失败')
+    } finally {
+        loading.value = false
     }
-  }
-  filterList.forEach(item => {
-    const pid = item.parent_id || ''
-    if (pid) findAllParents(pid)
-  })
-  
-  const fullList = [...filterList, ...allData.value.filter(item => allParentIds.has(item.id))]
-  treeData.value = buildTree(fullList)
 }
 
-const handleDebouncedSearch = () => {
-  handleSearch()
-}
-
-const handleReset = () => {
-  searchQuery.value = ''
-  filterStatus.value = ''
-  treeData.value = buildTree(allData.value)
-}
+const handleSearch = () => { }
+const handleDebouncedSearch = () => { }
+const handleReset = () => { searchQuery.value = ''; filterStatus.value = '' }
 
 /**
  * 新增顶级角色
  */
 const handleCreate = () => {
-  formData.value = { parent_id: '', status: 1, sort: 0, data_range: DATA_RANGE.ALL }
-  excludeIds.value = []
-  dialogVisible.value = true
+    formData.value = { parent_id: '', status: 1, sort: 0, data_range: DATA_RANGE.ALL }
+    excludeIds.value = []
+    dialogVisible.value = true
 }
 
 /**
@@ -234,9 +230,9 @@ const handleCreate = () => {
  * @param row 父级角色数据
  */
 const handleAddChild = (row: any) => {
-  formData.value = { parent_id: row.id, status: 1, sort: 0, data_range: DATA_RANGE.ALL }
-  excludeIds.value = []
-  dialogVisible.value = true
+    formData.value = { parent_id: row.id, status: 1, sort: 0, data_range: DATA_RANGE.ALL }
+    excludeIds.value = []
+    dialogVisible.value = true
 }
 
 /**
@@ -244,9 +240,24 @@ const handleAddChild = (row: any) => {
  * @param row 角色数据
  */
 const handleEdit = (row: any) => {
-  formData.value = { ...row }
-  excludeIds.value = [row.id, ...getAllChildrenIds(allData.value, row.id)]
-  dialogVisible.value = true
+    formData.value = { ...row }
+    excludeIds.value = getAllDescendantIds(row.id)
+    dialogVisible.value = true
+}
+
+// 菜单配置弹窗相关
+const menuDialogVisible = ref(false)
+const currentRoleId = ref('')
+const currentRoleName = ref('')
+
+/**
+ * 配置角色菜单
+ * @param row 角色数据
+ */
+const handleConfigMenu = (row: any) => {
+    currentRoleId.value = row.id
+    currentRoleName.value = row.role_name
+    menuDialogVisible.value = true
 }
 
 /**
@@ -268,48 +279,3 @@ const handleDelete = async (row: any) => {
 
 onMounted(() => loadData())
 </script>
-
-<style scoped>
-.main-card { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-:deep(.el-card__body) { height: 100%; display: flex; flex-direction: column; padding: 20px; overflow: hidden; box-sizing: border-box; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
-.page-title { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-.title-icon { font-size: 24px; color: var(--el-color-primary); }
-.header-actions { display: flex; gap: 10px; }
-.search-area { display: flex; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-.table-area { flex: 1; overflow: hidden; }
-.text-primary { color: var(--el-text-color-primary); }
-
-:deep(.el-table__row) {
-  transition: background-color 0.15s ease;
-}
-
-:deep(.el-table__row--level-0) {
-  background-color: var(--el-fill-color-lighter);
-}
-
-:deep(.el-table__row--level-0 > td:first-child) {
-  font-weight: 600;
-}
-
-:deep(.el-table__indent) {
-  padding-left: 0 !important;
-}
-
-:deep(.el-table__expand-icon) {
-  color: var(--el-color-primary);
-  font-size: 14px;
-}
-
-:deep(.el-table__expand-icon--expanded) {
-  transform: rotate(90deg);
-}
-
-:deep(.el-table .el-table__cell) {
-  padding: 12px 0;
-}
-
-:deep(.el-table .el-table__body tr:hover > td) {
-  background-color: var(--el-color-primary-light-9) !important;
-}
-</style>

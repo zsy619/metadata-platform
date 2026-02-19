@@ -63,6 +63,9 @@ type SsoRoleService interface {
 	UpdateRole(role *model.SsoRole) error
 	DeleteRole(id string) error
 	GetAllRoles() ([]model.SsoRole, error)
+	// 角色菜单相关
+	GetRoleMenus(roleID string) ([]string, error)
+	UpdateRoleMenus(roleID string, menuIDs []string, createBy string) error
 }
 
 // SsoOrgService 组织服务接口
@@ -109,6 +112,17 @@ type SsoRoleGroupService interface {
 	GetAllRoleGroups() ([]model.SsoRoleGroup, error)
 }
 
+// SsoUserGroupService 用户组服务接口
+type SsoUserGroupService interface {
+	CreateUserGroup(item *model.SsoUserGroup) error
+	GetUserGroupByID(id string) (*model.SsoUserGroup, error)
+	GetUserGroupByCode(code string) (*model.SsoUserGroup, error)
+	UpdateUserGroup(item *model.SsoUserGroup) error
+	UpdateUserGroupFields(id string, fields map[string]any) error
+	DeleteUserGroup(id string) error
+	GetAllUserGroups() ([]model.SsoUserGroup, error)
+}
+
 // SsoAuthService 认证服务接口
 type SsoAuthService interface {
 	Login(account string, password string, tenantID uint, clientInfo utils.ClientInfo) (accessToken string, refreshToken string, user *model.SsoUser, err error)
@@ -130,6 +144,7 @@ type Services struct {
 	Auth       SsoAuthService
 	OrgKind    SsoOrgKindService
 	RoleGroup  SsoRoleGroupService
+	UserGroup  SsoUserGroupService
 	CasbinSync SsoCasbinSyncService
 	Audit      auditService.AuditService
 }
@@ -148,6 +163,7 @@ func NewServices(repos *repository.Repositories, db *gorm.DB, auditDB *gorm.DB, 
 		Auth:      NewSsoAuthService(repos.User, repos.Role, repos.UserRole, auditSvc),
 		OrgKind:   NewSsoOrgKindService(repos.OrgKind),
 		RoleGroup: NewSsoRoleGroupService(repos.RoleGroup, repos.RoleGroupRole),
+		UserGroup: NewSsoUserGroupService(repos.UserGroup, repos.UserGroupUser),
 		CasbinSync: NewSsoCasbinSyncService(
 			repos.UserRole,
 			repos.RoleMenu,

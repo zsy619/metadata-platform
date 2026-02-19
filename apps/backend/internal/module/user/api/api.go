@@ -21,6 +21,7 @@ type SsoHandler struct {
 	AuthHandler      *SsoAuthHandler
 	OrgKindHandler   *SsoOrgKindHandler
 	RoleGroupHandler *SsoRoleGroupHandler
+	UserGroupHandler *SsoUserGroupHandler
 	AuditService     auditSvc.AuditService
 }
 
@@ -37,6 +38,7 @@ func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) 
 		AuthHandler:      NewSsoAuthHandler(services.Auth),
 		OrgKindHandler:   NewSsoOrgKindHandler(services.OrgKind, auditQueue),
 		RoleGroupHandler: NewSsoRoleGroupHandler(services.RoleGroup, auditQueue),
+		UserGroupHandler: NewSsoUserGroupHandler(services.UserGroup, auditQueue),
 		AuditService:     services.Audit,
 	}
 }
@@ -107,6 +109,9 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		roleRouter.PUT("/:id", h.RoleHandler.UpdateRole)
 		roleRouter.DELETE("/:id", h.RoleHandler.DeleteRole)
 		roleRouter.GET("", h.RoleHandler.GetAllRoles)
+		// 角色菜单相关路由
+		roleRouter.GET("/:id/menus", h.RoleHandler.GetRoleMenus)
+		roleRouter.PUT("/:id/menus", h.RoleHandler.UpdateRoleMenus)
 	}
 
 	// 组织相关路由
@@ -147,5 +152,15 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		roleGroupRouter.PUT("/:id", h.RoleGroupHandler.UpdateRoleGroup)
 		roleGroupRouter.DELETE("/:id", h.RoleGroupHandler.DeleteRoleGroup)
 		roleGroupRouter.GET("", h.RoleGroupHandler.GetAllRoleGroups)
+	}
+
+	// 用户组相关路由
+	userGroupRouter := group.Group("/user-group")
+	{
+		userGroupRouter.POST("", h.UserGroupHandler.CreateUserGroup)
+		userGroupRouter.GET("/:id", h.UserGroupHandler.GetUserGroupByID)
+		userGroupRouter.PUT("/:id", h.UserGroupHandler.UpdateUserGroup)
+		userGroupRouter.DELETE("/:id", h.UserGroupHandler.DeleteUserGroup)
+		userGroupRouter.GET("", h.UserGroupHandler.GetAllUserGroups)
 	}
 }

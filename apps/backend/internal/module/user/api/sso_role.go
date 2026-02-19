@@ -257,3 +257,68 @@ func (h *SsoRoleHandler) GetAllRoles(c context.Context, ctx *app.RequestContext)
 
 	ctx.JSON(200, roles)
 }
+
+// GetRoleMenus 获取角色的菜单ID列表
+func (h *SsoRoleHandler) GetRoleMenus(c context.Context, ctx *app.RequestContext) {
+	roleID := ctx.Param("id")
+
+	// 调用服务层获取角色菜单
+	menuIDs, err := h.roleService.GetRoleMenus(roleID)
+	if err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, map[string]interface{}{
+		"role_id":  roleID,
+		"menu_ids": menuIDs,
+	})
+}
+
+// UpdateRoleMenusRequest 更新角色菜单请求结构
+type UpdateRoleMenusRequest struct {
+	MenuIDs []string `json:"menu_ids" binding:"required"`
+}
+
+// UpdateRoleMenus 更新角色的菜单关联
+func (h *SsoRoleHandler) UpdateRoleMenus(c context.Context, ctx *app.RequestContext) {
+	roleID := ctx.Param("id")
+	var req UpdateRoleMenusRequest
+	if err := ctx.BindAndValidate(&req); err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 获取当前用户信息
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+
+	// 获取更新前的菜单ID列表
+	beforeMenuIDs, _ := h.roleService.GetRoleMenus(roleID)
+	beforeJSON, _ := json.Marshal(beforeMenuIDs)
+
+	// 调用服务层更新角色菜单
+	if err := h.roleService.UpdateRoleMenus(roleID, req.MenuIDs, headerUser.UserAccount); err != nil {
+		ctx.JSON(400, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 记录数据变更日志
+	afterJSON, _ := json.Marshal(req.MenuIDs)
+	h.audit.RecordDataChange(c, &model.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    headerUser.TraceID,
+		ModelID:    "role_menu",
+		RecordID:   roleID,
+		Action:     "UPDATE",
+		BeforeData: string(beforeJSON),
+		AfterData:  string(afterJSON),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "role_service",
+	})
+
+	ctx.JSON(200, map[string]interface{}{
+		"role_id":  roleID,
+		"menu_ids": req.MenuIDs,
+		"message":  "角色菜单更新成功",
+	})
+}
