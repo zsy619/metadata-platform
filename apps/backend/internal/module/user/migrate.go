@@ -14,6 +14,19 @@ func Migrate(db *gorm.DB) error {
 	utils.SugarLogger.Info("Starting user migration...")
 
 	var err error
+	// 用户扩展信息表（一对一/一对多，先于 join table 迁移）
+	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='用户档案'").AutoMigrate(&model.SsoUserProfile{}); err != nil {
+		return err
+	}
+	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='用户地址簿'").AutoMigrate(&model.SsoUserAddress{}); err != nil {
+		return err
+	}
+	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='用户联系方式'").AutoMigrate(&model.SsoUserContact{}); err != nil {
+		return err
+	}
+	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='用户第三方账号'").AutoMigrate(&model.SsoUserSocial{}); err != nil {
+		return err
+	}
 	if err = db.Set("gorm:table_options", "ENGINE=InnoDB COMMENT='用户职位关联'").AutoMigrate(&model.SsoUserPos{}); err != nil {
 		return err
 	}

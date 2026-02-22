@@ -11,8 +11,10 @@ type SsoUserRepository interface {
 	CreateUser(user *model.SsoUser) error
 	GetUserByID(id string) (*model.SsoUser, error)
 	GetUserByAccount(account string) (*model.SsoUser, error)
+	GetUserByMobile(mobile string) (*model.SsoUser, error)
+	GetUserByEmail(email string) (*model.SsoUser, error)
 	GetUserWithDetails(id string) (*model.SsoUser, error)
-	UpdateUser(user *model.SsoUser) error
+	UpdateUser(id string, updates map[string]any) error
 	UpdateLoginInfo(id string, ip string) error
 	IncrementLoginError(id string) error
 	DeleteUser(id string) error
@@ -267,6 +269,41 @@ type SsoOrgUserRepository interface {
 	GetAllOrgUsers() ([]model.SsoOrgUser, error)
 }
 
+// SsoUserProfileRepository 用户档案仓库接口
+type SsoUserProfileRepository interface {
+	GetByUserID(userID string) (*model.SsoUserProfile, error)
+	Upsert(profile *model.SsoUserProfile) error
+	Delete(userID string) error
+}
+
+// SsoUserAddressRepository 用户地址仓库接口
+type SsoUserAddressRepository interface {
+	Create(addr *model.SsoUserAddress) error
+	GetByID(id string) (*model.SsoUserAddress, error)
+	GetByUserID(userID string) ([]model.SsoUserAddress, error)
+	UpdateFields(id string, fields map[string]any) error
+	ClearDefault(userID string) error
+	Delete(id string) error
+}
+
+// SsoUserContactRepository 用户联系方式仓库接口
+type SsoUserContactRepository interface {
+	Create(contact *model.SsoUserContact) error
+	GetByID(id string) (*model.SsoUserContact, error)
+	GetByUserID(userID string) ([]model.SsoUserContact, error)
+	UpdateFields(id string, fields map[string]any) error
+	Delete(id string) error
+}
+
+// SsoUserSocialRepository 用户第三方账号仓库接口
+type SsoUserSocialRepository interface {
+	Create(social *model.SsoUserSocial) error
+	GetByID(id string) (*model.SsoUserSocial, error)
+	GetByUserID(userID string) ([]model.SsoUserSocial, error)
+	GetByProviderAndOpenID(provider, openID string) (*model.SsoUserSocial, error)
+	Delete(id string) error
+}
+
 // Repositories 用户模块仓库集合
 type Repositories struct {
 	User          SsoUserRepository
@@ -292,6 +329,10 @@ type Repositories struct {
 	RoleMenu      SsoRoleMenuRepository
 	PosRole       SsoPosRoleRepository
 	CasbinRule    SsoCasbinRuleRepository
+	UserProfile   SsoUserProfileRepository
+	UserAddress   SsoUserAddressRepository
+	UserContact   SsoUserContactRepository
+	UserSocial    SsoUserSocialRepository
 }
 
 // NewRepositories 创建用户模块仓库集合
@@ -320,5 +361,9 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		RoleMenu:      NewSsoRoleMenuRepository(db),
 		PosRole:       NewSsoPosRoleRepository(db),
 		CasbinRule:    NewSsoCasbinRuleRepository(db),
+		UserProfile:   NewSsoUserProfileRepository(db),
+		UserAddress:   NewSsoUserAddressRepository(db),
+		UserContact:   NewSsoUserContactRepository(db),
+		UserSocial:    NewSsoUserSocialRepository(db),
 	}
 }

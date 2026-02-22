@@ -38,8 +38,8 @@ func (m *MockSsoUserRepository) GetUserByAccount(account string) (*model.SsoUser
 	return args.Get(0).(*model.SsoUser), args.Error(1)
 }
 
-func (m *MockSsoUserRepository) UpdateUser(user *model.SsoUser) error {
-	args := m.Called(user)
+func (m *MockSsoUserRepository) UpdateUser(id string, updates map[string]any) error {
+	args := m.Called(id, updates)
 	return args.Error(0)
 }
 
@@ -69,6 +69,22 @@ func (m *MockSsoUserRepository) UpdateLoginInfo(id string, ip string) error {
 func (m *MockSsoUserRepository) IncrementLoginError(id string) error {
 	args := m.Called(id)
 	return args.Error(0)
+}
+
+func (m *MockSsoUserRepository) GetUserByMobile(mobile string) (*model.SsoUser, error) {
+	args := m.Called(mobile)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.SsoUser), args.Error(1)
+}
+
+func (m *MockSsoUserRepository) GetUserByEmail(email string) (*model.SsoUser, error) {
+	args := m.Called(email)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.SsoUser), args.Error(1)
 }
 
 // MockAuditService

@@ -1,11 +1,10 @@
 package repository
 
 import (
+	"metadata-platform/internal/module/user/model"
 	"time"
 
 	"gorm.io/gorm"
-
-	"metadata-platform/internal/module/user/model"
 )
 
 // ssoUserRepository 用户仓库实现
@@ -36,7 +35,27 @@ func (r *ssoUserRepository) GetUserByID(id string) (*model.SsoUser, error) {
 // GetUserByAccount 根据账号获取用户
 func (r *ssoUserRepository) GetUserByAccount(account string) (*model.SsoUser, error) {
 	var user model.SsoUser
-	result := r.db.Where("account = ?", account).First(&user)
+	result := r.db.Where("account = ? AND is_deleted = false", account).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
+// GetUserByMobile 根据手机号获取用户
+func (r *ssoUserRepository) GetUserByMobile(mobile string) (*model.SsoUser, error) {
+	var user model.SsoUser
+	result := r.db.Where("mobile = ? AND mobile != '' AND is_deleted = false", mobile).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}
+
+// GetUserByEmail 根据邮箱获取用户
+func (r *ssoUserRepository) GetUserByEmail(email string) (*model.SsoUser, error) {
+	var user model.SsoUser
+	result := r.db.Where("email = ? AND email != '' AND is_deleted = false", email).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -44,8 +63,8 @@ func (r *ssoUserRepository) GetUserByAccount(account string) (*model.SsoUser, er
 }
 
 // UpdateUser 更新用户
-func (r *ssoUserRepository) UpdateUser(user *model.SsoUser) error {
-	return r.db.Save(user).Error
+func (r *ssoUserRepository) UpdateUser(id string, updates map[string]any) error {
+	return r.db.Model(&model.SsoUser{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // DeleteUser 删除用户
@@ -77,7 +96,7 @@ func (r *ssoUserRepository) GetUserWithDetails(id string) (*model.SsoUser, error
 func (r *ssoUserRepository) UpdateLoginInfo(id string, ip string) error {
 	now := time.Now()
 	// 使用 map 更新，确保零值也能更新
-	updates := map[string]interface{}{
+	updates := map[string]any{
 		"last_login_time":   now,
 		"last_ip":           ip,
 		"login_error_count": 0,

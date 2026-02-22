@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	auditModel "metadata-platform/internal/module/audit/model"
 	"metadata-platform/internal/module/audit/queue"
@@ -39,14 +40,15 @@ type SsoCreateUserRequest struct {
 }
 
 type SsoUpdateUserRequest struct {
-	Account  string `json:"account" form:"account"`
-	Password string `json:"password" form:"password"`
-	Name     string `json:"name" form:"name"`
-	Mobile   string `json:"mobile" form:"mobile"`
-	Email    string `json:"email" form:"email"`
-	Kind     int    `json:"kind" form:"kind"`
-	Status   int    `json:"status" form:"status"`
-	Remark   string `json:"remark" form:"remark"`
+	Account  string     `json:"account" form:"account"`
+	Password string     `json:"password" form:"password"`
+	Name     string     `json:"name" form:"name"`
+	Mobile   string     `json:"mobile" form:"mobile"`
+	Email    string     `json:"email" form:"email"`
+	Kind     int        `json:"kind" form:"kind"`
+	Status   *int       `json:"status" form:"status"`
+	Remark   string     `json:"remark" form:"remark"`
+	EndTime  *time.Time `json:"end_time" form:"end_time"`
 }
 
 func (h *SsoUserHandler) CreateUser(c context.Context, ctx *app.RequestContext) {
@@ -104,27 +106,23 @@ func (h *SsoUserHandler) UpdateUser(c context.Context, ctx *app.RequestContext) 
 	if req.Account != "" {
 		user.Account = req.Account
 	}
-	if req.Password != "" {
-		user.Password = req.Password
-	}
+	// 密码：前端传了新密码则赋值（service 会加密），留空则清空（service 会保持原密码）
+	user.Password = req.Password
 	if req.Name != "" {
 		user.Name = req.Name
 	}
-	if req.Mobile != "" {
-		user.Mobile = req.Mobile
-	}
-	if req.Email != "" {
-		user.Email = req.Email
-	}
+	// 手机号/邮箱允许清空，所以始终覆盖
+	user.Mobile = req.Mobile
+	user.Email = req.Email
 	if req.Kind != 0 {
 		user.Kind = req.Kind
 	}
-	if req.Status != 0 {
-		user.Status = req.Status
+	// status 使用指针，支持设为 0（禁用）
+	if req.Status != nil {
+		user.Status = *req.Status
 	}
-	if req.Remark != "" {
-		user.Remark = req.Remark
-	}
+	user.Remark = req.Remark
+	user.EndTime = req.EndTime
 
 	if err := h.userService.UpdateUser(user); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})

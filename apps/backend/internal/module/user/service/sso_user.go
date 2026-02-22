@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-
 	"metadata-platform/internal/module/user/model"
 	"metadata-platform/internal/module/user/repository"
 	"metadata-platform/internal/utils"
@@ -17,10 +16,27 @@ type ssoUserService struct {
 	userPosRepo       repository.SsoUserPosRepository
 	userGroupUserRepo repository.SsoUserGroupUserRepository
 	userRoleGroupRepo repository.SsoUserRoleGroupRepository
+	// 用户扩展信息仓库
+	userProfileRepo repository.SsoUserProfileRepository
+	userAddressRepo repository.SsoUserAddressRepository
+	userContactRepo repository.SsoUserContactRepository
+	userSocialRepo  repository.SsoUserSocialRepository
 }
 
 // NewSsoUserService 创建用户服务实例
-func NewSsoUserService(userRepo repository.SsoUserRepository, orgRepo repository.SsoOrgRepository, orgUserRepo repository.SsoOrgUserRepository, userRoleRepo repository.SsoUserRoleRepository, userPosRepo repository.SsoUserPosRepository, userGroupUserRepo repository.SsoUserGroupUserRepository, userRoleGroupRepo repository.SsoUserRoleGroupRepository) SsoUserService {
+func NewSsoUserService(
+	userRepo repository.SsoUserRepository,
+	orgRepo repository.SsoOrgRepository,
+	orgUserRepo repository.SsoOrgUserRepository,
+	userRoleRepo repository.SsoUserRoleRepository,
+	userPosRepo repository.SsoUserPosRepository,
+	userGroupUserRepo repository.SsoUserGroupUserRepository,
+	userRoleGroupRepo repository.SsoUserRoleGroupRepository,
+	userProfileRepo repository.SsoUserProfileRepository,
+	userAddressRepo repository.SsoUserAddressRepository,
+	userContactRepo repository.SsoUserContactRepository,
+	userSocialRepo repository.SsoUserSocialRepository,
+) SsoUserService {
 	return &ssoUserService{
 		userRepo:          userRepo,
 		orgRepo:           orgRepo,
@@ -29,6 +45,10 @@ func NewSsoUserService(userRepo repository.SsoUserRepository, orgRepo repository
 		userPosRepo:       userPosRepo,
 		userGroupUserRepo: userGroupUserRepo,
 		userRoleGroupRepo: userRoleGroupRepo,
+		userProfileRepo:   userProfileRepo,
+		userAddressRepo:   userAddressRepo,
+		userContactRepo:   userContactRepo,
+		userSocialRepo:    userSocialRepo,
 	}
 }
 
@@ -38,6 +58,23 @@ func (s *ssoUserService) CreateUser(user *model.SsoUser) error {
 	existingUser, err := s.userRepo.GetUserByAccount(user.Account)
 	if err == nil && existingUser != nil {
 		return errors.New("账号已存在")
+	}
+	// 检查手机号唯一性
+	if user.Mobile != "" {
+		if m, err := s.userRepo.GetUserByMobile(user.Mobile); err == nil && m != nil {
+			return errors.New("手机号已被其他用户使用")
+		}
+	}
+	// 检查邮箱唯一性
+	if user.Email != "" {
+		if m, err := s.userRepo.GetUserByEmail(user.Email); err == nil && m != nil {
+			return errors.New("邮箱已被其他用户使用")
+		}
+	}
+
+	// 生成雪花 ID
+	if user.ID == "" {
+		user.ID = utils.GetSnowflake().GenerateIDString()
 	}
 
 	// 对密码进行哈希加密
@@ -77,13 +114,34 @@ func (s *ssoUserService) UpdateUser(user *model.SsoUser) error {
 		return errors.New("用户不存在")
 	}
 
+	updates := make(map[string]any)
+
 	// 如果账号发生变化，检查新账号是否已存在
-	if existingUser.Account != user.Account {
+	if user.Account != "" && existingUser.Account != user.Account {
 		otherUser, err := s.userRepo.GetUserByAccount(user.Account)
 		if err == nil && otherUser != nil {
 			return errors.New("账号已存在")
 		}
+		updates["account"] = user.Account
 	}
+	
+	// 检查手机号唯一性（排除自身）
+	if user.Mobile != "" && user.Mobile != existingUser.Mobile {
+		if m, err := s.userRepo.GetUserByMobile(user.Mobile); err == nil && m != nil && m.ID != user.ID {
+			return errors.New("手机号已被其他用户使用")
+		}
+	}
+	// 手机号允许清空，所以即便是空也可能需要更新（此处由传入的 user 决定，如果用 map 逻辑，前端传了就可以更新。如果 user 结构体未区分未传和清空，这会导致空值覆盖，这里需要处理：通常业务层是全量覆盖可选项）
+	// 因为传进来的是组装好的 user，我们按现有逻辑直接写入
+	updates["mobile"] = user.Mobile
+
+	// 检查邮箱唯一性（排除自身）
+	if user.Email != "" && user.Email != existingUser.Email {
+		if m, err := s.userRepo.GetUserByEmail(user.Email); err == nil && m != nil && m.ID != user.ID {
+			return errors.New("邮箱已被其他用户使用")
+		}
+	}
+	updates["email"] = user.Email
 
 	// 如果密码不为空，则对密码进行哈希加密
 	if user.Password != "" {
@@ -91,43 +149,74 @@ func (s *ssoUserService) UpdateUser(user *model.SsoUser) error {
 		if err != nil {
 			return errors.New("密码加密失败")
 		}
-		user.Password = hashedPassword
-		user.Salt = salt
-	} else {
-		// 保持原密码不变
-		user.Password = existingUser.Password
+		updates["password"] = hashedPassword
+		updates["salt"] = salt
 	}
 
+	if user.Name != "" {
+		updates["name"] = user.Name
+	}
+	if user.Kind != 0 {
+		updates["kind"] = user.Kind
+	}
+	// Status 是 int，0 也有意义，前面 handler 已确保传入的是修改后的值
+	updates["status"] = user.Status
+	// 备注可以直接覆盖
+	updates["remark"] = user.Remark
+	// 过期时间覆盖
+	updates["end_time"] = user.EndTime
+
 	// 更新用户
-	return s.userRepo.UpdateUser(user)
+	return s.userRepo.UpdateUser(user.ID, updates)
 }
 
 // DeleteUser 删除用户
 func (s *ssoUserService) DeleteUser(id string) error {
 	// 检查用户是否存在
-	_, err := s.userRepo.GetUserByID(id)
+	user, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return errors.New("用户不存在")
+	}
+
+	// 系统内置用户不允许删除
+	if user.IsSystem {
+		return errors.New("系统内置用户不允许删除")
 	}
 
 	// 删除用户关联的角色
 	if err := s.userRoleRepo.DeleteUserRolesByUserID(id); err != nil {
 		utils.SugarLogger.Errorw("删除用户角色关联失败", "userID", id, "error", err)
 	}
-
 	// 删除用户关联的职位
 	if err := s.userPosRepo.DeleteUserPosByUserID(id); err != nil {
 		utils.SugarLogger.Errorw("删除用户职位关联失败", "userID", id, "error", err)
 	}
-
 	// 删除用户关联的用户组
 	if err := s.userGroupUserRepo.DeleteUserGroupUsersByUserID(id); err != nil {
 		utils.SugarLogger.Errorw("删除用户组用户关联失败", "userID", id, "error", err)
 	}
-
 	// 删除用户关联的角色组
 	if err := s.userRoleGroupRepo.DeleteUserRoleGroupsByUserID(id); err != nil {
 		utils.SugarLogger.Errorw("删除用户角色组关联失败", "userID", id, "error", err)
+	}
+	// 删除用户档案
+	if err := s.userProfileRepo.Delete(id); err != nil {
+		utils.SugarLogger.Warnw("删除用户档案失败", "userID", id, "error", err)
+	}
+	// 删除用户地址簿
+	addrs, _ := s.userAddressRepo.GetByUserID(id)
+	for _, addr := range addrs {
+		_ = s.userAddressRepo.Delete(addr.ID)
+	}
+	// 删除用户联系方式
+	contacts, _ := s.userContactRepo.GetByUserID(id)
+	for _, c := range contacts {
+		_ = s.userContactRepo.Delete(c.ID)
+	}
+	// 删除用户第三方账号
+	socials, _ := s.userSocialRepo.GetByUserID(id)
+	for _, s2 := range socials {
+		_ = s.userSocialRepo.Delete(s2.ID)
 	}
 
 	// 删除用户

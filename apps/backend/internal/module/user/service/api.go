@@ -153,6 +153,36 @@ type SsoAuthService interface {
 	ChangePassword(userID string, oldPassword string, newPassword string) error
 }
 
+// SsoUserProfileService 用户档案服务接口
+type SsoUserProfileService interface {
+	GetByUserID(userID string) (*model.SsoUserProfile, error)
+	Upsert(profile *model.SsoUserProfile) error
+}
+
+// SsoUserAddressService 用户地址服务接口
+type SsoUserAddressService interface {
+	GetByUserID(userID string) ([]model.SsoUserAddress, error)
+	Create(addr *model.SsoUserAddress) error
+	UpdateFields(id string, fields map[string]any) error
+	SetDefault(userID, id string) error
+	Delete(userID, id string) error
+}
+
+// SsoUserContactService 用户联系方式服务接口
+type SsoUserContactService interface {
+	GetByUserID(userID string) ([]model.SsoUserContact, error)
+	Create(contact *model.SsoUserContact) error
+	UpdateFields(id string, fields map[string]any) error
+	Delete(userID, id string) error
+}
+
+// SsoUserSocialService 用户第三方账号服务接口
+type SsoUserSocialService interface {
+	GetByUserID(userID string) ([]model.SsoUserSocial, error)
+	Bind(social *model.SsoUserSocial) error
+	Unbind(userID, id string) error
+}
+
 // Services 用户模块服务集合
 type Services struct {
 	User       SsoUserService
@@ -168,13 +198,17 @@ type Services struct {
 	UserGroup  SsoUserGroupService
 	CasbinSync SsoCasbinSyncService
 	Audit      auditService.AuditService
+	UserProfile SsoUserProfileService
+	UserAddress SsoUserAddressService
+	UserContact SsoUserContactService
+	UserSocial  SsoUserSocialService
 }
 
 // NewServices 创建用户模块服务集合
 func NewServices(repos *repository.Repositories, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *Services {
 	auditSvc := auditService.NewAuditService(auditDB, auditQueue)
 	return &Services{
-		User:      NewSsoUserService(repos.User, repos.Org, repos.OrgUser, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup),
+		User:      NewSsoUserService(repos.User, repos.Org, repos.OrgUser, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup, repos.UserProfile, repos.UserAddress, repos.UserContact, repos.UserSocial),
 		Tenant:    NewSsoTenantService(repos.Tenant),
 		App:       NewSsoAppService(repos.App),
 		Menu:      NewSsoMenuService(repos.Menu),
@@ -191,6 +225,10 @@ func NewServices(repos *repository.Repositories, db *gorm.DB, auditDB *gorm.DB, 
 			repos.Role,
 			repos.Menu,
 		),
-		Audit: auditSvc,
+		Audit:       auditSvc,
+		UserProfile: NewSsoUserProfileService(repos.UserProfile),
+		UserAddress: NewSsoUserAddressService(repos.UserAddress),
+		UserContact: NewSsoUserContactService(repos.UserContact),
+		UserSocial:  NewSsoUserSocialService(repos.UserSocial),
 	}
 }

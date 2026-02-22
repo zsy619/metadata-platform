@@ -11,35 +11,43 @@ import (
 
 // SsoHandler 用户模块处理器集合
 type SsoHandler struct {
-	TenantHandler    *SsoTenantHandler
-	AppHandler       *SsoAppHandler
-	MenuHandler      *SsoMenuHandler
-	RoleHandler      *SsoRoleHandler
-	OrgHandler       *SsoOrgHandler
-	UserHandler      *SsoUserHandler
-	PosHandler       *SsoPosHandler
-	AuthHandler      *SsoAuthHandler
-	OrgKindHandler   *SsoOrgKindHandler
-	RoleGroupHandler *SsoRoleGroupHandler
-	UserGroupHandler *SsoUserGroupHandler
-	AuditService     auditSvc.AuditService
+	TenantHandler      *SsoTenantHandler
+	AppHandler         *SsoAppHandler
+	MenuHandler        *SsoMenuHandler
+	RoleHandler        *SsoRoleHandler
+	OrgHandler         *SsoOrgHandler
+	UserHandler        *SsoUserHandler
+	PosHandler         *SsoPosHandler
+	AuthHandler        *SsoAuthHandler
+	OrgKindHandler     *SsoOrgKindHandler
+	RoleGroupHandler   *SsoRoleGroupHandler
+	UserGroupHandler   *SsoUserGroupHandler
+	UserProfileHandler *SsoUserProfileHandler
+	UserAddressHandler *SsoUserAddressHandler
+	UserContactHandler *SsoUserContactHandler
+	UserSocialHandler  *SsoUserSocialHandler
+	AuditService       auditSvc.AuditService
 }
 
 // NewSsoHandler 创建用户模块处理器集合
 func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) *SsoHandler {
 	return &SsoHandler{
-		UserHandler:      NewSsoUserHandler(services.User, auditQueue),
-		TenantHandler:    NewSsoTenantHandler(services.Tenant, auditQueue),
-		AppHandler:       NewSsoAppHandler(services.App, auditQueue),
-		MenuHandler:      NewSsoMenuHandler(services.Menu, auditQueue),
-		RoleHandler:      NewSsoRoleHandler(services.Role, auditQueue),
-		OrgHandler:       NewSsoOrgHandler(services.Org, auditQueue),
-		PosHandler:       NewSsoPosHandler(services.Pos, auditQueue),
-		AuthHandler:      NewSsoAuthHandler(services.Auth),
-		OrgKindHandler:   NewSsoOrgKindHandler(services.OrgKind, auditQueue),
-		RoleGroupHandler: NewSsoRoleGroupHandler(services.RoleGroup, auditQueue),
-		UserGroupHandler: NewSsoUserGroupHandler(services.UserGroup, auditQueue),
-		AuditService:     services.Audit,
+		UserHandler:        NewSsoUserHandler(services.User, auditQueue),
+		TenantHandler:      NewSsoTenantHandler(services.Tenant, auditQueue),
+		AppHandler:         NewSsoAppHandler(services.App, auditQueue),
+		MenuHandler:        NewSsoMenuHandler(services.Menu, auditQueue),
+		RoleHandler:        NewSsoRoleHandler(services.Role, auditQueue),
+		OrgHandler:         NewSsoOrgHandler(services.Org, auditQueue),
+		PosHandler:         NewSsoPosHandler(services.Pos, auditQueue),
+		AuthHandler:        NewSsoAuthHandler(services.Auth),
+		OrgKindHandler:     NewSsoOrgKindHandler(services.OrgKind, auditQueue),
+		RoleGroupHandler:   NewSsoRoleGroupHandler(services.RoleGroup, auditQueue),
+		UserGroupHandler:   NewSsoUserGroupHandler(services.UserGroup, auditQueue),
+		UserProfileHandler: NewSsoUserProfileHandler(services.UserProfile, auditQueue),
+		UserAddressHandler: NewSsoUserAddressHandler(services.UserAddress, auditQueue),
+		UserContactHandler: NewSsoUserContactHandler(services.UserContact, auditQueue),
+		UserSocialHandler:  NewSsoUserSocialHandler(services.UserSocial, auditQueue),
+		AuditService:       services.Audit,
 	}
 }
 
@@ -79,6 +87,21 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		userRouter.PUT("/:id/role-groups", h.UserHandler.UpdateUserRoleGroups)
 		userRouter.GET("/:id/orgs", h.UserHandler.GetUserOrgs)
 		userRouter.PUT("/:id/orgs", h.UserHandler.UpdateUserOrgs)
+		// 用户扩展信息路由
+		userRouter.GET("/:id/profile", h.UserProfileHandler.GetUserProfile)
+		userRouter.PUT("/:id/profile", h.UserProfileHandler.UpsertUserProfile)
+		userRouter.GET("/:id/addresses", h.UserAddressHandler.GetAddresses)
+		userRouter.POST("/:id/addresses", h.UserAddressHandler.CreateAddress)
+		userRouter.PUT("/:id/addresses/:aid", h.UserAddressHandler.UpdateAddress)
+		userRouter.DELETE("/:id/addresses/:aid", h.UserAddressHandler.DeleteAddress)
+		userRouter.PUT("/:id/addresses/:aid/default", h.UserAddressHandler.SetDefaultAddress)
+		userRouter.GET("/:id/contacts", h.UserContactHandler.GetContacts)
+		userRouter.POST("/:id/contacts", h.UserContactHandler.CreateContact)
+		userRouter.PUT("/:id/contacts/:cid", h.UserContactHandler.UpdateContact)
+		userRouter.DELETE("/:id/contacts/:cid", h.UserContactHandler.DeleteContact)
+		userRouter.GET("/:id/socials", h.UserSocialHandler.GetSocials)
+		userRouter.POST("/:id/socials", h.UserSocialHandler.BindSocial)
+		userRouter.DELETE("/:id/socials/:sid", h.UserSocialHandler.UnbindSocial)
 	}
 
 	// 租户相关路由

@@ -211,6 +211,11 @@ func (s *ssoAuthService) ChangePassword(userID string, oldPassword string, newPa
 	user.Password = hash
 	user.Salt = salt
 
+	updates := map[string]any{
+		"password": hash,
+		"salt":     salt,
+	}
+
 	// 更新用户
-	return s.userRepo.UpdateUser(user)
+	return s.userRepo.UpdateUser(user.ID, updates)
 }

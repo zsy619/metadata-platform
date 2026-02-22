@@ -39,7 +39,7 @@ request.interceptors.request.use(
             config.headers = config.headers || {}
             config.headers.Authorization = `Bearer ${token}`
         }
-        
+
         // 获取用户信息并添加到请求头
         // 从localStorage获取用户信息（登录后存储）
         const userInfoStr = storage.get('userInfo')
@@ -57,10 +57,10 @@ request.interceptors.request.use(
                 console.warn('解析用户信息失败:', e)
             }
         }
-        
+
         // 添加租户ID到请求头
         config.headers['X-Tenant-ID'] = storage.getTenantID()
-        
+
         return config
     },
     (error: AxiosError) => {
@@ -105,7 +105,7 @@ request.interceptors.response.use(
 
             switch (status) {
                 case 400:
-                    errorMessage = data?.message || '请求参数错误'
+                    errorMessage = data?.error || data?.message || '请求参数错误'
                     break
                 case 401:
                     // 如果是登录接口返回401，说明是用户名密码错误，由业务层处理
