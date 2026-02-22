@@ -67,12 +67,12 @@ func SeedData(db *gorm.DB) {
 	}
 
 	// 3. 初始化默认应用
-	apps := []model.SsoPos{
+	apps := []model.SsoApp{
 		{
 			ID:       "1",
 			TenantID: utils.SystemTenantID,
-			PosName:  "元数据管理",
-			PosCode:  "metadata",
+			AppName:  "元数据管理",
+			AppCode:  "metadata",
 			Status:   1,
 			IsSystem: true,
 			Remark:   "元数据管理",
@@ -84,8 +84,8 @@ func SeedData(db *gorm.DB) {
 		{
 			ID:       "2",
 			TenantID: utils.SystemTenantID,
-			PosName:  "用户管理",
-			PosCode:  "sso",
+			AppName:  "用户管理",
+			AppCode:  "sso",
 			Status:   1,
 			IsSystem: true,
 			Remark:   "账号认证与权限管理系统",
@@ -97,12 +97,12 @@ func SeedData(db *gorm.DB) {
 	}
 
 	for _, app := range apps {
-		db.Model(&model.SsoPos{}).Where("pos_code = ?", app.PosCode).Count(&count)
+		db.Model(&model.SsoApp{}).Where("app_code = ?", app.AppCode).Count(&count)
 		if count == 0 {
 			if err := db.Create(&app).Error; err != nil {
-				utils.SugarLogger.Errorf("Failed to seed position %s: %v", app.PosName, err)
+				utils.SugarLogger.Errorf("Failed to seed app %s: %v", app.AppName, err)
 			} else {
-				utils.SugarLogger.Infof("Seeded position: %s", app.PosName)
+				utils.SugarLogger.Infof("Seeded app: %s", app.AppName)
 			}
 		}
 	}

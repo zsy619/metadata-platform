@@ -7,7 +7,7 @@ type SsoUserPos struct {
 	ID        string    `json:"id" form:"id" gorm:"primary_key;type:varchar(64);column:id;comment:主键ID"`
 	UserID    string    `json:"user_id" form:"user_id" gorm:"type:varchar(64);default:'';uniqueIndex:idx_user_pos;column:user_id;comment:用户ID"`
 	PosID     string    `json:"pos_id" form:"pos_id" gorm:"type:varchar(64);default:'';uniqueIndex:idx_user_pos;column:pos_id;comment:职位ID"`
-	Remark    string    `json:"remark" gorm:"size:1024;default:'';column:remark;comment:备注"`
+	Remark    string    `json:"remark" form:"remark" gorm:"size:1024;default:'';column:remark;comment:备注"`
 	IsDeleted bool      `json:"is_deleted" form:"is_deleted" gorm:"type:tinyint(1);default:0;column:is_deleted;comment:是否删除"`
 	IsSystem  bool      `json:"is_system" form:"is_system" gorm:"type:tinyint(1);default:0;comment:是否系统内置"`
 	TenantID  string    `json:"tenant_id" form:"tenant_id" gorm:"index;type:varchar(64);not null;default:'1';column:tenant_id;comment:租户ID"`

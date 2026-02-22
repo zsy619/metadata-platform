@@ -7,7 +7,7 @@ type SsoOrgKindRole struct {
 	ID        string    `json:"id" form:"id" gorm:"primary_key;type:varchar(64);column:id"`
 	KindCode  string    `json:"kind_code" form:"kind_code" gorm:"size:64;default:'';uniqueIndex:idx_kind_role;column:kind_code;comment:类型编码"`
 	RoleID    string    `json:"role_id" form:"role_id" gorm:"type:varchar(64);default:'0';uniqueIndex:idx_kind_role;column:role_id;comment:角色ID"`
-	Remark    string    `json:"remark" gorm:"size:1024;default:'';column:remark;comment:备注"`
+	Remark    string    `json:"remark" form:"remark" gorm:"size:1024;default:'';column:remark;comment:备注"`
 	IsDeleted bool      `json:"is_deleted" form:"is_deleted" gorm:"type:tinyint(1);default:0;column:is_deleted;comment:是否删除"`
 	IsSystem  bool      `json:"is_system" form:"is_system" gorm:"type:tinyint(1);default:0;comment:是否系统内置"`
 	TenantID  string    `json:"tenant_id" form:"tenant_id" gorm:"index;type:varchar(64);not null;default:'1';column:tenant_id;comment:租户ID"`

@@ -40,7 +40,7 @@ type SsoUser struct {
 	// 关联数据 (不存入 sso_user 表)
 	Roles         []SsoRole    `json:"roles" gorm:"many2many:sso_user_role;joinForeignKey:UserID;joinReferences:RoleID"`
 	Positions     []SsoPos     `json:"positions" gorm:"many2many:sso_user_pos;joinForeignKey:UserID;joinReferences:PosID"`
-	Organizations []SsoOrgUser `json:"organizations" gorm:"many2many:sso_organization_user;joinForeignKey:UserID;joinReferences:OrgID"`
+	Organizations []SsoOrgUser `json:"organizations" gorm:"many2many:sso_org_user;joinForeignKey:UserID;joinReferences:OrgID"`
 }
 
 // TableName 指定表名

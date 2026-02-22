@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"gorm.io/gorm"
-
 	"metadata-platform/internal/module/user/model"
+
+	"gorm.io/gorm"
 )
 
 // SsoUserRepository 用户仓库接口
@@ -215,10 +215,10 @@ type SsoUserRoleGroupRepository interface {
 
 type SsoCasbinRuleRepository interface {
 	CreateCasbinRule(item *model.SsoCasbinRule) error
-	GetCasbinRuleByID(id string) (*model.SsoCasbinRule, error)
+	GetCasbinRuleByID(id uint) (*model.SsoCasbinRule, error)
 	GetCasbinRulesByPType(ptype string) ([]model.SsoCasbinRule, error)
 	GetCasbinRule(pType, v0, v1 string) (*model.SsoCasbinRule, error)
-	DeleteCasbinRule(id string) error
+	DeleteCasbinRule(id uint) error
 	DeleteCasbinRulesByPType(ptype string) error
 	DeleteCasbinRules(pType, v0, v1 string) error
 	GetAllCasbinRules() ([]model.SsoCasbinRule, error)
@@ -269,56 +269,56 @@ type SsoOrgUserRepository interface {
 
 // Repositories 用户模块仓库集合
 type Repositories struct {
-	User           SsoUserRepository
-	Tenant         SsoTenantRepository
-	App            SsoAppRepository
-	Menu           SsoMenuRepository
-	Role           SsoRoleRepository
-	Org            SsoOrgRepository
-	OrgKind        SsoOrgKindRepository
-	OrgKindRole    SsoOrgKindRoleRepository
-	OrgMenu        SsoOrgMenuRepository
-	OrgRole        SsoOrgRoleRepository
-	OrgUser        SsoOrgUserRepository
-	RoleGroup      SsoRoleGroupRepository
-	UserGroup      SsoUserGroupRepository
-	RoleGroupRole  SsoRoleGroupRoleRepository
-	UserGroupUser  SsoUserGroupUserRepository
-	UserGroupRole  SsoUserGroupRoleRepository
-	UserRoleGroup  SsoUserRoleGroupRepository
-	Pos            SsoPosRepository
-	UserRole       SsoUserRoleRepository
-	UserPos        SsoUserPosRepository
-	RoleMenu       SsoRoleMenuRepository
-	PosRole        SsoPosRoleRepository
-	CasbinRule     SsoCasbinRuleRepository
+	User          SsoUserRepository
+	Tenant        SsoTenantRepository
+	App           SsoAppRepository
+	Menu          SsoMenuRepository
+	Role          SsoRoleRepository
+	Org           SsoOrgRepository
+	OrgKind       SsoOrgKindRepository
+	OrgKindRole   SsoOrgKindRoleRepository
+	OrgMenu       SsoOrgMenuRepository
+	OrgRole       SsoOrgRoleRepository
+	OrgUser       SsoOrgUserRepository
+	RoleGroup     SsoRoleGroupRepository
+	UserGroup     SsoUserGroupRepository
+	RoleGroupRole SsoRoleGroupRoleRepository
+	UserGroupUser SsoUserGroupUserRepository
+	UserGroupRole SsoUserGroupRoleRepository
+	UserRoleGroup SsoUserRoleGroupRepository
+	Pos           SsoPosRepository
+	UserRole      SsoUserRoleRepository
+	UserPos       SsoUserPosRepository
+	RoleMenu      SsoRoleMenuRepository
+	PosRole       SsoPosRoleRepository
+	CasbinRule    SsoCasbinRuleRepository
 }
 
 // NewRepositories 创建用户模块仓库集合
 func NewRepositories(db *gorm.DB) *Repositories {
 	return &Repositories{
-		User:           NewSsoUserRepository(db),
-		Tenant:         NewSsoTenantRepository(db),
-		App:            NewSsoAppRepository(db),
-		Menu:           NewSsoMenuRepository(db),
-		Role:           NewSsoRoleRepository(db),
-		Org:            NewSsoOrgRepository(db),
-		OrgKind:        NewSsoOrgKindRepository(db),
-		OrgKindRole:    NewSsoOrgKindRoleRepository(db),
-		OrgMenu:        NewSsoOrgMenuRepository(db),
-		OrgRole:        NewSsoOrgRoleRepository(db),
-		OrgUser:        NewSsoOrgUserRepository(db),
-		RoleGroup:      NewSsoRoleGroupRepository(db),
-		UserGroup:      NewSsoUserGroupRepository(db),
-		RoleGroupRole:  NewSsoRoleGroupRoleRepository(db),
-		UserGroupUser:  NewSsoUserGroupUserRepository(db),
-		UserGroupRole:  NewSsoUserGroupRoleRepository(db),
-		UserRoleGroup:  NewSsoUserRoleGroupRepository(db),
-		Pos:            NewSsoPosRepository(db),
-		UserRole:       NewSsoUserRoleRepository(db),
-		UserPos:        NewSsoUserPosRepository(db),
-		RoleMenu:       NewSsoRoleMenuRepository(db),
-		PosRole:        NewSsoPosRoleRepository(db),
-		CasbinRule:     NewSsoCasbinRuleRepository(db),
+		User:          NewSsoUserRepository(db),
+		Tenant:        NewSsoTenantRepository(db),
+		App:           NewSsoAppRepository(db),
+		Menu:          NewSsoMenuRepository(db),
+		Role:          NewSsoRoleRepository(db),
+		Org:           NewSsoOrgRepository(db),
+		OrgKind:       NewSsoOrgKindRepository(db),
+		OrgKindRole:   NewSsoOrgKindRoleRepository(db),
+		OrgMenu:       NewSsoOrgMenuRepository(db),
+		OrgRole:       NewSsoOrgRoleRepository(db),
+		OrgUser:       NewSsoOrgUserRepository(db),
+		RoleGroup:     NewSsoRoleGroupRepository(db),
+		UserGroup:     NewSsoUserGroupRepository(db),
+		RoleGroupRole: NewSsoRoleGroupRoleRepository(db),
+		UserGroupUser: NewSsoUserGroupUserRepository(db),
+		UserGroupRole: NewSsoUserGroupRoleRepository(db),
+		UserRoleGroup: NewSsoUserRoleGroupRepository(db),
+		Pos:           NewSsoPosRepository(db),
+		UserRole:      NewSsoUserRoleRepository(db),
+		UserPos:       NewSsoUserPosRepository(db),
+		RoleMenu:      NewSsoRoleMenuRepository(db),
+		PosRole:       NewSsoPosRoleRepository(db),
+		CasbinRule:    NewSsoCasbinRuleRepository(db),
 	}
 }

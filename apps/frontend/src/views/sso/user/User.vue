@@ -43,7 +43,8 @@
           <el-table-column label="操作" width="280" fixed="right">
             <template #default="scope">
               <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
-              <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
+              <el-button v-if="!scope.row.is_system" type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
+              <el-tag v-else type="warning" size="small" effect="light" style="margin-left: 4px">系统内置</el-tag>
               <el-dropdown trigger="click" @command="(cmd: string) => handleSetting(cmd, scope.row)">
                 <el-button type="info" size="small" text bg>
                   设置<el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -101,10 +102,10 @@
 <script setup lang="ts">
 import { createUser, deleteUser, getUsers, updateUser } from '@/api/user'
 import { ArrowDown, Avatar, Delete, Edit, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
-import UserSettingDialog from './UserSettingDialog.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
+import UserSettingDialog from './UserSettingDialog.vue'
 
 const loading = ref(false)
 const loadingText = ref('加载中...')

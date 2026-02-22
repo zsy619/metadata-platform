@@ -18,7 +18,7 @@ func (r *ssoCasbinRuleRepository) CreateCasbinRule(item *model.SsoCasbinRule) er
 	return r.db.Create(item).Error
 }
 
-func (r *ssoCasbinRuleRepository) GetCasbinRuleByID(id string) (*model.SsoCasbinRule, error) {
+func (r *ssoCasbinRuleRepository) GetCasbinRuleByID(id uint) (*model.SsoCasbinRule, error) {
 	var item model.SsoCasbinRule
 	result := r.db.Where("id = ?", id).First(&item)
 	if result.Error != nil {
@@ -45,7 +45,7 @@ func (r *ssoCasbinRuleRepository) GetCasbinRule(pType, v0, v1 string) (*model.Ss
 	return &item, nil
 }
 
-func (r *ssoCasbinRuleRepository) DeleteCasbinRule(id string) error {
+func (r *ssoCasbinRuleRepository) DeleteCasbinRule(id uint) error {
 	return r.db.Where("id = ?", id).Delete(&model.SsoCasbinRule{}).Error
 }
 
