@@ -3,13 +3,13 @@ package api
 import (
 	"context"
 	"encoding/json"
-
-	"github.com/cloudwego/hertz/pkg/app"
-
 	"metadata-platform/internal/module/audit/model"
 	"metadata-platform/internal/module/audit/queue"
 	"metadata-platform/internal/module/user/service"
 	"metadata-platform/internal/utils"
+
+	"github.com/cloudwego/hertz/pkg/app"
+
 	userModel "metadata-platform/internal/module/user/model"
 )
 

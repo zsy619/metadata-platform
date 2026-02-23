@@ -13,10 +13,10 @@ type SsoTenant struct {
 	IsDeleted  bool      `json:"is_deleted" gorm:"type:tinyint(1);default:0;comment:是否删除"`
 	IsSystem   bool      `json:"is_system" gorm:"type:tinyint(1);default:0;comment:是否系统内置"`
 	TenantID   string    `json:"tenant_id" gorm:"type:varchar(64);not null;default:'';comment:租户ID"`
-	CreateID   string    `json:"create_id" gorm:"type:varchar(64);default:'0';comment:创建人ID"`
+	CreateID   string    `json:"create_id" gorm:"type:varchar(64);default:'';comment:创建人ID"`
 	CreateBy   string    `json:"create_by" gorm:"type:varchar(64);comment:创建人"`
 	CreateAt   time.Time `json:"create_at" gorm:"autoCreateTime;comment:创建时间"`
-	UpdateID   string    `json:"update_id" gorm:"type:varchar(64);default:'0';comment:更新人ID"`
+	UpdateID   string    `json:"update_id" gorm:"type:varchar(64);default:'';comment:更新人ID"`
 	UpdateBy   string    `json:"update_by" gorm:"type:varchar(64);comment:修改人"`
 	UpdateAt   time.Time `json:"update_at" gorm:"autoUpdateTime;comment:修改时间"`
 }

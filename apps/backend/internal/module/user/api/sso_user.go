@@ -3,13 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"metadata-platform/internal/module/audit/queue"
+	"metadata-platform/internal/module/user/service"
+	"metadata-platform/internal/utils"
 	"time"
 
 	auditModel "metadata-platform/internal/module/audit/model"
-	"metadata-platform/internal/module/audit/queue"
+
 	userModel "metadata-platform/internal/module/user/model"
-	"metadata-platform/internal/module/user/service"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 )
@@ -29,14 +30,15 @@ func NewSsoUserHandler(userService service.SsoUserService, auditQueue *queue.Aud
 }
 
 type SsoCreateUserRequest struct {
-	Account  string `json:"account" form:"account" binding:"required"`
-	Password string `json:"password" form:"password" binding:"required"`
-	Name     string `json:"name" form:"name"`
-	Mobile   string `json:"mobile" form:"mobile"`
-	Email    string `json:"email" form:"email"`
-	Kind     int    `json:"kind" form:"kind"`
-	Status   int    `json:"status" form:"status"`
-	Remark   string `json:"remark" form:"remark"`
+	Account  string     `json:"account" form:"account" binding:"required"`
+	Password string     `json:"password" form:"password" binding:"required"`
+	Name     string     `json:"name" form:"name"`
+	Mobile   string     `json:"mobile" form:"mobile"`
+	Email    string     `json:"email" form:"email"`
+	Kind     int        `json:"kind" form:"kind"`
+	Status   int        `json:"status" form:"status"`
+	Remark   string     `json:"remark" form:"remark"`
+	EndTime  *time.Time `json:"end_time" form:"end_time"`
 }
 
 type SsoUpdateUserRequest struct {
@@ -58,7 +60,10 @@ func (h *SsoUserHandler) CreateUser(c context.Context, ctx *app.RequestContext) 
 		return
 	}
 
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+
 	user := &userModel.SsoUser{
+		TenantID: headerUser.TenantID,
 		Account:  req.Account,
 		Password: req.Password,
 		Name:     req.Name,
@@ -66,13 +71,33 @@ func (h *SsoUserHandler) CreateUser(c context.Context, ctx *app.RequestContext) 
 		Email:    req.Email,
 		Kind:     req.Kind,
 		Status:   req.Status,
+		EndTime:  req.EndTime,
 		Remark:   req.Remark,
+		CreateID: headerUser.UserID,
+		CreateBy: headerUser.UserAccount,
+		UpdateID: "",
+		UpdateBy: "",
 	}
 
 	if err := h.userService.CreateUser(user); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	afterData, _ := json.Marshal(user)
+
+	h.audit.RecordDataChange(c, &auditModel.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    headerUser.TraceID,
+		ModelID:    "sso_user",
+		RecordID:   user.ID,
+		Action:     "CREATE",
+		BeforeData: "",
+		AfterData:  string(afterData),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "sso_user_service",
+		Remark:     "新增用户",
+	})
 
 	user.Password = ""
 	ctx.JSON(201, user)
@@ -103,20 +128,17 @@ func (h *SsoUserHandler) UpdateUser(c context.Context, ctx *app.RequestContext) 
 		return
 	}
 
-	if req.Account != "" {
-		user.Account = req.Account
-	}
+	// 获取修改前的数据快照
+	beforeData, _ := json.Marshal(user)
+
+	user.Account = req.Account
 	// 密码：前端传了新密码则赋值（service 会加密），留空则清空（service 会保持原密码）
 	user.Password = req.Password
-	if req.Name != "" {
-		user.Name = req.Name
-	}
+	user.Name = req.Name
 	// 手机号/邮箱允许清空，所以始终覆盖
 	user.Mobile = req.Mobile
 	user.Email = req.Email
-	if req.Kind != 0 {
-		user.Kind = req.Kind
-	}
+
 	// status 使用指针，支持设为 0（禁用）
 	if req.Status != nil {
 		user.Status = *req.Status
@@ -129,16 +151,63 @@ func (h *SsoUserHandler) UpdateUser(c context.Context, ctx *app.RequestContext) 
 		return
 	}
 
+	// 获取操作人信息和修改后的数据
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+	// 由于 user 对象已包含最新属性信息（其中包含屏蔽密码后的 user）
+	// 为准确记录修改后数据，重新从 db 获取最新数据
+	afterUser, _ := h.userService.GetUserByID(id)
+	afterData, _ := json.Marshal(afterUser)
+
+	h.audit.RecordDataChange(c, &auditModel.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    headerUser.TraceID,
+		ModelID:    "sso_user",
+		RecordID:   id,
+		Action:     "UPDATE",
+		BeforeData: string(beforeData),
+		AfterData:  string(afterData),
+		CreateBy:   headerUser.UserAccount,
+		Source:     "sso_user_service",
+		Remark:     "更新用户信息",
+	})
+
 	user.Password = ""
 	ctx.JSON(200, user)
 }
 
 func (h *SsoUserHandler) DeleteUser(c context.Context, ctx *app.RequestContext) {
 	id := ctx.Param("id")
+
+	// 获取当前操作人信息
+	headerUser := h.GetHeaderUserStruct(c, ctx)
+
+	// 记录操作前查询用户信息
+	user, err := h.userService.GetUserByID(id)
+	if err != nil {
+		ctx.JSON(404, map[string]string{"error": "用户不存在，无法删除"})
+		return
+	}
+	beforeData, _ := json.Marshal(user)
+
 	if err := h.userService.DeleteUser(id); err != nil {
 		ctx.JSON(400, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// 记录数据变更日志 (DELETE)
+	h.audit.RecordDataChange(c, &auditModel.SysDataChangeLog{
+		ID:         utils.GetSnowflake().GenerateIDString(),
+		TraceID:    headerUser.TraceID,
+		ModelID:    "sso_user",
+		RecordID:   id,
+		Action:     "DELETE",
+		BeforeData: string(beforeData),
+		AfterData:  "",
+		CreateBy:   headerUser.UserAccount, // 统一使用 UserAccount
+		Source:     "sso_user_service",
+		Remark:     "物理删除用户",
+	})
+
 	ctx.JSON(200, map[string]string{"message": "用户删除成功"})
 }
 
