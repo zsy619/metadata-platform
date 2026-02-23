@@ -69,7 +69,7 @@ func (r *ssoUserRepository) UpdateUser(id string, updates map[string]any) error 
 
 // DeleteUser 删除用户
 func (r *ssoUserRepository) DeleteUser(id string) error {
-	return r.db.Model(&model.SsoUser{}).Where("id = ?", id).Update("is_deleted", true).Error
+	return r.db.Where("id = ?", id).Delete(&model.SsoUser{}).Error
 }
 
 // GetAllUsers 获取所有用户
