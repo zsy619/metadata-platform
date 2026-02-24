@@ -21,6 +21,7 @@ type ssoUserService struct {
 	userAddressRepo repository.SsoUserAddressRepository
 	userContactRepo repository.SsoUserContactRepository
 	userSocialRepo  repository.SsoUserSocialRepository
+	casbinSync      SsoCasbinSyncService
 }
 
 // NewSsoUserService 创建用户服务实例
@@ -36,6 +37,7 @@ func NewSsoUserService(
 	userAddressRepo repository.SsoUserAddressRepository,
 	userContactRepo repository.SsoUserContactRepository,
 	userSocialRepo repository.SsoUserSocialRepository,
+	casbinSync SsoCasbinSyncService,
 ) SsoUserService {
 	return &ssoUserService{
 		userRepo:          userRepo,
@@ -49,6 +51,7 @@ func NewSsoUserService(
 		userAddressRepo:   userAddressRepo,
 		userContactRepo:   userContactRepo,
 		userSocialRepo:    userSocialRepo,
+		casbinSync:        casbinSync,
 	}
 }
 
@@ -220,7 +223,12 @@ func (s *ssoUserService) DeleteUser(id string) error {
 	}
 
 	// 删除用户
-	return s.userRepo.DeleteUser(id)
+	if err := s.userRepo.DeleteUser(id); err != nil {
+		return err
+	}
+	// 同步清空 Casbin 权限
+	_ = s.casbinSync.SyncUser(id)
+	return nil
 }
 
 // GetAllUsers 获取所有用户
@@ -279,6 +287,8 @@ func (s *ssoUserService) UpdateUserRoles(userID string, roleIDs []string, create
 			utils.SugarLogger.Errorw("创建用户角色关联失败", "userID", userID, "roleID", roleID, "error", err)
 		}
 	}
+	// 同步增量 Casbin 规则
+	_ = s.casbinSync.SyncUser(userID)
 	return nil
 }
 
@@ -311,6 +321,8 @@ func (s *ssoUserService) UpdateUserPos(userID string, posIDs []string, createBy 
 			utils.SugarLogger.Errorw("创建用户职位关联失败", "userID", userID, "posID", posID, "error", err)
 		}
 	}
+	// 同步增量 Casbin 规则
+	_ = s.casbinSync.SyncUser(userID)
 	return nil
 }
 
@@ -343,6 +355,8 @@ func (s *ssoUserService) UpdateUserGroups(userID string, groupIDs []string, crea
 			utils.SugarLogger.Errorw("创建用户组用户关联失败", "userID", userID, "groupID", groupID, "error", err)
 		}
 	}
+	// 同步增量 Casbin 规则
+	_ = s.casbinSync.SyncUser(userID)
 	return nil
 }
 
@@ -375,6 +389,8 @@ func (s *ssoUserService) UpdateUserRoleGroups(userID string, roleGroupIDs []stri
 			utils.SugarLogger.Errorw("创建用户角色组关联失败", "userID", userID, "roleGroupID", roleGroupID, "error", err)
 		}
 	}
+	// 同步增量 Casbin 规则
+	_ = s.casbinSync.SyncUser(userID)
 	return nil
 }
 
@@ -407,5 +423,7 @@ func (s *ssoUserService) UpdateUserOrgs(userID string, orgIDs []string, createBy
 			utils.SugarLogger.Errorw("创建组织用户关联失败", "userID", userID, "orgID", orgID, "error", err)
 		}
 	}
+	// 同步增量 Casbin 规则
+	_ = s.casbinSync.SyncUser(userID)
 	return nil
 }

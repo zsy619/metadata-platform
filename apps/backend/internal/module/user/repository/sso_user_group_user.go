@@ -56,3 +56,12 @@ func (r *ssoUserGroupUserRepository) DeleteUserGroupUsersByGroupID(groupID strin
 func (r *ssoUserGroupUserRepository) DeleteUserGroupUsersByUserID(userID string) error {
 	return r.db.Model(&model.SsoUserGroupUser{}).Where("user_id = ?", userID).Update("is_deleted", true).Error
 }
+
+func (r *ssoUserGroupUserRepository) GetAllUserGroupUsers() ([]model.SsoUserGroupUser, error) {
+	var items []model.SsoUserGroupUser
+	result := r.db.Where("is_deleted = false").Find(&items)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return items, nil
+}

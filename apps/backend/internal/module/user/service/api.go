@@ -207,24 +207,35 @@ type Services struct {
 // NewServices 创建用户模块服务集合
 func NewServices(repos *repository.Repositories, db *gorm.DB, auditDB *gorm.DB, auditQueue *queue.AuditLogQueue) *Services {
 	auditSvc := auditService.NewAuditService(auditDB, auditQueue)
+	casbinSyncSvc := NewSsoCasbinSyncService(
+		repos.UserRole,
+		repos.RoleMenu,
+		repos.Role,
+		repos.Menu,
+		repos.UserGroupRole,
+		repos.RoleGroupRole,
+		repos.UserGroupUser,
+		repos.UserRoleGroup,
+		repos.UserPos,
+		repos.PosRole,
+		repos.OrgUser,
+		repos.OrgRole,
+		repos.OrgMenu,
+	)
+	
 	return &Services{
-		User:      NewSsoUserService(repos.User, repos.Org, repos.OrgUser, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup, repos.UserProfile, repos.UserAddress, repos.UserContact, repos.UserSocial),
+		User:      NewSsoUserService(repos.User, repos.Org, repos.OrgUser, repos.UserRole, repos.UserPos, repos.UserGroupUser, repos.UserRoleGroup, repos.UserProfile, repos.UserAddress, repos.UserContact, repos.UserSocial, casbinSyncSvc),
 		Tenant:    NewSsoTenantService(repos.Tenant),
 		App:       NewSsoAppService(repos.App),
-		Menu:      NewSsoMenuService(repos.Menu),
-		Role:      NewSsoRoleService(repos.Role, repos.RoleMenu, repos.UserRole, repos.PosRole, repos.OrgRole, repos.RoleGroupRole, repos.UserGroupRole, repos.OrgKindRole),
-		Org:       NewSsoOrgService(repos.Org, repos.OrgUser, repos.OrgRole, repos.OrgMenu),
-		Pos:       NewSsoPosService(repos.Pos, repos.PosRole, repos.UserPos),
+		Menu:      NewSsoMenuService(repos.Menu, casbinSyncSvc),
+		Role:      NewSsoRoleService(repos.Role, repos.RoleMenu, repos.UserRole, repos.PosRole, repos.OrgRole, repos.RoleGroupRole, repos.UserGroupRole, repos.OrgKindRole, casbinSyncSvc),
+		Org:       NewSsoOrgService(repos.Org, repos.OrgUser, repos.OrgRole, repos.OrgMenu, casbinSyncSvc),
+		Pos:       NewSsoPosService(repos.Pos, repos.PosRole, repos.UserPos, casbinSyncSvc),
 		Auth:      NewSsoAuthService(repos.User, repos.Role, repos.UserRole, auditSvc),
 		OrgKind:   NewSsoOrgKindService(repos.OrgKind),
-		RoleGroup: NewSsoRoleGroupService(repos.RoleGroup, repos.RoleGroupRole),
-		UserGroup: NewSsoUserGroupService(repos.UserGroup, repos.UserGroupUser, repos.UserGroupRole),
-		CasbinSync: NewSsoCasbinSyncService(
-			repos.UserRole,
-			repos.RoleMenu,
-			repos.Role,
-			repos.Menu,
-		),
+		RoleGroup: NewSsoRoleGroupService(repos.RoleGroup, repos.RoleGroupRole, casbinSyncSvc),
+		UserGroup: NewSsoUserGroupService(repos.UserGroup, repos.UserGroupUser, repos.UserGroupRole, casbinSyncSvc),
+		CasbinSync: casbinSyncSvc,
 		Audit:       auditSvc,
 		UserProfile: NewSsoUserProfileService(repos.UserProfile),
 		UserAddress: NewSsoUserAddressService(repos.UserAddress),

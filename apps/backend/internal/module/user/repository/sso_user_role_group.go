@@ -56,3 +56,12 @@ func (r *ssoUserRoleGroupRepository) DeleteUserRoleGroupsByUserID(userID string)
 func (r *ssoUserRoleGroupRepository) DeleteUserRoleGroupsByGroupID(groupID string) error {
 	return r.db.Model(&model.SsoUserRoleGroup{}).Where("group_id = ?", groupID).Update("is_deleted", true).Error
 }
+
+func (r *ssoUserRoleGroupRepository) GetAllUserRoleGroups() ([]model.SsoUserRoleGroup, error) {
+	var items []model.SsoUserRoleGroup
+	result := r.db.Where("is_deleted = false").Find(&items)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return items, nil
+}

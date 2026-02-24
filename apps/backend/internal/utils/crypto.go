@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/tjfoc/gmsm/sm3"
 )
@@ -17,5 +18,7 @@ func EncryptPasswordSM3(password string, salt string) string {
 
 // ComparePasswordSM3 校验密码是否正确
 func ComparePasswordSM3(hashedPassword, password, salt string) bool {
-	return EncryptPasswordSM3(password, salt) == hashedPassword
+	pass := EncryptPasswordSM3(password, salt)
+	fmt.Printf("ComparePasswordSM3===>%s %s %s %s \n", password, salt, pass, hashedPassword)
+	return pass == hashedPassword
 }

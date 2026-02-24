@@ -13,14 +13,16 @@ type ssoPosService struct {
 	posRepo     repository.SsoPosRepository
 	posRoleRepo repository.SsoPosRoleRepository
 	userPosRepo repository.SsoUserPosRepository
+	casbinSync  SsoCasbinSyncService
 }
 
 // NewSsoPosService 创建职位服务实例
-func NewSsoPosService(posRepo repository.SsoPosRepository, posRoleRepo repository.SsoPosRoleRepository, userPosRepo repository.SsoUserPosRepository) SsoPosService {
+func NewSsoPosService(posRepo repository.SsoPosRepository, posRoleRepo repository.SsoPosRoleRepository, userPosRepo repository.SsoUserPosRepository, casbinSync SsoCasbinSyncService) SsoPosService {
 	return &ssoPosService{
 		posRepo:     posRepo,
 		posRoleRepo: posRoleRepo,
 		userPosRepo: userPosRepo,
+		casbinSync:  casbinSync,
 	}
 }
 
@@ -114,7 +116,12 @@ func (s *ssoPosService) DeletePos(id string) error {
 		utils.SugarLogger.Errorw("删除用户职位关联失败", "posID", id, "error", err)
 	}
 
-	return s.posRepo.DeletePos(id)
+	// 删除职位
+	err = s.posRepo.DeletePos(id)
+	if err == nil {
+		_ = s.casbinSync.SyncPos(id) // SyncPos 里会清空关联 p
+	}
+	return err
 }
 
 // GetAllPos 获取所有职位
@@ -171,5 +178,6 @@ func (s *ssoPosService) UpdatePosRoles(posID string, roleIDs []string, createBy 
 		}
 	}
 
+	_ = s.casbinSync.SyncPos(posID)
 	return nil
 }

@@ -9,7 +9,7 @@ import (
 func TestSM3EncryptionAndComparison(t *testing.T) {
 	password := "user_password_123"
 	salt := GenerateSalt()
-	
+
 	encrypted := EncryptPasswordSM3(password, salt)
 	assert.Len(t, encrypted, 64) // SM3 hash is 256 bits = 64 hex chars
 
@@ -69,5 +69,31 @@ func BenchmarkComparePasswordSM3(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ComparePasswordSM3(hashed, password, salt)
+	}
+}
+
+func TestComparePasswordSM3(t *testing.T) {
+	password := "Admin@2026"
+	salt := "45c7284acea52e54714f13f384624b580569df67f5b1c51a0fbf6b1be3f766ac"
+	hashed := EncryptPasswordSM3(password, salt)
+
+	tests := []struct {
+		name     string
+		hashed   string
+		password string
+		salt     string
+		want     bool
+	}{
+		{"验证成功", hashed, password, salt, true},
+		{"密码错误", hashed, "wrong_password", salt, false},
+		{"盐值错误", hashed, password, "wrong_salt", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ComparePasswordSM3(tt.hashed, tt.password, tt.salt); got != tt.want {
+				t.Errorf("ComparePasswordSM3() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

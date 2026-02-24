@@ -14,15 +14,17 @@ type ssoOrgService struct {
 	orgUserRepo repository.SsoOrgUserRepository
 	orgRoleRepo repository.SsoOrgRoleRepository
 	orgMenuRepo repository.SsoOrgMenuRepository
+	casbinSync  SsoCasbinSyncService
 }
 
 // NewSsoOrgService 创建组织服务实例
-func NewSsoOrgService(orgRepo repository.SsoOrgRepository, orgUserRepo repository.SsoOrgUserRepository, orgRoleRepo repository.SsoOrgRoleRepository, orgMenuRepo repository.SsoOrgMenuRepository) SsoOrgService {
+func NewSsoOrgService(orgRepo repository.SsoOrgRepository, orgUserRepo repository.SsoOrgUserRepository, orgRoleRepo repository.SsoOrgRoleRepository, orgMenuRepo repository.SsoOrgMenuRepository, casbinSync SsoCasbinSyncService) SsoOrgService {
 	return &ssoOrgService{
 		orgRepo:     orgRepo,
 		orgUserRepo: orgUserRepo,
 		orgRoleRepo: orgRoleRepo,
 		orgMenuRepo: orgMenuRepo,
+		casbinSync:  casbinSync,
 	}
 }
 
@@ -119,7 +121,12 @@ func (s *ssoOrgService) DeleteOrg(id string) error {
 		utils.SugarLogger.Errorw("删除组织菜单关联失败", "orgID", id, "error", err)
 	}
 
-	return s.orgRepo.DeleteOrg(id)
+	// 删除组织
+	err = s.orgRepo.DeleteOrg(id)
+	if err == nil {
+		_ = s.casbinSync.SyncOrg(id)
+	}
+	return err
 }
 
 // GetAllOrgs 获取所有组织

@@ -17,10 +17,11 @@ type ssoRoleService struct {
 	roleGroupRoleRepo repository.SsoRoleGroupRoleRepository
 	userGroupRoleRepo repository.SsoUserGroupRoleRepository
 	orgKindRoleRepo   repository.SsoOrgKindRoleRepository
+	casbinSync        SsoCasbinSyncService
 }
 
 // NewSsoRoleService 创建角色服务实例
-func NewSsoRoleService(roleRepo repository.SsoRoleRepository, roleMenuRepo repository.SsoRoleMenuRepository, userRoleRepo repository.SsoUserRoleRepository, posRoleRepo repository.SsoPosRoleRepository, orgRoleRepo repository.SsoOrgRoleRepository, roleGroupRoleRepo repository.SsoRoleGroupRoleRepository, userGroupRoleRepo repository.SsoUserGroupRoleRepository, orgKindRoleRepo repository.SsoOrgKindRoleRepository) SsoRoleService {
+func NewSsoRoleService(roleRepo repository.SsoRoleRepository, roleMenuRepo repository.SsoRoleMenuRepository, userRoleRepo repository.SsoUserRoleRepository, posRoleRepo repository.SsoPosRoleRepository, orgRoleRepo repository.SsoOrgRoleRepository, roleGroupRoleRepo repository.SsoRoleGroupRoleRepository, userGroupRoleRepo repository.SsoUserGroupRoleRepository, orgKindRoleRepo repository.SsoOrgKindRoleRepository, casbinSync SsoCasbinSyncService) SsoRoleService {
 	return &ssoRoleService{
 		roleRepo:          roleRepo,
 		roleMenuRepo:      roleMenuRepo,
@@ -30,6 +31,7 @@ func NewSsoRoleService(roleRepo repository.SsoRoleRepository, roleMenuRepo repos
 		roleGroupRoleRepo: roleGroupRoleRepo,
 		userGroupRoleRepo: userGroupRoleRepo,
 		orgKindRoleRepo:   orgKindRoleRepo,
+		casbinSync:        casbinSync,
 	}
 }
 
@@ -143,7 +145,11 @@ func (s *ssoRoleService) DeleteRole(id string) error {
 	}
 
 	// 删除角色
-	return s.roleRepo.DeleteRole(id)
+	err = s.roleRepo.DeleteRole(id)
+	if err == nil {
+		_ = s.casbinSync.ClearRole(role.RoleCode)
+	}
+	return err
 }
 
 // GetAllRoles 获取所有角色
@@ -204,6 +210,9 @@ func (s *ssoRoleService) UpdateRoleMenus(roleID string, menuIDs []string, create
 			utils.SugarLogger.Errorw("创建角色菜单关联失败", "roleID", roleID, "menuID", menuID, "error", err)
 		}
 	}
+
+	// 重新同步该角色对 Casbin P规则的影响
+	_ = s.casbinSync.SyncRole(roleID)
 
 	return nil
 }

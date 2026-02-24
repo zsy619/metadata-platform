@@ -11,11 +11,12 @@ import (
 // ssoMenuService 菜单服务实现
 type ssoMenuService struct {
 	menuRepo repository.SsoMenuRepository
+	casbinSync SsoCasbinSyncService
 }
 
 // NewSsoMenuService 创建菜单服务实例
-func NewSsoMenuService(menuRepo repository.SsoMenuRepository) SsoMenuService {
-	return &ssoMenuService{menuRepo: menuRepo}
+func NewSsoMenuService(menuRepo repository.SsoMenuRepository, casbinSync SsoCasbinSyncService) SsoMenuService {
+	return &ssoMenuService{menuRepo: menuRepo, casbinSync: casbinSync}
 }
 
 // CreateMenu 创建菜单
@@ -75,8 +76,17 @@ func (s *ssoMenuService) UpdateMenu(menu *model.SsoMenu) error {
 		}
 	}
 
+	// 清理该菜单之前可能有的 P 规则（因为可能更改了 URL）
+	if existingMenu.URL != menu.URL || existingMenu.Method != menu.Method {
+		_ = s.casbinSync.ClearMenu(existingMenu.URL, existingMenu.Method)
+	}
+
 	// 更新菜单
-	return s.menuRepo.UpdateMenu(menu)
+	err = s.menuRepo.UpdateMenu(menu)
+	if err == nil {
+		_ = s.casbinSync.SyncMenu(menu.ID)
+	}
+	return err
 }
 
 // UpdateMenuFields 更新菜单指定字段
@@ -97,7 +107,12 @@ func (s *ssoMenuService) UpdateMenuFields(id string, fields map[string]any) erro
 		}
 	}
 
-	return s.menuRepo.UpdateMenuFields(id, fields)
+	// 简单处理：更新字段较复杂，如果涉及路由可以清除重跑，因此这里直接重建全量
+	err = s.menuRepo.UpdateMenuFields(id, fields)
+	if err == nil {
+		_ = s.casbinSync.SyncMenu(id)
+	}
+	return err
 }
 
 // DeleteMenu 删除菜单
@@ -111,6 +126,11 @@ func (s *ssoMenuService) DeleteMenu(id string) error {
 	// 检查是否为系统内置菜单
 	if menu.IsSystem {
 		return errors.New("系统内置菜单不允许删除")
+	}
+
+	// 清空关联路由 P 规则
+	if menu.URL != "" {
+		_ = s.casbinSync.ClearMenu(menu.URL, menu.Method)
 	}
 
 	// 删除菜单

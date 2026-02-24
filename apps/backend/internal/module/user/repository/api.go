@@ -150,6 +150,7 @@ type SsoUserPosRepository interface {
 	DeleteUserPos(id string) error
 	DeleteUserPosByUserID(userID string) error
 	DeleteUserPosByPosID(posID string) error
+	GetAllUserPoss() ([]model.SsoUserPos, error)
 }
 
 // SsoRoleMenuRepository 角色菜单仓库接口
@@ -173,6 +174,7 @@ type SsoPosRoleRepository interface {
 	DeletePosRole(id string) error
 	DeletePosRolesByPosID(posID string) error
 	DeletePosRolesByRoleID(roleID string) error
+	GetAllPosRoles() ([]model.SsoPosRole, error)
 }
 
 type SsoRoleGroupRoleRepository interface {
@@ -183,6 +185,7 @@ type SsoRoleGroupRoleRepository interface {
 	DeleteRoleGroupRole(id string) error
 	DeleteRoleGroupRolesByGroupID(groupID string) error
 	DeleteRoleGroupRolesByRoleID(roleID string) error
+	GetAllRoleGroupRoles() ([]model.SsoRoleGroupRole, error)
 }
 
 type SsoUserGroupUserRepository interface {
@@ -193,6 +196,7 @@ type SsoUserGroupUserRepository interface {
 	DeleteUserGroupUser(id string) error
 	DeleteUserGroupUsersByGroupID(groupID string) error
 	DeleteUserGroupUsersByUserID(userID string) error
+	GetAllUserGroupUsers() ([]model.SsoUserGroupUser, error)
 }
 
 type SsoUserGroupRoleRepository interface {
@@ -203,6 +207,7 @@ type SsoUserGroupRoleRepository interface {
 	DeleteUserGroupRole(id string) error
 	DeleteUserGroupRolesByGroupID(groupID string) error
 	DeleteUserGroupRolesByRoleID(roleID string) error
+	GetAllUserGroupRoles() ([]model.SsoUserGroupRole, error)
 }
 
 type SsoUserRoleGroupRepository interface {
@@ -213,6 +218,7 @@ type SsoUserRoleGroupRepository interface {
 	DeleteUserRoleGroup(id string) error
 	DeleteUserRoleGroupsByUserID(userID string) error
 	DeleteUserRoleGroupsByGroupID(groupID string) error
+	GetAllUserRoleGroups() ([]model.SsoUserRoleGroup, error)
 }
 
 type SsoCasbinRuleRepository interface {

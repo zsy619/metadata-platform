@@ -10,12 +10,14 @@ import (
 type ssoRoleGroupService struct {
 	roleGroupRepo     repository.SsoRoleGroupRepository
 	roleGroupRoleRepo repository.SsoRoleGroupRoleRepository
+	casbinSync        SsoCasbinSyncService
 }
 
-func NewSsoRoleGroupService(roleGroupRepo repository.SsoRoleGroupRepository, roleGroupRoleRepo repository.SsoRoleGroupRoleRepository) *ssoRoleGroupService {
+func NewSsoRoleGroupService(roleGroupRepo repository.SsoRoleGroupRepository, roleGroupRoleRepo repository.SsoRoleGroupRoleRepository, casbinSync SsoCasbinSyncService) *ssoRoleGroupService {
 	return &ssoRoleGroupService{
 		roleGroupRepo:     roleGroupRepo,
 		roleGroupRoleRepo: roleGroupRoleRepo,
+		casbinSync:        casbinSync,
 	}
 }
 
@@ -73,7 +75,11 @@ func (s *ssoRoleGroupService) DeleteRoleGroup(id string) error {
 		utils.SugarLogger.Errorw("删除角色组角色关联失败", "groupID", id, "error", err)
 	}
 
-	return s.roleGroupRepo.DeleteRoleGroup(id)
+	err = s.roleGroupRepo.DeleteRoleGroup(id)
+	if err == nil {
+		_ = s.casbinSync.SyncRoleGroup(id)
+	}
+	return err
 }
 
 func (s *ssoRoleGroupService) GetAllRoleGroups() ([]model.SsoRoleGroup, error) {
@@ -129,5 +135,6 @@ func (s *ssoRoleGroupService) UpdateRoleGroupRoles(groupID string, roleIDs []str
 		}
 	}
 
+	_ = s.casbinSync.SyncRoleGroup(groupID)
 	return nil
 }

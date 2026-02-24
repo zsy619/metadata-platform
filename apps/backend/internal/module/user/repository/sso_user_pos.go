@@ -65,3 +65,13 @@ func (r *ssoUserPosRepository) DeleteUserPosByUserID(userID string) error {
 func (r *ssoUserPosRepository) DeleteUserPosByPosID(posID string) error {
 	return r.db.Delete(&model.SsoUserPos{}, "pos_id = ?", posID).Error
 }
+
+// GetAllUserPoss 获取所有关联
+func (r *ssoUserPosRepository) GetAllUserPoss() ([]model.SsoUserPos, error) {
+	var userPositions []model.SsoUserPos
+	result := r.db.Find(&userPositions)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return userPositions, nil
+}

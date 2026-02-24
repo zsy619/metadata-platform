@@ -24,6 +24,6 @@ func HashPassword(password string) (string, string, error) {
 }
 
 // CheckPasswordHash 验证密码是否与哈希值匹配
-func CheckPasswordHash(password, hash, salt string) bool {
-	return ComparePasswordSM3(hash, password, salt)
+func CheckPasswordHash(password, hashedPassword, salt string) bool {
+	return ComparePasswordSM3(hashedPassword, password, salt)
 }

@@ -64,3 +64,12 @@ func (r *ssoRoleGroupRoleRepository) DeleteRoleGroupRolesByGroupID(groupID strin
 func (r *ssoRoleGroupRoleRepository) DeleteRoleGroupRolesByRoleID(roleID string) error {
 	return r.db.Model(&model.SsoRoleGroupRole{}).Where("role_id = ?", roleID).Update("is_deleted", true).Error
 }
+
+func (r *ssoRoleGroupRoleRepository) GetAllRoleGroupRoles() ([]model.SsoRoleGroupRole, error) {
+	var items []model.SsoRoleGroupRole
+	result := r.db.Where("is_deleted = false").Find(&items)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return items, nil
+}

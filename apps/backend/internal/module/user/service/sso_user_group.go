@@ -12,13 +12,15 @@ type ssoUserGroupService struct {
 	userGroupRepo     repository.SsoUserGroupRepository
 	userGroupUserRepo repository.SsoUserGroupUserRepository
 	userGroupRoleRepo repository.SsoUserGroupRoleRepository
+	casbinSync        SsoCasbinSyncService
 }
 
-func NewSsoUserGroupService(userGroupRepo repository.SsoUserGroupRepository, userGroupUserRepo repository.SsoUserGroupUserRepository, userGroupRoleRepo repository.SsoUserGroupRoleRepository) *ssoUserGroupService {
+func NewSsoUserGroupService(userGroupRepo repository.SsoUserGroupRepository, userGroupUserRepo repository.SsoUserGroupUserRepository, userGroupRoleRepo repository.SsoUserGroupRoleRepository, casbinSync SsoCasbinSyncService) *ssoUserGroupService {
 	return &ssoUserGroupService{
 		userGroupRepo:     userGroupRepo,
 		userGroupUserRepo: userGroupUserRepo,
 		userGroupRoleRepo: userGroupRoleRepo,
+		casbinSync:        casbinSync,
 	}
 }
 
@@ -80,7 +82,11 @@ func (s *ssoUserGroupService) DeleteUserGroup(id string) error {
 		utils.SugarLogger.Errorw("删除用户组角色关联失败", "groupID", id, "error", err)
 	}
 
-	return s.userGroupRepo.DeleteUserGroup(id)
+	err = s.userGroupRepo.DeleteUserGroup(id)
+	if err == nil {
+		_ = s.casbinSync.SyncUserGroup(id)
+	}
+	return err
 }
 
 func (s *ssoUserGroupService) GetAllUserGroups() ([]model.SsoUserGroup, error) {
@@ -136,5 +142,6 @@ func (s *ssoUserGroupService) UpdateUserGroupRoles(groupID string, roleIDs []str
 		}
 	}
 
+	_ = s.casbinSync.SyncUserGroup(groupID)
 	return nil
 }

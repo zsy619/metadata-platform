@@ -65,3 +65,13 @@ func (r *ssoPosRoleRepository) DeletePosRolesByPosID(posID string) error {
 func (r *ssoPosRoleRepository) DeletePosRolesByRoleID(roleID string) error {
 	return r.db.Delete(&model.SsoPosRole{}, "role_id = ?", roleID).Error
 }
+
+// GetAllPosRoles 获取所有关联
+func (r *ssoPosRoleRepository) GetAllPosRoles() ([]model.SsoPosRole, error) {
+	var posRoles []model.SsoPosRole
+	result := r.db.Find(&posRoles)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return posRoles, nil
+}

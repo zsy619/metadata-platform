@@ -3,15 +3,15 @@ package service
 import (
 	"context"
 	"errors"
+	"metadata-platform/internal/module/user/model"
+	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/utils"
 	"time"
 
 	"github.com/google/uuid"
 
 	auditModel "metadata-platform/internal/module/audit/model"
 	auditService "metadata-platform/internal/module/audit/service"
-	"metadata-platform/internal/module/user/model"
-	"metadata-platform/internal/module/user/repository"
-	"metadata-platform/internal/utils"
 )
 
 // ssoAuthService 实现
@@ -38,12 +38,13 @@ func (s *ssoAuthService) Login(account string, password string, tenantID uint, c
 	var loginStatus int = 1 // default success
 	var errMsg string
 
+	// If user found, use ID
+	user, err := s.userRepo.GetUserByAccount(account)
+
 	// 记录日志闭包
-	defer func() {
+	defer func(user *model.SsoUser) {
 		// Log login attempt
 		userID := ""
-		// If user found, use ID
-		user, _ := s.userRepo.GetUserByAccount(account)
 		if user != nil {
 			userID = user.ID
 		}
@@ -71,14 +72,13 @@ func (s *ssoAuthService) Login(account string, password string, tenantID uint, c
 			CreateAt:         loginTime,
 			ErrorMessage:     errMsg,
 		})
-	}()
-
-	user, err := s.userRepo.GetUserByAccount(account)
+	}(user)
 	if err != nil {
 		loginStatus = 0
 		errMsg = err.Error()
 		return "", "", nil, err
 	}
+
 	// 校验密码
 	if user == nil || !utils.CheckPasswordHash(password, user.Password, user.Salt) {
 		loginStatus = 0
