@@ -6,7 +6,9 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
@@ -58,16 +60,37 @@ func NewDBManager(cfg *configs.Config) (*DBManager, error) {
 	return dbm, nil
 }
 
-// initDB 初始化数据库连接
+// initDB 初始化数据库连接（支持MySQL和PostgreSQL）
 func initDB(appMode string, dbCfg configs.DBConfig) (*gorm.DB, error) {
-	// 构建DSN连接字符串
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		dbCfg.User,
-		dbCfg.Password,
-		dbCfg.Host,
-		dbCfg.Port,
-		dbCfg.Name,
-	)
+	var dsn string
+	var dialector gorm.Dialector
+
+	// 根据数据库类型构建DSN
+	switch dbCfg.Type {
+	case "postgres", "postgresql":
+		// PostgreSQL DSN格式
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=Asia/Shanghai",
+			dbCfg.Host,
+			dbCfg.User,
+			dbCfg.Password,
+			dbCfg.Name,
+			dbCfg.Port,
+			dbCfg.SSLMode,
+		)
+		dialector = postgres.Open(dsn)
+	case "mysql":
+		fallthrough
+	default:
+		// MySQL DSN格式（默认）
+		dsn = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			dbCfg.User,
+			dbCfg.Password,
+			dbCfg.Host,
+			dbCfg.Port,
+			dbCfg.Name,
+		)
+		dialector = mysql.Open(dsn)
+	}
 
 	// 配置日志级别
 	logLevel := logger.Silent
@@ -76,7 +99,7 @@ func initDB(appMode string, dbCfg configs.DBConfig) (*gorm.DB, error) {
 	}
 
 	// 连接数据库
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+	db, err := gorm.Open(dialector, &gorm.Config{
 		Logger: logger.Default.LogMode(logLevel),
 	})
 	if err != nil {
@@ -94,7 +117,7 @@ func initDB(appMode string, dbCfg configs.DBConfig) (*gorm.DB, error) {
 	sqlDB.SetMaxOpenConns(dbCfg.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	SugarLogger.Infof("Database connection established: %s:%d/%s", dbCfg.Host, dbCfg.Port, dbCfg.Name)
+	SugarLogger.Infof("Database connection established: %s://%s:%d/%s", dbCfg.Type, dbCfg.Host, dbCfg.Port, dbCfg.Name)
 
 	return db, nil
 }
@@ -150,7 +173,7 @@ func (dbm *DBManager) checkSingleDBHealth(db *gorm.DB, dbType string) bool {
 			SugarLogger.Errorf("Failed to reconnect to %s database: %v", dbType, err)
 			return false
 		} else {
-			SugarLogger.Info("Successfully reconnected to %s database", dbType)
+			SugarLogger.Infof("Successfully reconnected to %s database", dbType)
 			return true
 		}
 	}

@@ -8,6 +8,7 @@ import (
 
 // DBConfig 数据库配置结构体
 type DBConfig struct {
+	Type         string `mapstructure:"TYPE"`         // 数据库类型: mysql, postgres
 	Host         string `mapstructure:"HOST"`
 	Port         int    `mapstructure:"PORT"`
 	User         string `mapstructure:"USER"`
@@ -15,6 +16,7 @@ type DBConfig struct {
 	Name         string `mapstructure:"NAME"`
 	MaxIdleConns int    `mapstructure:"MAX_IDLE_CONNS"`
 	MaxOpenConns int    `mapstructure:"MAX_OPEN_CONNS"`
+	SSLMode      string `mapstructure:"SSL_MODE"`     // SSL模式: disable, require, verify-ca, verify-full (PostgreSQL)
 }
 
 // Config 应用配置结构体
@@ -76,6 +78,7 @@ func setDefaults() {
 	viper.SetDefault("SERVER_PORT", 8080)
 
 	// 元数据数据库配置
+	viper.SetDefault("METADATA_DB.TYPE", "mysql")
 	viper.SetDefault("METADATA_DB.HOST", "localhost")
 	viper.SetDefault("METADATA_DB.PORT", 3306)
 	viper.SetDefault("METADATA_DB.USER", "root")
@@ -83,8 +86,10 @@ func setDefaults() {
 	viper.SetDefault("METADATA_DB.NAME", "metadata_platform")
 	viper.SetDefault("METADATA_DB.MAX_IDLE_CONNS", 10)
 	viper.SetDefault("METADATA_DB.MAX_OPEN_CONNS", 100)
+	viper.SetDefault("METADATA_DB.SSL_MODE", "disable")
 
 	// 用户管理数据库配置
+	viper.SetDefault("USER_DB.TYPE", "mysql")
 	viper.SetDefault("USER_DB.HOST", "localhost")
 	viper.SetDefault("USER_DB.PORT", 3306)
 	viper.SetDefault("USER_DB.USER", "root")
@@ -92,8 +97,10 @@ func setDefaults() {
 	viper.SetDefault("USER_DB.NAME", "metadata_sso")
 	viper.SetDefault("USER_DB.MAX_IDLE_CONNS", 10)
 	viper.SetDefault("USER_DB.MAX_OPEN_CONNS", 100)
+	viper.SetDefault("USER_DB.SSL_MODE", "disable")
 
 	// 审计日志数据库配置
+	viper.SetDefault("AUDIT_DB.TYPE", "mysql")
 	viper.SetDefault("AUDIT_DB.HOST", "localhost")
 	viper.SetDefault("AUDIT_DB.PORT", 3306)
 	viper.SetDefault("AUDIT_DB.USER", "root")
@@ -101,6 +108,7 @@ func setDefaults() {
 	viper.SetDefault("AUDIT_DB.NAME", "metadata_audit")
 	viper.SetDefault("AUDIT_DB.MAX_IDLE_CONNS", 10)
 	viper.SetDefault("AUDIT_DB.MAX_OPEN_CONNS", 100)
+	viper.SetDefault("AUDIT_DB.SSL_MODE", "disable")
 
 	// JWT配置
 	viper.SetDefault("JWT_SECRET", "your-secret-key")
@@ -109,5 +117,4 @@ func setDefaults() {
 	// 日志配置
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("LOG_FILE_PATH", "logs/app.log")
-	// viper.SetDefault("LOG_FILE_PATH", "/tmp/metadata_platform/app.log")
 }

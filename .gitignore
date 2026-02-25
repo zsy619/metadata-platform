@@ -17,7 +17,7 @@ apps/backend/*.so
 apps/backend/*.test
 apps/backend/logs/
 apps/backend/run.pid
-apps/backend/.env
+~apps/backend/.env
 # Usually we keep go.sum, but user requested ignore in previous steps. 
 # However, standard practice is to keep it. I will leave it ignored if explicitly desired,
 # but since I am "perfecting" it, I should probably NOT ignore it unless told. 
