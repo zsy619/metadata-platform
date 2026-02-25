@@ -87,3 +87,10 @@ func (r *ssoRoleRepository) HasChildren(parentID string) (bool, error) {
 	err := r.db.Model(&model.SsoRole{}).Where("parent_id = ? AND is_deleted = false", parentID).Count(&count).Error
 	return count > 0, err
 }
+
+// Count 获取角色总数
+func (r *ssoRoleRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.SsoRole{}).Where("is_deleted = ?", false).Count(&count).Error
+	return count, err
+}

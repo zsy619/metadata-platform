@@ -23,7 +23,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 	services := service.NewServices(repos, db, auditDB, auditQueue)
 
 	// 初始化处理器集合
-	handlers := api.NewSsoHandler(services, auditQueue)
+	handlers := api.NewSsoHandler(db, services, auditQueue, repos)
 
 	// 注册路由
 	handlers.RegisterRoutes(r)

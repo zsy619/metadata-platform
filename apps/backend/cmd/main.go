@@ -10,11 +10,11 @@ import (
 	"metadata-platform/configs"
 	"metadata-platform/internal/api"
 	"metadata-platform/internal/middleware"
-	"metadata-platform/internal/utils"
 	audit "metadata-platform/internal/module/audit"
 	auditQueuePkg "metadata-platform/internal/module/audit/queue"
 	metadata "metadata-platform/internal/module/metadata"
 	user "metadata-platform/internal/module/user"
+	"metadata-platform/internal/utils"
 )
 
 // ... comments ...
@@ -59,7 +59,7 @@ func main() {
 	}
 
 	fmt.Fprintln(os.Stderr, "DEBUG: Seeding completed. Starting seeding...")
-	seedMetadataDatabase(metadataDB)
+	seedMetadataDatabase(metadataDB, cfg)
 	seedUserDatabase(userDB)
 	// 6. 初始化Hertz引擎
 	fmt.Fprintln(os.Stderr, "DEBUG: Seeding completed. Initializing Hertz server...")
@@ -127,8 +127,8 @@ func migrateAuditDatabase(db *gorm.DB) {
 	}
 }
 
-func seedMetadataDatabase(db *gorm.DB) {
-	metadata.SeedData(db)
+func seedMetadataDatabase(db *gorm.DB, cfg *configs.Config) {
+	metadata.SeedData(db, cfg)
 }
 
 func seedUserDatabase(db *gorm.DB) {

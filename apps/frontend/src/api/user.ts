@@ -761,3 +761,75 @@ export const updateUserGroup = async (id: string, data: any): Promise<any> => {
 export const deleteUserGroup = async (id: string): Promise<void> => {
     return request({ url: `/api/sso/user-group/${id}`, method: 'delete' })
 }
+
+// ==================== 仪表板相关API ====================
+
+export const getDashboardStats = async (): Promise<{
+    user_count: number
+    role_count: number
+    org_count: number
+    menu_count: number
+    pos_count: number
+    user_group_count: number
+    role_group_count: number
+}> => {
+    return request({ url: '/api/sso/dashboard/stats', method: 'get' })
+}
+
+export const getRecentLoginLogs = async (): Promise<any[]> => {
+    return request({ url: '/api/sso/dashboard/login-logs', method: 'get' })
+}
+
+export const getRecentOperationLogs = async (): Promise<any[]> => {
+    return request({ url: '/api/sso/dashboard/operation-logs', method: 'get' })
+}
+
+// 登录趋势项
+export interface LoginTrendItem {
+    date: string
+    success: number
+    fail: number
+}
+
+// 用户状态分布
+export interface UserStatusDistribution {
+    active: number
+    inactive: number
+    locked: number
+    pending: number
+}
+
+// 操作统计
+export interface OperationStats {
+    create: number
+    update: number
+    delete: number
+    query: number
+    export: number
+}
+
+// 组织分布项
+export interface OrgDistribution {
+    name: string
+    value: number
+}
+
+// 获取登录趋势（最近7天）
+export const getLoginTrend = async (): Promise<LoginTrendItem[]> => {
+    return request({ url: '/api/sso/dashboard/login-trend', method: 'get' })
+}
+
+// 获取用户状态分布
+export const getUserStatusDistribution = async (): Promise<UserStatusDistribution> => {
+    return request({ url: '/api/sso/dashboard/user-status', method: 'get' })
+}
+
+// 获取操作统计
+export const getOperationStats = async (): Promise<OperationStats> => {
+    return request({ url: '/api/sso/dashboard/operation-stats', method: 'get' })
+}
+
+// 获取组织分布
+export const getOrgDistribution = async (): Promise<OrgDistribution[]> => {
+    return request({ url: '/api/sso/dashboard/org-distribution', method: 'get' })
+}

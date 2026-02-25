@@ -1,33 +1,70 @@
 package metadata
 
 import (
+	"metadata-platform/configs"
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/utils"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
 )
 
 // SeedData 初始化元数据模块种子数据
-func SeedData(db *gorm.DB) {
+func SeedData(db *gorm.DB, cfg *configs.Config) {
 	utils.SugarLogger.Info("Seeding metadata database...")
 
 	sf := utils.NewSnowflake(1, 1)
 
 	now := time.Now()
 
-	// 1. 初始化默认数据连接组 (ParentID = "0")
-	defaultConnGroup := model.MdConn{
+	// 初始化三个数据库连接
+	seedDatabaseConnections(db, cfg, sf, now)
+
+	utils.SugarLogger.Info("Metadata database seeding completed")
+}
+
+// seedDatabaseConnections 初始化数据库连接种子数据
+func seedDatabaseConnections(db *gorm.DB, cfg *configs.Config, sf *utils.Snowflake, now time.Time) {
+	// 定义三个数据库连接配置
+	connections := []struct {
+		name string
+		cfg  configs.DBConfig
+	}{
+		{"metadata", cfg.MetadataDB},
+		{"user", cfg.UserDB},
+		{"audit", cfg.AuditDB},
+	}
+
+	for _, conn := range connections {
+		seedSingleConnection(db, conn.name, conn.cfg, sf, now)
+	}
+}
+
+// seedSingleConnection 初始化单个数据库连接
+func seedSingleConnection(db *gorm.DB, connName string, dbCfg configs.DBConfig, sf *utils.Snowflake, now time.Time) {
+	// 根据数据库类型设置端口
+	connPort := dbCfg.Port
+	if connPort == 0 {
+		if strings.ToLower(dbCfg.Type) == "postgres" {
+			connPort = 5432
+		} else {
+			connPort = 3306
+		}
+	}
+
+	// 创建连接记录
+	connRecord := model.MdConn{
 		ID:           sf.GenerateIDString(),
 		TenantID:     utils.SystemTenantID,
 		ParentID:     "",
-		ConnName:     "system",
-		ConnKind:     "MySQL",
-		ConnHost:     "localhost",
-		ConnPort:     3306,
-		ConnUser:     "root",
-		ConnPassword: "123456",
-		ConnDatabase: "metadata_platform",
+		ConnName:     connName,
+		ConnKind:     strings.ToUpper(dbCfg.Type),
+		ConnHost:     dbCfg.Host,
+		ConnPort:     connPort,
+		ConnUser:     dbCfg.User,
+		ConnPassword: dbCfg.Password,
+		ConnDatabase: dbCfg.Name,
 		IsDeleted:    false,
 		CreateBy:     "system",
 		CreateAt:     now,
@@ -37,38 +74,15 @@ func SeedData(db *gorm.DB) {
 
 	// 检查是否已存在
 	var count int64
-	db.Model(&model.MdConn{}).Where("conn_name = ? AND parent_id = ?", "system", "0").Count(&count)
+	db.Model(&model.MdConn{}).Where("conn_name = ? AND parent_id = ?", connName, "").Count(&count)
 	if count == 0 {
-		if err := db.Create(&defaultConnGroup).Error; err != nil {
-			utils.SugarLogger.Errorf("Failed to seed default connection group: %v", err)
+		if err := db.Create(&connRecord).Error; err != nil {
+			utils.SugarLogger.Errorf("Failed to seed %s connection: %v", connName, err)
 		} else {
-			utils.SugarLogger.Info("Seeded default connection group")
+			utils.SugarLogger.Infof("Seeded %s connection: %s@%s:%d/%s (%s)",
+				connName, dbCfg.User, dbCfg.Host, connPort, dbCfg.Name, dbCfg.Type)
 		}
+	} else {
+		utils.SugarLogger.Debugf("%s connection already exists, skipping", connName)
 	}
-
-	// // 2. 初始化默认模型组 (ParentID = "0")
-	// defaultModelGroup := model.MdModel{
-	// 	ID:        sf.GenerateIDString(),
-	// 	TenantID:  utils.SystemTenantID,
-	// 	ParentID:  "0",
-	// 	ModelName: "system",
-	// 	ModelCode: "system",
-	// 	ModelKind: 0, // 0 as folder/group
-	// 	IsDeleted: false,
-	// 	CreateBy:  "system",
-	// 	CreateAt:  now,
-	// 	UpdateBy:  "system",
-	// 	UpdateAt:  now,
-	// }
-
-	// db.Model(&model.MdModel{}).Where("model_code = ?", "system").Count(&count)
-	// if count == 0 {
-	// 	if err := db.Create(&defaultModelGroup).Error; err != nil {
-	// 		utils.SugarLogger.Errorf("Failed to seed default model group: %v", err)
-	// 	} else {
-	// 		utils.SugarLogger.Info("Seeded default model group")
-	// 	}
-	// }
-
-	utils.SugarLogger.Info("Metadata database seeding completed")
 }

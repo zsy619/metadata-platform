@@ -111,3 +111,10 @@ func (r *ssoUserRepository) UpdateLoginInfo(id string, ip string) error {
 func (r *ssoUserRepository) IncrementLoginError(id string) error {
 	return r.db.Model(&model.SsoUser{}).Where("id = ?", id).Update("login_error_count", gorm.Expr("login_error_count + ?", 1)).Error
 }
+
+// Count 获取用户总数
+func (r *ssoUserRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.SsoUser{}).Where("is_deleted = ?", false).Count(&count).Error
+	return count, err
+}

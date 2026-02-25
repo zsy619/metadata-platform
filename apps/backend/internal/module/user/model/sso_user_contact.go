@@ -8,7 +8,7 @@ type SsoUserContact struct {
 	UserID     string    `json:"user_id" form:"user_id" gorm:"type:varchar(64);not null;index;column:user_id;comment:用户ID"`
 	Type       string    `json:"type" form:"type" gorm:"size:16;not null;column:type;comment:联系方式类型(email/phone/wechat/qq)"`
 	Value      string    `json:"value" form:"value" gorm:"size:256;not null;column:value;comment:联系方式值"`
-	IsVerified bool      `json:"is_verified" form:"is_verified" gorm:";default:0;column:is_verified;comment:是否已验证"`
+	IsVerified bool      `json:"is_verified" form:"is_verified" gorm:"default:0;column:is_verified;comment:是否已验证"`
 	Remark     string    `json:"remark" form:"remark" gorm:"size:256;default:'';column:remark;comment:备注"`
 	TenantID   string    `json:"tenant_id" form:"tenant_id" gorm:"index;type:varchar(64);not null;default:'1';column:tenant_id;comment:租户ID"`
 	CreateID   string    `json:"create_id" form:"create_id" gorm:"size:64;default:'';column:create_id;comment:创建人ID"`

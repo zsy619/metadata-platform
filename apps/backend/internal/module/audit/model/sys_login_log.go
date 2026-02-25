@@ -7,7 +7,7 @@ type SysLoginLog struct {
 	ID          string `json:"id" gorm:"primary_key;type:varchar(64);comment:主键ID"`
 	UserID      string `json:"user_id" gorm:"type:varchar(64);index;comment:用户ID"`
 	Account     string `json:"account" gorm:"type:varchar(128);index;comment:账号名"`
-	LoginStatus int    `json:"login_status" gorm:"type:tinyint;comment:1成功 0失败 2退出"` // 1:Success, 0:Fail, 2:Logout
+	LoginStatus int    `json:"login_status" gorm:"comment:1成功 0失败 2退出"` // 1:Success, 0:Fail, 2:Logout
 
 	// 浏览器信息
 	Browser        string `json:"browser" gorm:"type:varchar(128);index;comment:浏览器名称"`

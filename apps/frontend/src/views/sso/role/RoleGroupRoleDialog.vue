@@ -30,8 +30,8 @@
 <script setup lang="ts">
 import { getRoleGroupRoles, getRoles, updateRoleGroupRoles } from '@/api/user'
 import { Folder, User } from '@element-plus/icons-vue'
-import type { ElTree } from 'element-plus'
 import { ElMessage } from 'element-plus'
+import type { ElTree } from 'element-plus'
 import { computed, nextTick, ref } from 'vue'
 
 const props = defineProps<{

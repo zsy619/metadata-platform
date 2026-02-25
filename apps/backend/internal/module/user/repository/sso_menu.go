@@ -91,3 +91,10 @@ func (r *ssoMenuRepository) GetMaxSort() (int, error) {
 	}
 	return maxSort, nil
 }
+
+// Count 获取菜单总数
+func (r *ssoMenuRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.SsoMenu{}).Where("is_deleted = ?", false).Count(&count).Error
+	return count, err
+}

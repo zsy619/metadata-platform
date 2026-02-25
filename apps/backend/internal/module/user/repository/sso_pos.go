@@ -76,3 +76,10 @@ func (r *ssoPosRepository) GetMaxSort() (int, error) {
 	}
 	return maxSort, nil
 }
+
+// Count 获取职位总数
+func (r *ssoPosRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.SsoPos{}).Where("is_deleted = ?", false).Count(&count).Error
+	return count, err
+}

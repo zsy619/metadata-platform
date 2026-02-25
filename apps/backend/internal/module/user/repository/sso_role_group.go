@@ -68,3 +68,9 @@ func (r *ssoRoleGroupRepository) GetMaxSort() (int, error) {
 	err := r.db.Model(&model.SsoRoleGroup{}).Select("COALESCE(MAX(sort), 0)").Scan(&maxSort).Error
 	return maxSort, err
 }
+
+func (r *ssoRoleGroupRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.SsoRoleGroup{}).Where("is_deleted = ?", false).Count(&count).Error
+	return count, err
+}

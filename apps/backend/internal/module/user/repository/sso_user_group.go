@@ -68,3 +68,9 @@ func (r *ssoUserGroupRepository) GetMaxSort() (int, error) {
 	err := r.db.Model(&model.SsoUserGroup{}).Select("COALESCE(MAX(sort), 0)").Scan(&maxSort).Error
 	return maxSort, err
 }
+
+func (r *ssoUserGroupRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.SsoUserGroup{}).Where("is_deleted = ?", false).Count(&count).Error
+	return count, err
+}

@@ -63,6 +63,13 @@ func (r *ssoOrgRepository) HasChildren(parentID string) (bool, error) {
 	return count > 0, err
 }
 
+// Count 获取组织总数
+func (r *ssoOrgRepository) Count() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.SsoOrg{}).Where("is_deleted = ?", false).Count(&count).Error
+	return count, err
+}
+
 // GetAllOrgs 获取所有组织
 func (r *ssoOrgRepository) GetAllOrgs() ([]model.SsoOrg, error) {
 	var units []model.SsoOrg

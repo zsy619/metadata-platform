@@ -87,6 +87,11 @@ func (m *MockSsoUserRepository) GetUserByEmail(email string) (*model.SsoUser, er
 	return args.Get(0).(*model.SsoUser), args.Error(1)
 }
 
+func (m *MockSsoUserRepository) Count() (int64, error) {
+	args := m.Called()
+	return args.Get(0).(int64), args.Error(1)
+}
+
 // MockAuditService
 type MockAuditService struct {
 	mock.Mock
@@ -126,6 +131,14 @@ func (m *MockAuditService) GetAllOperationLogs(filters map[string]interface{}) (
 }
 
 func (m *MockAuditService) GetAllDataChangeLogs(filters map[string]interface{}) ([]auditModel.SysDataChangeLog, error) {
+	return nil, nil
+}
+
+func (m *MockAuditService) GetRecentLoginLogs(limit int) ([]auditModel.SysLoginLog, error) {
+	return nil, nil
+}
+
+func (m *MockAuditService) GetRecentOperationLogs(limit int) ([]auditModel.SysOperationLog, error) {
 	return nil, nil
 }
 
@@ -183,6 +196,11 @@ func (m *MockSsoRoleRepository) GetRolesByUserID(userID string) ([]model.SsoRole
 func (m *MockSsoRoleRepository) HasChildren(parentID string) (bool, error) {
 	args := m.Called(parentID)
 	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockSsoRoleRepository) Count() (int64, error) {
+	args := m.Called()
+	return args.Get(0).(int64), args.Error(1)
 }
 
 // MockSsoUserRoleRepository is a mock implementation of repository.SsoUserRoleRepository

@@ -21,6 +21,9 @@ type AuditService interface {
 	GetAllLoginLogs(filters map[string]interface{}) ([]model.SysLoginLog, error)
 	GetAllOperationLogs(filters map[string]interface{}) ([]model.SysOperationLog, error)
 	GetAllDataChangeLogs(filters map[string]interface{}) ([]model.SysDataChangeLog, error)
+
+	GetRecentLoginLogs(limit int) ([]model.SysLoginLog, error)
+	GetRecentOperationLogs(limit int) ([]model.SysOperationLog, error)
 }
 
 type auditService struct {

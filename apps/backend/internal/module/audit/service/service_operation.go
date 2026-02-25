@@ -34,3 +34,10 @@ func (s *auditService) GetAllOperationLogs(filters map[string]interface{}) ([]mo
 	err := db.Order("create_at DESC").Find(&logs).Error
 	return logs, err
 }
+
+// GetRecentOperationLogs 获取最近的操作日志
+func (s *auditService) GetRecentOperationLogs(limit int) ([]model.SysOperationLog, error) {
+	var logs []model.SysOperationLog
+	err := s.db.Model(&model.SysOperationLog{}).Order("create_at DESC").Limit(limit).Find(&logs).Error
+	return logs, err
+}

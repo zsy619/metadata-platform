@@ -4,6 +4,7 @@
             <template #extra>
                 <el-button type="primary" @click="handleRetry">刷新页面</el-button>
                 <el-button @click="handleBack">返回上页</el-button>
+                <el-button @click="handleHome">返回首页</el-button>
             </template>
         </el-result>
     </div>
@@ -19,6 +20,10 @@ const handleRetry = () => {
 
 const handleBack = () => {
     router.back()
+}
+
+const handleHome = () => {
+    router.push('/')
 }
 </script>
 <style scoped>

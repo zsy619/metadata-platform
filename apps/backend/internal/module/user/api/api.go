@@ -1,12 +1,16 @@
 package api
 
 import (
+	"metadata-platform/internal/module/audit/queue"
+	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/module/user/service"
+
 	"github.com/cloudwego/hertz/pkg/app/server"
+	"gorm.io/gorm"
 
 	globalMiddleware "metadata-platform/internal/middleware"
-	"metadata-platform/internal/module/audit/queue"
+
 	auditSvc "metadata-platform/internal/module/audit/service"
-	"metadata-platform/internal/module/user/service"
 )
 
 // SsoHandler 用户模块处理器集合
@@ -26,11 +30,12 @@ type SsoHandler struct {
 	UserAddressHandler *SsoUserAddressHandler
 	UserContactHandler *SsoUserContactHandler
 	UserSocialHandler  *SsoUserSocialHandler
+	DashboardHandler   *DashboardHandler
 	AuditService       auditSvc.AuditService
 }
 
 // NewSsoHandler 创建用户模块处理器集合
-func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) *SsoHandler {
+func NewSsoHandler(db *gorm.DB, services *service.Services, auditQueue *queue.AuditLogQueue, repos *repository.Repositories) *SsoHandler {
 	return &SsoHandler{
 		UserHandler:        NewSsoUserHandler(services.User, auditQueue),
 		TenantHandler:      NewSsoTenantHandler(services.Tenant, auditQueue),
@@ -47,6 +52,7 @@ func NewSsoHandler(services *service.Services, auditQueue *queue.AuditLogQueue) 
 		UserAddressHandler: NewSsoUserAddressHandler(services.UserAddress, auditQueue),
 		UserContactHandler: NewSsoUserContactHandler(services.UserContact, auditQueue),
 		UserSocialHandler:  NewSsoUserSocialHandler(services.UserSocial, auditQueue),
+		DashboardHandler:   NewDashboardHandler(db, repos, services.Audit),
 		AuditService:       services.Audit,
 	}
 }
@@ -204,5 +210,17 @@ func (h *SsoHandler) RegisterRoutes(router *server.Hertz) {
 		// 用户组角色关联路由
 		userGroupRouter.GET("/:id/roles", h.UserGroupHandler.GetUserGroupRoles)
 		userGroupRouter.PUT("/:id/roles", h.UserGroupHandler.UpdateUserGroupRoles)
+	}
+
+	// 仪表板相关路由
+	dashboardRouter := group.Group("/dashboard")
+	{
+		dashboardRouter.GET("/stats", h.DashboardHandler.GetStats)
+		dashboardRouter.GET("/login-logs", h.DashboardHandler.GetRecentLoginLogs)
+		dashboardRouter.GET("/operation-logs", h.DashboardHandler.GetRecentOperationLogs)
+		dashboardRouter.GET("/login-trend", h.DashboardHandler.GetLoginTrend)
+		dashboardRouter.GET("/user-status", h.DashboardHandler.GetUserStatusDistribution)
+		dashboardRouter.GET("/operation-stats", h.DashboardHandler.GetOperationStats)
+		dashboardRouter.GET("/org-distribution", h.DashboardHandler.GetOrgDistribution)
 	}
 }

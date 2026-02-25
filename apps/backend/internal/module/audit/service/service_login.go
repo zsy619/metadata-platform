@@ -34,3 +34,10 @@ func (s *auditService) GetAllLoginLogs(filters map[string]interface{}) ([]model.
 	err := db.Order("create_at DESC").Find(&logs).Error
 	return logs, err
 }
+
+// GetRecentLoginLogs 获取最近的登录日志
+func (s *auditService) GetRecentLoginLogs(limit int) ([]model.SysLoginLog, error) {
+	var logs []model.SysLoginLog
+	err := s.db.Model(&model.SysLoginLog{}).Order("create_at DESC").Limit(limit).Find(&logs).Error
+	return logs, err
+}

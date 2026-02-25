@@ -19,6 +19,7 @@ type SsoUserRepository interface {
 	IncrementLoginError(id string) error
 	DeleteUser(id string) error
 	GetAllUsers() ([]model.SsoUser, error)
+	Count() (int64, error)
 }
 
 // SsoTenantRepository 租户仓库接口
@@ -54,6 +55,7 @@ type SsoMenuRepository interface {
 	DeleteMenu(id string) error
 	GetAllMenus() ([]model.SsoMenu, error)
 	GetMaxSort() (int, error)
+	Count() (int64, error)
 }
 
 // SsoRoleRepository 角色仓库接口
@@ -67,6 +69,7 @@ type SsoRoleRepository interface {
 	GetMaxSort() (int, error)
 	GetRolesByUserID(userID string) ([]model.SsoRole, error)
 	HasChildren(parentID string) (bool, error)
+	Count() (int64, error)
 }
 
 // SsoOrgRepository 组织仓库接口
@@ -80,6 +83,7 @@ type SsoOrgRepository interface {
 	GetAllOrgs() ([]model.SsoOrg, error)
 	GetMaxSort() (int, error)
 	HasChildren(parentID string) (bool, error)
+	Count() (int64, error)
 }
 
 type SsoOrgKindRepository interface {
@@ -103,6 +107,7 @@ type SsoPosRepository interface {
 	DeletePos(id string) error
 	GetAllPoss() ([]model.SsoPos, error)
 	GetMaxSort() (int, error)
+	Count() (int64, error)
 }
 
 type SsoRoleGroupRepository interface {
@@ -115,6 +120,7 @@ type SsoRoleGroupRepository interface {
 	HasChildren(parentID string) (bool, error)
 	GetAllRoleGroups() ([]model.SsoRoleGroup, error)
 	GetMaxSort() (int, error)
+	Count() (int64, error)
 }
 
 type SsoUserGroupRepository interface {
@@ -127,6 +133,7 @@ type SsoUserGroupRepository interface {
 	HasChildren(parentID string) (bool, error)
 	GetAllUserGroups() ([]model.SsoUserGroup, error)
 	GetMaxSort() (int, error)
+	Count() (int64, error)
 }
 
 // SsoUserRoleRepository 用户角色仓库接口
