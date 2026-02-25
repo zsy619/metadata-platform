@@ -25,8 +25,8 @@ func RegisterModuleRoutes(h *server.Hertz, metadataDB, userDB, auditDB *gorm.DB,
 	// Register Audit Module
 	registerAuditRoutes(h, auditDB, auditQueue)
 
-	// Register Monitor Module
-	monitor.RegisterRoutes(h)
+	// Register Monitor Module (with DB connections for stats)
+	monitor.RegisterRoutesWithDB(h, userDB, auditDB)
 
 	// 打印所有已注册的路由
 	h.GET("/debug/routes", func(c context.Context, ctx *app.RequestContext) {

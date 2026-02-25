@@ -8,6 +8,11 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/hertz-contrib/websocket"
+	"gorm.io/gorm"
+
+	"metadata-platform/internal/middleware"
+	"metadata-platform/internal/module/monitor/api"
+	"metadata-platform/internal/module/monitor/service"
 )
 
 var upgrader = websocket.HertzUpgrader{
@@ -18,8 +23,98 @@ var upgrader = websocket.HertzUpgrader{
 
 // RegisterRoutes 注册监控模块路由
 func RegisterRoutes(h *server.Hertz) {
+	// 初始化服务
+	monitorSvc := service.NewMonitorService()
+	statsSvc := service.NewStatsService(nil, nil) // 暂时为空，需要通过 SetDB 方法设置
+
+	// 初始化处理器
+	handler := api.NewMonitorHandler(monitorSvc, statsSvc)
+
+	// 公开路由组（WebSocket）
+	wsGroup := h.Group("/api/monitor")
+	wsGroup.GET("/ws", WSHandler)
+
+	// 需要认证的路由组
 	group := h.Group("/api/monitor")
-	group.GET("/ws", WSHandler)
+	group.Use(middleware.AuthMiddleware())
+
+	// 仪表盘汇总
+	group.GET("/dashboard", handler.GetDashboardSummary)
+
+	// 系统监控
+	group.GET("/system", handler.GetSystemStats)
+
+	// 业务统计
+	group.GET("/business", handler.GetBusinessStats)
+
+	// 访问统计
+	group.GET("/access", handler.GetAccessStats)
+
+	// 趋势数据
+	group.GET("/trend/hourly", handler.GetHourlyTrend)
+	group.GET("/trend/daily", handler.GetDailyTrend)
+
+	// TOP数据
+	group.GET("/top-paths", handler.GetTopPaths)
+
+	// 分布数据
+	group.GET("/status-distribution", handler.GetStatusDistribution)
+	group.GET("/latency-distribution", handler.GetLatencyDistribution)
+
+	// 性能分析
+	group.GET("/slow-queries", handler.GetSlowQueries)
+	group.GET("/error-interfaces", handler.GetErrorInterfaces)
+
+	// 登录统计
+	group.GET("/login-stats", handler.GetLoginStats)
+}
+
+// RegisterRoutesWithDB 注册监控模块路由（带数据库连接）
+func RegisterRoutesWithDB(h *server.Hertz, userDB, auditDB *gorm.DB) {
+	// 初始化服务
+	monitorSvc := service.NewMonitorService()
+	statsSvc := service.NewStatsService(userDB, auditDB)
+
+	// 初始化处理器
+	handler := api.NewMonitorHandler(monitorSvc, statsSvc)
+
+	// 公开路由组（WebSocket）
+	wsGroup := h.Group("/api/monitor")
+	wsGroup.GET("/ws", WSHandler)
+
+	// 需要认证的路由组
+	group := h.Group("/api/monitor")
+	group.Use(middleware.AuthMiddleware())
+
+	// 仪表盘汇总
+	group.GET("/dashboard", handler.GetDashboardSummary)
+
+	// 系统监控
+	group.GET("/system", handler.GetSystemStats)
+
+	// 业务统计
+	group.GET("/business", handler.GetBusinessStats)
+
+	// 访问统计
+	group.GET("/access", handler.GetAccessStats)
+
+	// 趋势数据
+	group.GET("/trend/hourly", handler.GetHourlyTrend)
+	group.GET("/trend/daily", handler.GetDailyTrend)
+
+	// TOP数据
+	group.GET("/top-paths", handler.GetTopPaths)
+
+	// 分布数据
+	group.GET("/status-distribution", handler.GetStatusDistribution)
+	group.GET("/latency-distribution", handler.GetLatencyDistribution)
+
+	// 性能分析
+	group.GET("/slow-queries", handler.GetSlowQueries)
+	group.GET("/error-interfaces", handler.GetErrorInterfaces)
+
+	// 登录统计
+	group.GET("/login-stats", handler.GetLoginStats)
 }
 
 // WSHandler WebSocket处理函数
