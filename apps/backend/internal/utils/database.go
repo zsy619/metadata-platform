@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -65,10 +66,10 @@ func initDB(appMode string, dbCfg configs.DBConfig) (*gorm.DB, error) {
 	var dsn string
 	var dialector gorm.Dialector
 
-	// 根据数据库类型构建DSN
-	switch dbCfg.Type {
+	dbType := strings.ToLower(dbCfg.Type)
+
+	switch dbType {
 	case "postgres", "postgresql":
-		// PostgreSQL DSN格式
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=Asia/Shanghai",
 			dbCfg.Host,
 			dbCfg.User,
@@ -81,7 +82,6 @@ func initDB(appMode string, dbCfg configs.DBConfig) (*gorm.DB, error) {
 	case "mysql":
 		fallthrough
 	default:
-		// MySQL DSN格式（默认）
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			dbCfg.User,
 			dbCfg.Password,

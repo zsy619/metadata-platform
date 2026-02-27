@@ -360,3 +360,119 @@ export const getDBFields = async (connID: string): Promise<MdTableField[]> => {
     })
 }
 
+/**
+ * 获取数据库所有存储过程名称
+ * @param id 数据连接ID
+ * @param schema Schema名称
+ * @returns 存储过程列表
+ */
+export const getDBProcedures = async (id: string, schema?: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/conns/${id}/procedures`,
+        method: 'get',
+        params: { schema }
+    })
+}
+
+/**
+ * 获取数据库所有函数名称
+ * @param id 数据连接ID
+ * @param schema Schema名称
+ * @returns 函数列表
+ */
+export const getDBFunctions = async (id: string, schema?: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/conns/${id}/functions`,
+        method: 'get',
+        params: { schema }
+    })
+}
+
+// ==================== 存储过程/函数相关API ====================
+
+/**
+ * 获取所有存储过程/函数
+ * @returns 存储过程/函数列表
+ */
+export const getProcedures = async (): Promise<any> => {
+    return request({
+        url: '/api/metadata/procedures',
+        method: 'get'
+    })
+}
+
+/**
+ * 根据ID获取存储过程/函数
+ * @param id 存储过程/函数ID
+ * @returns 存储过程/函数详情
+ */
+export const getProcedureById = async (id: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/procedures/${id}`,
+        method: 'get'
+    })
+}
+
+/**
+ * 根据连接ID获取存储过程/函数列表
+ * @param connID 连接ID
+ * @returns 存储过程/函数列表
+ */
+export const getProceduresByConnId = async (connID: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/procedures/conn/${connID}`,
+        method: 'get'
+    })
+}
+
+/**
+ * 创建存储过程/函数
+ * @param data 存储过程/函数数据
+ * @returns 创建结果
+ */
+export const createProcedure = async (data: any): Promise<any> => {
+    return request({
+        url: '/api/metadata/procedures',
+        method: 'post',
+        data
+    })
+}
+
+/**
+ * 更新存储过程/函数
+ * @param id 存储过程/函数ID
+ * @param data 存储过程/函数数据
+ * @returns 更新结果
+ */
+export const updateProcedure = async (id: string, data: any): Promise<any> => {
+    return request({
+        url: `/api/metadata/procedures/${id}`,
+        method: 'put',
+        data
+    })
+}
+
+/**
+ * 删除存储过程/函数
+ * @param id 存储过程/函数ID
+ * @returns 删除结果
+ */
+export const deleteProcedure = async (id: string): Promise<void> => {
+    return request({
+        url: `/api/metadata/procedures/${id}`,
+        method: 'delete'
+    })
+}
+
+/**
+ * 根据存储过程ID获取参数列表
+ * @param procID 存储过程ID
+ * @returns 参数列表
+ */
+export const getParamsByProcId = async (procID: string): Promise<any> => {
+    return request({
+        url: `/api/metadata/procedures/${procID}/params`,
+        method: 'get'
+    })
+}
+

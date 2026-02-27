@@ -251,6 +251,16 @@ func (e *MongoDBExtractor) GetQueryColumns(query string, params []interface{}) (
 	return nil, fmt.Errorf("method GetQueryColumns not implemented for this adapter")
 }
 
+// GetProcedures 获取存储过程列表
+func (e *MongoDBExtractor) GetProcedures(schema string) ([]ProcedureInfo, error) {
+	return []ProcedureInfo{}, nil
+}
+
+// GetFunctions 获取函数列表
+func (e *MongoDBExtractor) GetFunctions(schema string) ([]ProcedureInfo, error) {
+	return []ProcedureInfo{}, nil
+}
+
 // Close 关闭连接
 func (e *MongoDBExtractor) Close() error {
 	return e.client.Disconnect(context.TODO())

@@ -8,9 +8,11 @@
                 数据源管理
             </h1>
             <div class="header-actions">
+                <!-- 批量删除功能已隐藏
                 <el-button type="danger" :icon="Delete" @click="handleBatchDelete" :disabled="selectedRows.length === 0">
                     批量删除
                 </el-button>
+                -->
                 <el-button type="primary" @click="handleCreate" :icon="Plus">
                     新增数据源
                 </el-button>
@@ -53,13 +55,15 @@
                 </el-button>
             </div>
             <div class="table-area">
-                <el-table v-loading="loading" :element-loading-text="loadingText" :data="pagedDataSources" border stripe style="width: 100%; height: 100%;" @selection-change="handleSelectionChange">
+                <el-table v-loading="loading" :element-loading-text="loadingText" :data="pagedDataSources" border stripe style="width: 100%; height: 100%;">
                     <template #empty>
                         <el-empty :description="searchQuery ? '未搜索到相关数据源' : '暂无数据源'">
                             <el-button v-if="!searchQuery" type="primary" @click="handleCreate">新增数据源</el-button>
                         </el-empty>
                     </template>
+                    <!-- 选择列已隐藏
                     <el-table-column type="selection" width="55" />
+                    -->
                     <el-table-column prop="conn_name" label="数据源名称" width="200" show-overflow-tooltip />
                     <el-table-column prop="conn_kind" label="类型" width="120" />
                     <el-table-column prop="conn_host" label="主机" width="180" show-overflow-tooltip />
@@ -141,7 +145,8 @@ const loadingText = ref('加载中...')
 const dataSources = ref<MdConn[]>([])
 const searchQuery = ref('')
 const filterType = ref('')
-const selectedRows = ref<MdConn[]>([])
+// 批量删除功能已隐藏
+// const selectedRows = ref<MdConn[]>([])
 
 // Browser Dialog
 const browserVisible = ref(false)
@@ -241,9 +246,10 @@ const handleReset = () => {
     currentPage.value = 1
 }
 
-const handleSelectionChange = (val: MdConn[]) => {
-    selectedRows.value = val
-}
+// 批量删除功能已隐藏
+// const handleSelectionChange = (val: MdConn[]) => {
+//     selectedRows.value = val
+// }
 
 const handleCreate = () => router.push('/metadata/datasource/create')
 const handleEdit = (row: MdConn) => router.push(`/metadata/datasource/${row.id}/edit`)
@@ -260,17 +266,18 @@ const handleDelete = (row: MdConn) => {
     })
 }
 
-const handleBatchDelete = () => {
-    showDeleteConfirm(`确定要删除选中的 ${selectedRows.value.length} 个数据源吗？`).then(async () => {
-        try {
-            await Promise.all(selectedRows.value.map(row => deleteConn(row.id)))
-            ElMessage.success('批量删除成功')
-            fetchDataSources()
-        } catch (error) {
-            console.error(error)
-        }
-    })
-}
+// 批量删除功能已隐藏
+// const handleBatchDelete = () => {
+//     showDeleteConfirm(`确定要删除选中的 ${selectedRows.value.length} 个数据源吗？`).then(async () => {
+//         try {
+//             await Promise.all(selectedRows.value.map(row => deleteConn(row.id)))
+//             ElMessage.success('批量删除成功')
+//             fetchDataSources()
+//         } catch (error) {
+//             console.error(error)
+//         }
+//     })
+// }
 
 const handleTestConnection = async (row: MdConn) => {
     loadingText.value = `正在测试与 "${row.conn_name}" 的连接...`

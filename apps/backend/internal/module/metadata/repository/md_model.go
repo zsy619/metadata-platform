@@ -64,7 +64,6 @@ func (r *mdModelRepository) UpdateModel(model *model.MdModel) error {
 func (r *mdModelRepository) DeleteModel(id string) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// 定义需要清理的关联模型列表
-		// 注意：这里按顺序清理所有关联 md_model 的表
 		relatedModels := []interface{}{
 			&model.MdModelField{},
 			&model.MdModelFieldEnhancement{},

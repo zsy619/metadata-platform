@@ -6,6 +6,7 @@ import (
 
 	auditService "metadata-platform/internal/module/audit/service"
 	"metadata-platform/internal/module/user/repository"
+	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"gorm.io/gorm"
@@ -76,7 +77,7 @@ func (h *DashboardHandler) GetStats(c context.Context, ctx *app.RequestContext) 
 	userGroupCount, _ := h.repos.UserGroup.Count()
 	roleGroupCount, _ := h.repos.RoleGroup.Count()
 
-	ctx.JSON(200, StatsResponse{
+	utils.SuccessResponse(ctx, StatsResponse{
 		UserCount:      userCount,
 		RoleCount:      roleCount,
 		OrgCount:       orgCount,
@@ -90,13 +91,13 @@ func (h *DashboardHandler) GetStats(c context.Context, ctx *app.RequestContext) 
 // GetRecentLoginLogs 获取最近登录日志
 func (h *DashboardHandler) GetRecentLoginLogs(c context.Context, ctx *app.RequestContext) {
 	logs, _ := h.auditService.GetRecentLoginLogs(10)
-	ctx.JSON(200, logs)
+	utils.SuccessResponse(ctx, logs)
 }
 
 // GetRecentOperationLogs 获取最近操作日志
 func (h *DashboardHandler) GetRecentOperationLogs(c context.Context, ctx *app.RequestContext) {
 	logs, _ := h.auditService.GetRecentOperationLogs(10)
-	ctx.JSON(200, logs)
+	utils.SuccessResponse(ctx, logs)
 }
 
 // GetLoginTrend 获取登录趋势（最近7天）
@@ -127,7 +128,7 @@ func (h *DashboardHandler) GetLoginTrend(c context.Context, ctx *app.RequestCont
 		})
 	}
 
-	ctx.JSON(200, trends)
+	utils.SuccessResponse(ctx, trends)
 }
 
 // GetUserStatusDistribution 获取用户状态分布
@@ -139,7 +140,7 @@ func (h *DashboardHandler) GetUserStatusDistribution(c context.Context, ctx *app
 	h.db.Table("sso_user").Where("status = ?", 2).Count(&locked)
 	h.db.Table("sso_user").Where("status = ?", 3).Count(&pending)
 
-	ctx.JSON(200, UserStatusDistribution{
+	utils.SuccessResponse(ctx, UserStatusDistribution{
 		Active:   active,
 		Inactive: inactive,
 		Locked:   locked,
@@ -157,7 +158,7 @@ func (h *DashboardHandler) GetOperationStats(c context.Context, ctx *app.Request
 	h.db.Table("sys_operation_log").Where("action = ?", "query").Count(&query)
 	h.db.Table("sys_operation_log").Where("action = ?", "export").Count(&export)
 
-	ctx.JSON(200, OperationStats{
+	utils.SuccessResponse(ctx, OperationStats{
 		Create: create,
 		Update: update,
 		Delete: delete,
@@ -195,5 +196,5 @@ func (h *DashboardHandler) GetOrgDistribution(c context.Context, ctx *app.Reques
 		}
 	}
 
-	ctx.JSON(200, distributions)
+	utils.SuccessResponse(ctx, distributions)
 }

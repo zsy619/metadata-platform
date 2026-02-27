@@ -27,6 +27,7 @@ type Services struct {
 	Table            MdTableService
 	TableField       MdTableFieldService
 	Model            MdModelService
+	Procedure        MdModelProcedureService
 	FieldEnhancement MdModelFieldEnhancementService
 	CRUD             CRUDService
 	APIGenerator     APIGenerator
@@ -57,9 +58,10 @@ func NewServices(db *gorm.DB, repos *repository.Repositories, auditDB *gorm.DB, 
 	return &Services{
 		API:              NewAPIService(repos.API),
 		Conn:             connService,
-		Table:            NewMdTableService(repos.Table),
+		Table:            NewMdTableService(repos.Table, repos.TableField),
 		TableField:       NewMdTableFieldService(repos.TableField),
 		Model:            NewMdModelService(repos.Model, repos.ModelField, repos.ModelSql, repos.ModelParam, connService),
+		Procedure:        NewMdModelProcedureService(repos.Procedure, repos.Conn),
 		FieldEnhancement: NewMdModelFieldEnhancementService(repos.FieldEnhancement),
 		CRUD:             crudSvc,
 		APIGenerator:     NewAPIGenerator(repos.Model, repos.API),

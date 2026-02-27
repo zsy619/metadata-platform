@@ -1,13 +1,14 @@
 package metadata
 
 import (
-	"metadata-platform/configs"
-	"metadata-platform/internal/module/metadata/model"
-	"metadata-platform/internal/utils"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
+
+	"metadata-platform/configs"
+	"metadata-platform/internal/module/metadata/model"
+	"metadata-platform/internal/utils"
 )
 
 // SeedData 初始化元数据模块种子数据

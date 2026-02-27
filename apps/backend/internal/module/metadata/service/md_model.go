@@ -727,6 +727,7 @@ func (s *mdModelService) SaveVisualModel(req *SaveVisualModelRequest) (*model.Md
 		if req.JoinFields[i].ID == "" || strings.HasPrefix(req.JoinFields[i].ID, "tmp_") {
 			req.JoinFields[i].ID = s.snowflake.GenerateIDString()
 		}
+		req.JoinFields[i].ModelID = mdModel.ID
 		req.JoinFields[i].TenantID = req.TenantID
 		req.JoinFields[i].CreateID = req.UserID
 		req.JoinFields[i].CreateBy = req.Username

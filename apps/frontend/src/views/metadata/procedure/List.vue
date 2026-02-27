@@ -3,7 +3,7 @@
         <div class="page-header">
             <h1 class="page-title">
                 <el-icon class="title-icon">
-                    <Grid />
+                    <Document />
                 </el-icon>
                 {{ pageTitle }}
             </h1>
@@ -13,6 +13,12 @@
                 <el-select v-model="selectedConn" placeholder="选择数据源" style="width: 240px" @change="handleConnChange">
                     <el-option v-for="conn in connections" :key="conn.id" :label="conn.conn_name" :value="conn.id" />
                 </el-select>
+                <div style="margin-left: 10px;" v-if="schemas.length > 0">
+                    <span class="m-r-xs">模式(Schema): </span>
+                    <el-select v-model="selectedSchema" placeholder="选择模式" style="width: 200px" @change="handleSchemaChange">
+                        <el-option v-for="schema in schemas" :key="schema" :label="schema" :value="schema" />
+                    </el-select>
+                </div>
                 <el-input v-model="searchQuery" :placeholder="searchPlaceholder" clearable :prefix-icon="Search" style="width: 300px; margin-left: 10px" />
                 <el-button type="primary" :icon="Search" style="margin-left: 10px" @click="handleSearch">搜索</el-button>
                 <el-button :icon="RefreshLeft" @click="handleReset">重置</el-button>
@@ -22,43 +28,36 @@
                     </el-button>
                     <template #dropdown>
                         <el-dropdown-menu>
-                            <el-dropdown-item command="TABLE" v-if="isTablePage">选择表</el-dropdown-item>
-                            <el-dropdown-item command="VIEW" v-if="isViewPage">选择视图</el-dropdown-item>
+                            <el-dropdown-item command="PROCEDURE" v-if="isProcedurePage">选择存储过程</el-dropdown-item>
+                            <el-dropdown-item command="FUNCTION" v-if="isFunctionPage">选择函数</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
             </div>
             <div class="table-area">
-                <el-table v-loading="loading" :element-loading-text="loadingText" :data="pagedTables" border stripe style="width: 100%; height: 100%">
+                <el-table v-loading="loading" :element-loading-text="loadingText" :data="pagedProcedures" border stripe style="width: 100%; height: 100%">
                     <template #empty>
                         <el-empty :description="searchQuery ? '未搜索到相关内容' : '暂无数据'" />
                     </template>
-                    <el-table-column prop="table_name" label="名称" min-width="150" sortable />
-                    <el-table-column prop="table_title" label="标题" min-width="150" />
-                    <el-table-column prop="table_comment" label="备注" min-width="200" />
-                    <el-table-column prop="table_type" label="类型" width="100" v-if="showTypeColumn">
+                    <el-table-column prop="proc_name" label="名称" min-width="180" sortable />
+                    <el-table-column prop="proc_type" label="类型" width="120" v-if="showTypeColumn">
                         <template #default="scope">
-                            <el-tag :type="scope.row.table_type === 'VIEW' ? 'warning' : 'success'">
-                                {{ scope.row.table_type }}
+                            <el-tag :type="scope.row.proc_type === 'FUNCTION' ? 'warning' : 'success'">
+                                {{ scope.row.proc_type === 'FUNCTION' ? '函数' : '存储过程' }}
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="table_schema" label="模式" width="120" show-overflow-tooltip />
+                    <el-table-column prop="return_type" label="返回类型" width="150" show-overflow-tooltip />
+                    <el-table-column prop="proc_comment" label="注释" min-width="200" show-overflow-tooltip />
                     <el-table-column prop="create_at" label="导入时间" width="160">
                         <template #default="scope">
                             {{ formatDateTime(scope.row.create_at) }}
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" width="320" fixed="right" class-name="action-column">
+                    <el-table-column label="操作" width="200" fixed="right" class-name="action-column">
                         <template #default="scope">
                             <el-button type="info" size="small" :icon="View" @click="handleViewDetail(scope.row)">
                                 详情
-                            </el-button>
-                            <el-button type="primary" size="small" :icon="Refresh" @click="handleRefreshTable(scope.row)">
-                                刷新
-                            </el-button>
-                            <el-button type="success" size="small" :icon="Edit" @click="handleEdit(scope.row)">
-                                修改
                             </el-button>
                             <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)">
                                 删除
@@ -74,7 +73,7 @@
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="1000px" destroy-on-close class="custom-dialog transfer-dialog" :close-on-click-modal="false">
             <div style="margin-bottom: 15px;" v-if="schemas.length > 0">
                 <span class="m-r-xs">模式(Schema): </span>
-                <el-select v-model="selectedSchema" placeholder="选择模式" style="width: 200px" @change="handleSchemaChange">
+                <el-select v-model="selectedSchema" placeholder="选择模式" style="width: 200px" @change="handleSchemaChangeForDialog">
                     <el-option v-for="schema in schemas" :key="schema" :label="schema" :value="schema" />
                 </el-select>
             </div>
@@ -93,56 +92,24 @@
                 </div>
             </template>
         </el-dialog>
-        <el-dialog v-model="editDialogVisible" title="修改表信息" width="600px" class="custom-dialog">
-            <el-form :model="editForm" label-width="120px" label-position="right">
-                <el-form-item label="表标题">
-                    <el-input v-model="editForm.table_title" placeholder="请输入表标题" clearable />
-                </el-form-item>
-                <el-form-item label="表备注">
-                    <el-input v-model="editForm.table_comment" type="textarea" :rows="4" placeholder="请输入表备注" />
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <div class="dialog-footer">
-                    <el-button @click="editDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="handleEditSubmit">确定</el-button>
-                </div>
-            </template>
-        </el-dialog>
-        <el-dialog v-model="detailDialogVisible" title="表详情" width="900px" class="custom-dialog detail-dialog">
+        <el-dialog v-model="detailDialogVisible" title="存储过程/函数详情" width="900px" class="custom-dialog detail-dialog">
             <div v-loading="detailLoading">
                 <el-descriptions title="基本信息" :column="2" border>
-                    <el-descriptions-item label="名称">{{ currentTable.table_name }}</el-descriptions-item>
-                    <el-descriptions-item label="标题">{{ currentTable.table_title }}</el-descriptions-item>
+                    <el-descriptions-item label="名称">{{ currentProcedure.proc_name }}</el-descriptions-item>
                     <el-descriptions-item label="类型" v-if="showTypeColumn">
-                        <el-tag :type="currentTable.table_type === 'VIEW' ? 'warning' : 'success'" size="small">
-                            {{ currentTable.table_type }}
+                        <el-tag :type="currentProcedure.proc_type === 'FUNCTION' ? 'warning' : 'success'" size="small">
+                            {{ currentProcedure.proc_type === 'FUNCTION' ? '函数' : '存储过程' }}
                         </el-tag>
                     </el-descriptions-item>
-                    <el-descriptions-item label="模式">{{ currentTable.table_schema || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="备注" :span="2">{{ currentTable.table_comment || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="返回类型" v-if="currentProcedure.return_type">{{ currentProcedure.return_type }}</el-descriptions-item>
+                    <el-descriptions-item label="模式">{{ currentProcedure.proc_schema || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="注释" :span="2">{{ currentProcedure.proc_comment || '-' }}</el-descriptions-item>
                 </el-descriptions>
-                <div class="m-t-lg">
+                <div class="m-t-lg" v-if="currentProcedure.definition">
                     <div class="field-header">
-                        <div class="field-title">字段列表 ({{ currentTableFields.length }})</div>
-                        <el-button type="primary" size="small" plain :icon="Refresh" @click="handleDetailSync" :loading="detailSyncing">
-                            同步数据库结构
-                        </el-button>
+                        <div class="field-title">定义代码</div>
                     </div>
-                    <el-table :data="currentTableFields" border stripe size="small" height="400px">
-                        <el-table-column prop="sort" label="排序" width="70" align="center" />
-                        <el-table-column prop="column_name" label="字段名称" min-width="150" />
-                        <el-table-column prop="column_title" label="字段标题" min-width="150" />
-                        <el-table-column prop="column_type" label="类型" width="120" />
-                        <el-table-column prop="column_length" label="长度" width="80" />
-                        <el-table-column label="约束" width="120">
-                            <template #default="{ row }">
-                                <el-tag v-if="row.is_primary_key" type="danger" size="small">PK</el-tag>
-                                <el-tag v-if="!row.is_nullable" type="warning" size="small" class="m-l-xs">Not Null</el-tag>
-                            </template>
-                        </el-table-column>
-                        <el-table-column prop="column_comment" label="备注" min-width="200" show-overflow-tooltip />
-                    </el-table>
+                    <el-input v-model="currentProcedure.definition" type="textarea" :rows="20" readonly style="width: 100%" />
                 </div>
             </div>
             <template #footer>
@@ -155,11 +122,10 @@
 </template>
 
 <script setup lang="ts">
-import { createField, createTable, deleteFieldsByTableId, deleteTable, getConns, getDBTables, getDBViews, getFieldsByTableId, getSchemas, getTablesByConnId, getTableStructureFromDB, updateTable } from '@/api/metadata'
-import type { MdTable, MdTableField } from '@/types/metadata'
+import { getConns, getSchemas, getDBProcedures, getDBFunctions, getProceduresByConnId, createProcedure, deleteProcedure, getParamsByProcId } from '@/api/metadata'
+import { ArrowDown, Delete, Document, RefreshLeft, Search, View } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { showConfirm, showDeleteConfirm } from '@/utils/confirm'
-import { ArrowDown, Delete, Edit, Grid, Refresh, RefreshLeft, Search, View } from '@element-plus/icons-vue'
-import { ElLoading, ElMessage } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -169,23 +135,33 @@ const loading = ref(false)
 const loadingText = ref('加载中...')
 const selectedConn = ref('')
 const connections = ref<any[]>([])
-const allTables = ref<MdTable[]>([])
+const allProcedures = ref<any[]>([])
 const searchQuery = ref('')
-
+const schemas = ref<string[]>([])
+const selectedSchema = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
-const total = computed(() => filteredTables.value.length)
+const total = computed(() => filteredProcedures.value.length)
+const detailDialogVisible = ref(false)
+const currentProcedure = ref<any>({})
+const detailLoading = ref(false)
 
 const dialogVisible = ref(false)
-const dialogType = ref<'TABLE' | 'VIEW'>('TABLE')
+const dialogType = ref<'PROCEDURE' | 'FUNCTION'>('PROCEDURE')
 const dialogLoading = ref(false)
 const saving = ref(false)
 const selectedValues = ref<string[]>([])
 const dbObjects = ref<any[]>([])
 
-const dialogTitle = computed(() => dialogType.value === 'TABLE' ? '选择表入库' : '选择视图入库')
+const isProcedurePage = computed(() => route.path.includes('/procedure'))
+const isFunctionPage = computed(() => route.path.includes('/function'))
+const pageTitle = computed(() => isProcedurePage.value ? '存储过程' : '函数')
+const searchPlaceholder = computed(() => isProcedurePage.value ? '搜索存储过程名称' : '搜索函数名称')
+const showTypeColumn = computed(() => !isProcedurePage.value && !isFunctionPage.value)
+
+const dialogTitle = computed(() => dialogType.value === 'PROCEDURE' ? '选择存储过程入库' : '选择函数入库')
 const transferData = computed(() => {
-    const existingNames = new Set(allTables.value.map(t => t.table_name))
+    const existingNames = new Set(allProcedures.value.map(p => p.proc_name || p.name))
     return dbObjects.value
         .filter(obj => !existingNames.has(obj.name))
         .map(obj => ({
@@ -194,16 +170,7 @@ const transferData = computed(() => {
         }))
 })
 
-const schemas = ref<string[]>([])
-const selectedSchema = ref('')
-
-const isTablePage = computed(() => route.path.includes('/table'))
-const isViewPage = computed(() => route.path.includes('/view'))
-const pageTitle = computed(() => isTablePage.value ? '表列表' : '视图列表')
-const searchPlaceholder = computed(() => isTablePage.value ? '搜索表名称' : '搜索视图名称')
-const showTypeColumn = computed(() => !isTablePage.value && !isViewPage.value)
-
-const openSelectDialog = async (type: 'TABLE' | 'VIEW') => {
+const openSelectDialog = async (type: 'PROCEDURE' | 'FUNCTION') => {
     if (!selectedConn.value) {
         ElMessage.warning('请先选择数据源')
         return
@@ -211,9 +178,7 @@ const openSelectDialog = async (type: 'TABLE' | 'VIEW') => {
     dialogType.value = type
     dialogVisible.value = true
     selectedValues.value = []
-    schemas.value = []
-    selectedSchema.value = ''
-
+    
     try {
         const res: any = await getSchemas(selectedConn.value)
         const schemaList = res?.data || res || []
@@ -228,16 +193,12 @@ const openSelectDialog = async (type: 'TABLE' | 'VIEW') => {
     await fetchDBObjects()
 }
 
-const handleSchemaChange = () => {
-    fetchDBObjects()
-}
-
 const fetchDBObjects = async () => {
     dialogLoading.value = true
     try {
-        const res: any = dialogType.value === 'TABLE'
-            ? await getDBTables(selectedConn.value, selectedSchema.value)
-            : await getDBViews(selectedConn.value, selectedSchema.value)
+        const res: any = dialogType.value === 'PROCEDURE'
+            ? await getDBProcedures(selectedConn.value, selectedSchema.value)
+            : await getDBFunctions(selectedConn.value, selectedSchema.value)
 
         const list = res?.data || res
         dbObjects.value = Array.isArray(list) ? list : []
@@ -250,6 +211,10 @@ const fetchDBObjects = async () => {
     }
 }
 
+const handleSchemaChangeForDialog = () => {
+    fetchDBObjects()
+}
+
 const handleConfirmSelect = async () => {
     if (selectedValues.value.length === 0) {
         ElMessage.warning('请选择至少一项')
@@ -257,7 +222,7 @@ const handleConfirmSelect = async () => {
     }
 
     try {
-        await showConfirm(`确定要导入选中的 ${selectedValues.value.length} 个${dialogType.value === 'TABLE' ? '表' : '视图'}吗？`, '导入确认', 'info')
+        await showConfirm(`确定要导入选中的 ${selectedValues.value.length} 个${dialogType.value === 'PROCEDURE' ? '存储过程' : '函数'}吗？`, '导入确认', 'info')
     } catch {
         return
     }
@@ -268,71 +233,27 @@ const handleConfirmSelect = async () => {
 
     try {
         const selectedDetail = dbObjects.value.filter(obj => selectedValues.value.includes(obj.name))
-        ElMessage.info(`开始导入 ${selectedDetail.length} 个${dialogType.value === 'TABLE' ? '表' : '视图'}...`)
+        ElMessage.info(`开始导入 ${selectedDetail.length} 个${dialogType.value === 'PROCEDURE' ? '存储过程' : '函数'}...`)
+
+        const selectedConnData = connections.value.find(c => c.id === selectedConn.value)
+        const connName = selectedConnData?.conn_name || ''
 
         for (const obj of selectedDetail) {
             try {
-                const structureRes = await getTableStructureFromDB(selectedConn.value, obj.name, selectedSchema.value)
-                const tableStructure = structureRes?.data || structureRes
-
-                if (!tableStructure) {
-                    console.error(`获取表 ${obj.name} 的结构信息失败`)
-                    failCount++
-                    continue
-                }
-
-                const tableData: Partial<MdTable> = {
+                const procData: any = {
                     conn_id: selectedConn.value,
-                    table_name: obj.name,
-                    table_title: obj.name,
-                    table_comment: obj.comment || '',
-                    table_type: dialogType.value,
-                    table_schema: selectedSchema.value || '',
-                    state: 1
+                    conn_name: connName,
+                    proc_schema: selectedSchema.value || '',
+                    proc_name: obj.name,
+                    proc_title: obj.name,
+                    proc_type: dialogType.value,
+                    proc_comment: obj.comment || '',
+                    definition: obj.definition || '',
+                    return_type: obj.return_type || '',
+                    language: obj.language || ''
                 }
 
-                const resTable: any = await createTable(tableData)
-                const createdTable = resTable?.data || resTable
-
-                if (!createdTable || !createdTable.id) {
-                    console.error(`创建表 ${obj.name} 记录失败, 返回原始数据:`, resTable)
-                    failCount++
-                    continue
-                }
-
-                let columns = []
-                if (Array.isArray(tableStructure)) {
-                    columns = tableStructure
-                } else {
-                    columns = tableStructure.columns || tableStructure.fields || []
-                }
-
-                if (columns.length > 0) {
-                    const fieldPromises = columns.map((col: any, index: number) => {
-                        const fieldData: any = {
-                            conn_id: selectedConn.value,
-                            table_id: createdTable.id,
-                            table_name: obj.name,
-                            table_title: obj.name,
-                            column_name: col.name || col.column_name,
-                            column_title: col.name || col.column_name,
-                            column_type: col.type || col.data_type || '',
-                            column_length: col.length || col.character_maximum_length || 0,
-                            column_comment: col.comment || col.column_comment || '',
-                            is_nullable: col.is_nullable === true || col.nullable === true,
-                            is_primary_key: col.is_primary_key === true,
-                            is_auto_increment: col.is_auto_increment === true,
-                            default_value: col.default_value || col.column_default || '',
-                            extra_info: col.extra || '',
-                            state: 1,
-                            sort: col.sort || index + 1
-                        }
-                        return createField(fieldData)
-                    })
-
-                    await Promise.all(fieldPromises)
-                }
-
+                await createProcedure(procData)
                 successCount++
                 ElMessage.success(`成功导入: ${obj.name}`)
             } catch (error) {
@@ -350,7 +271,7 @@ const handleConfirmSelect = async () => {
 
         if (successCount > 0) {
             dialogVisible.value = false
-            fetchTables()
+            fetchProcedures()
         }
     } catch (error) {
         console.error('导入过程出错:', error)
@@ -360,27 +281,30 @@ const handleConfirmSelect = async () => {
     }
 }
 
-const filteredTables = computed(() => {
-    let result = allTables.value
+const filteredProcedures = computed(() => {
+    let result = allProcedures.value
     
-    if (isTablePage.value) {
-        result = result.filter(t => t.table_type === 'TABLE')
-    } else if (isViewPage.value) {
-        result = result.filter(t => t.table_type === 'VIEW')
+    if (isProcedurePage.value) {
+        result = result.filter(p => p.proc_type === 'PROCEDURE')
+    } else if (isFunctionPage.value) {
+        result = result.filter(p => p.proc_type === 'FUNCTION')
     }
     
-    if (!searchQuery.value) return result
-    const query = searchQuery.value.toLowerCase()
-    return result.filter(t =>
-        t.table_name.toLowerCase().includes(query) ||
-        (t.table_comment && t.table_comment.toLowerCase().includes(query))
-    )
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        result = result.filter(p =>
+            (p.proc_name && p.proc_name.toLowerCase().includes(query)) ||
+            (p.proc_comment && p.proc_comment.toLowerCase().includes(query))
+        )
+    }
+    
+    return result
 })
 
-const pagedTables = computed(() => {
+const pagedProcedures = computed(() => {
     const start = (currentPage.value - 1) * pageSize.value
     const end = start + pageSize.value
-    return filteredTables.value.slice(start, end)
+    return filteredProcedures.value.slice(start, end)
 })
 
 const handleSizeChange = (val: number) => {
@@ -398,9 +322,9 @@ const handleSearch = () => {
 
 const handleReset = () => {
     searchQuery.value = ''
-    selectedConn.value = connections.value.length > 0 ? connections.value[0].id as string : ''
+    selectedSchema.value = schemas.value.length > 0 ? schemas.value[0] : ''
     currentPage.value = 1
-    fetchTables()
+    fetchProcedures()
 }
 
 onMounted(async () => {
@@ -413,29 +337,52 @@ const fetchConnections = async () => {
         connections.value = res?.data || []
         if (connections.value.length > 0) {
             selectedConn.value = connections.value[0].id as string
-            fetchTables()
+            await fetchSchemas()
+            fetchProcedures()
         }
     } catch (error) {
         console.error('获取数据源失败:', error)
     }
 }
 
-const fetchTables = async () => {
+const fetchSchemas = async () => {
+    if (!selectedConn.value) return
+    try {
+        const res: any = await getSchemas(selectedConn.value)
+        const schemaList = res?.data || res || []
+        schemas.value = Array.isArray(schemaList) ? schemaList : []
+        if (schemas.value.length > 0) {
+            selectedSchema.value = schemas.value[0]
+        }
+    } catch (error) {
+        console.warn('获取Schema列表失败:', error)
+        schemas.value = []
+    }
+}
+
+const fetchProcedures = async () => {
     if (!selectedConn.value) return
     loadingText.value = '加载中...'
     loading.value = true
     try {
-        const res: any = await getTablesByConnId(selectedConn.value)
-        allTables.value = res?.data || []
+        const res: any = await getProceduresByConnId(selectedConn.value)
+        allProcedures.value = res?.data || []
     } catch (error) {
-        console.error('获取表列表失败:', error)
+        console.error('获取存储过程和函数列表失败:', error)
+        ElMessage.error('获取列表失败')
+        allProcedures.value = []
     } finally {
         loading.value = false
     }
 }
 
-const handleConnChange = () => {
-    fetchTables()
+const handleConnChange = async () => {
+    await fetchSchemas()
+    fetchProcedures()
+}
+
+const handleSchemaChange = () => {
+    fetchProcedures()
 }
 
 const formatDateTime = (dateStr: string | undefined) => {
@@ -452,187 +399,36 @@ const formatDateTime = (dateStr: string | undefined) => {
     return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
-const handleViewDetail = async (row: MdTable) => {
-    console.log('正在查看表详情, 参数 row:', JSON.parse(JSON.stringify(row)))
-    currentTable.value = row
+const handleViewDetail = (row: any) => {
+    currentProcedure.value = row
     detailDialogVisible.value = true
-    detailLoading.value = true
-    currentTableFields.value = []
+}
 
+const handleDelete = async (row: any) => {
     if (!row.id) {
-        console.error('查看详情失败: row.id 为空')
-        ElMessage.error('该项目数据异常 (缺少ID)')
-        detailLoading.value = false
+        ElMessage.error('该存储过程/函数数据异常,缺少ID')
         return
     }
 
+    let paramCount = 0
+
     try {
-        const res: any = await getFieldsByTableId(row.id as string)
-        console.log('获取字段列表成功:', res)
-        currentTableFields.value = Array.isArray(res) ? res : (res?.data || [])
+        const res: any = await getParamsByProcId(row.id as string)
+        const params = Array.isArray(res) ? res : (res?.data || [])
+        paramCount = params.length
     } catch (error: any) {
-        console.error('获取字段列表失败, ID:', row.id, '错误详情:', error)
-        ElMessage.warning('无法获取字段列表, 仅显示基本信息')
-    } finally {
-        detailLoading.value = false
-    }
-}
-
-const detailSyncing = ref(false)
-const handleDetailSync = async () => {
-    if (!currentTable.value.id) return
-
-    try {
-        await showConfirm(
-            '同步将重新从数据库读取字段结构并更新当前元数据, 确认继续?',
-            '同步确认',
-            'info'
-        )
-
-        detailSyncing.value = true
-        await doRefreshTable(currentTable.value)
-
-        const res: any = await getFieldsByTableId(currentTable.value.id as string)
-        currentTableFields.value = Array.isArray(res) ? res : (res?.data || [])
-        ElMessage.success('字段同步成功')
-    } catch (error: any) {
-        if (error !== 'cancel') {
-            console.error('详情同步失败:', error)
-            ElMessage.error(error?.message || '同步失败')
-        }
-    } finally {
-        detailSyncing.value = false
-    }
-}
-
-const doRefreshTable = async (table: any) => {
-    await deleteFieldsByTableId(table.id as string)
-
-    const structureRes = await getTableStructureFromDB(table.conn_id, table.table_name)
-    const tableStructure = structureRes?.data || structureRes?.result || structureRes
-
-    let columns = []
-    if (Array.isArray(tableStructure)) {
-        columns = tableStructure
-    } else if (tableStructure && (tableStructure.columns || tableStructure.fields)) {
-        columns = tableStructure.columns || tableStructure.fields
-    } else {
-        throw new Error('获取表结构失败 (数据库返回格式无法识别)')
+        console.warn('获取参数列表失败:', error)
     }
 
-    if (columns.length > 0) {
-        const fieldPromises = columns.map((col: any, index: number) => {
-            const fieldData: any = {
-                conn_id: table.conn_id,
-                table_id: table.id,
-                table_name: table.table_name,
-                table_title: table.table_title || table.table_name,
-                column_name: col.name || col.column_name,
-                column_title: col.name || col.column_name,
-                column_type: col.type || col.data_type || '',
-                column_length: col.length || col.character_maximum_length || 0,
-                column_comment: col.comment || col.column_comment || '',
-                is_nullable: col.is_nullable === true || col.nullable === true,
-                is_primary_key: col.is_primary_key === true,
-                is_auto_increment: col.is_auto_increment === true,
-                default_value: col.default_value || col.column_default || '',
-                extra_info: col.extra || '',
-                state: 1,
-                sort: col.sort || index + 1
-            }
-            return createField(fieldData)
-        })
-
-        await Promise.all(fieldPromises)
-    }
-}
-
-const handleRefreshTable = async (row: MdTable) => {
-    showConfirm(
-        `刷新将删除现有字段并重新从数据库同步,确定要刷新表 "${row.table_title || row.table_name}" 吗?`,
-        '刷新确认',
-        'warning'
-    ).then(async () => {
-        const loading = ElLoading.service({ text: '正在刷新...' })
-        try {
-            await doRefreshTable(row)
-            ElMessage.success('刷新成功')
-            if (detailDialogVisible.value && currentTable.value.id === row.id) {
-                const res: any = await getFieldsByTableId(row.id as string)
-                currentTableFields.value = Array.isArray(res) ? res : (res?.data || [])
-            }
-        } catch (error: any) {
-            console.error('刷新失败:', error)
-            ElMessage.error(error?.message || '刷新失败')
-        } finally {
-            loading.close()
-        }
-    }).catch(() => {
-    })
-}
-
-const editDialogVisible = ref(false)
-const editForm = ref({
-    id: '',
-    table_title: '',
-    table_comment: ''
-})
-
-const detailDialogVisible = ref(false)
-const currentTable = ref<Partial<MdTable>>({})
-const currentTableFields = ref<MdTableField[]>([])
-const detailLoading = ref(false)
-
-const handleEdit = (row: MdTable) => {
-    editForm.value = {
-        id: row.id as string,
-        table_title: row.table_title || '',
-        table_comment: row.table_comment || ''
-    }
-    editDialogVisible.value = true
-}
-
-const handleEditSubmit = async () => {
-    if (!editForm.value.id) return
-    try {
-        await updateTable(editForm.value.id, {
-            table_title: editForm.value.table_title,
-            table_comment: editForm.value.table_comment
-        })
-        ElMessage.success('修改成功')
-        editDialogVisible.value = false
-        fetchTables()
-    } catch (error) {
-        console.error('修改失败:', error)
-        ElMessage.error('修改失败')
-    }
-}
-
-const handleDelete = async (row: MdTable) => {
-    if (!row.id) {
-        ElMessage.error('该表数据异常,缺少ID')
-        return
-    }
-
-    let fieldCount = 0
-
-    try {
-        const res: any = await getFieldsByTableId(row.id as string)
-        const fields = Array.isArray(res) ? res : (res?.data || [])
-        fieldCount = fields.length
-    } catch (error: any) {
-        console.warn('获取字段列表失败:', error)
-    }
-
-    const confirmMsg = fieldCount > 0
-        ? `确定要删除表 "${row.table_title || row.table_name}" 吗？\n\n该表包含 ${fieldCount} 个字段，将一起被删除。`
-        : `确定要删除表 "${row.table_title || row.table_name}" 吗?`
+    const confirmMsg = paramCount > 0
+        ? `确定要删除 "${row.proc_title || row.proc_name}" 吗？\n\n该${row.proc_type === 'FUNCTION' ? '函数' : '存储过程'}包含 ${paramCount} 个参数，将一起被删除。`
+        : `确定要删除 "${row.proc_title || row.proc_name}" 吗?`
 
     showDeleteConfirm(confirmMsg).then(async () => {
         try {
-            await deleteTable(row.id as string)
+            await deleteProcedure(row.id as string)
             ElMessage.success('删除成功')
-            fetchTables()
+            fetchProcedures()
         } catch (delError: any) {
             console.error('删除操作失败:', delError)
             ElMessage.error(delError?.message || '删除失败')

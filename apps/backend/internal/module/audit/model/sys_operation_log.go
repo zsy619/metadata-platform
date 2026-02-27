@@ -4,9 +4,10 @@ import "time"
 
 // SysOperationLog 系统操作日志
 type SysOperationLog struct {
-	TraceID  string `json:"trace_id" gorm:"primary_key;type:varchar(64);comment:追踪ID"`
-	UserID   string `json:"user_id" gorm:"type:varchar(64);index;comment:用户ID"`
-	TenantID string `json:"tenant_id" gorm:"type:varchar(64);index;comment:租户ID"`
+	TraceID     string `json:"trace_id" gorm:"primary_key;type:varchar(64);comment:追踪ID"`
+	UserID      string `json:"user_id" gorm:"type:varchar(64);index;comment:用户ID"`
+	UserAccount string `json:"user_account" gorm:"type:varchar(64);index;comment:用户账户"`
+	TenantID    string `json:"tenant_id" gorm:"type:varchar(64);index;comment:租户ID"`
 
 	// 请求信息
 	Method  string `json:"method" gorm:"type:varchar(16);comment:请求方法"`

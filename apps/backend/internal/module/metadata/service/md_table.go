@@ -22,15 +22,17 @@ type MdTableService interface {
 // mdTableService 数据连接表服务实现
 type mdTableService struct {
 	tableRepo  repository.MdTableRepository
+	fieldRepo  repository.MdTableFieldRepository
 	snowflake  *utils.Snowflake
 }
 
 // NewMdTableService 创建数据连接表服务实例
-func NewMdTableService(tableRepo repository.MdTableRepository) MdTableService {
+func NewMdTableService(tableRepo repository.MdTableRepository, fieldRepo repository.MdTableFieldRepository) MdTableService {
 	// 创建雪花算法生成器实例，使用默认数据中心ID和机器ID
 	snowflake := utils.NewSnowflake(1, 1)
 	return &mdTableService{
 		tableRepo:  tableRepo,
+		fieldRepo:  fieldRepo,
 		snowflake: snowflake,
 	}
 }
@@ -86,6 +88,12 @@ func (s *mdTableService) DeleteTable(id string) error {
 	_, err := s.tableRepo.GetTableByID(id)
 	if err != nil {
 		return errors.New("表不存在")
+	}
+
+	// 先删除该表的所有字段
+	err = s.fieldRepo.DeleteFieldsByTableID(id)
+	if err != nil {
+		return err
 	}
 
 	// 删除表

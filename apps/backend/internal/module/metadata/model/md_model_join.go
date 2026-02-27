@@ -36,6 +36,7 @@ func (MdModelJoin) TableName() string {
 type MdModelJoinField struct {
 	ID              string    `json:"id" form:"id" gorm:"primary_key;type:varchar(64);comment:主键ID"`
 	TenantID        string    `json:"tenant_id" form:"tenant_id" gorm:"index;type:varchar(64);not null;default:'';comment:租户ID"`
+	ModelID         string    `json:"model_id" form:"model_id" gorm:"index;type:varchar(64);not null;default:'';comment:模型ID"`
 	JoinID          string    `json:"join_id" form:"join_id" gorm:"type:varchar(64);not null;default:'';comment:关联ID"`
 	Operator1       string    `json:"operator1" form:"operator1" gorm:"size:64;not null;default:'';comment:操作符：and/or"`
 	Brackets1       string    `json:"brackets1" form:"brackets1" gorm:"size:64;not null;default:'';comment:括号：("`

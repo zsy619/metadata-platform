@@ -45,28 +45,67 @@ type Config struct {
 
 // LoadConfig 从环境变量或配置文件加载配置
 func LoadConfig() (*Config, error) {
-	// 初始化Viper
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 
-	// 读取配置文件
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return nil, fmt.Errorf("failed to read config file: %w", err)
 		}
-		// 配置文件不存在，使用默认值
 	}
 
-	// 设置默认值
 	setDefaults()
 
-	// 解析配置到结构体
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
+	config.MetadataDB.Type = getString("METADATA_DB.TYPE", config.MetadataDB.Type)
+	config.MetadataDB.Host = getString("METADATA_DB.HOST", config.MetadataDB.Host)
+	config.MetadataDB.Port = getInt("METADATA_DB.PORT", config.MetadataDB.Port)
+	config.MetadataDB.User = getString("METADATA_DB.USER", config.MetadataDB.User)
+	config.MetadataDB.Password = getString("METADATA_DB.PASSWORD", config.MetadataDB.Password)
+	config.MetadataDB.Name = getString("METADATA_DB.NAME", config.MetadataDB.Name)
+	config.MetadataDB.MaxIdleConns = getInt("METADATA_DB.MAX_IDLE_CONNS", config.MetadataDB.MaxIdleConns)
+	config.MetadataDB.MaxOpenConns = getInt("METADATA_DB.MAX_OPEN_CONNS", config.MetadataDB.MaxOpenConns)
+	config.MetadataDB.SSLMode = getString("METADATA_DB.SSL_MODE", config.MetadataDB.SSLMode)
+
+	config.UserDB.Type = getString("USER_DB.TYPE", config.UserDB.Type)
+	config.UserDB.Host = getString("USER_DB.HOST", config.UserDB.Host)
+	config.UserDB.Port = getInt("USER_DB.PORT", config.UserDB.Port)
+	config.UserDB.User = getString("USER_DB.USER", config.UserDB.User)
+	config.UserDB.Password = getString("USER_DB.PASSWORD", config.UserDB.Password)
+	config.UserDB.Name = getString("USER_DB.NAME", config.UserDB.Name)
+	config.UserDB.MaxIdleConns = getInt("USER_DB.MAX_IDLE_CONNS", config.UserDB.MaxIdleConns)
+	config.UserDB.MaxOpenConns = getInt("USER_DB.MAX_OPEN_CONNS", config.UserDB.MaxOpenConns)
+	config.UserDB.SSLMode = getString("USER_DB.SSL_MODE", config.UserDB.SSLMode)
+
+	config.AuditDB.Type = getString("AUDIT_DB.TYPE", config.AuditDB.Type)
+	config.AuditDB.Host = getString("AUDIT_DB.HOST", config.AuditDB.Host)
+	config.AuditDB.Port = getInt("AUDIT_DB.PORT", config.AuditDB.Port)
+	config.AuditDB.User = getString("AUDIT_DB.USER", config.AuditDB.User)
+	config.AuditDB.Password = getString("AUDIT_DB.PASSWORD", config.AuditDB.Password)
+	config.AuditDB.Name = getString("AUDIT_DB.NAME", config.AuditDB.Name)
+	config.AuditDB.MaxIdleConns = getInt("AUDIT_DB.MAX_IDLE_CONNS", config.AuditDB.MaxIdleConns)
+	config.AuditDB.MaxOpenConns = getInt("AUDIT_DB.MAX_OPEN_CONNS", config.AuditDB.MaxOpenConns)
+	config.AuditDB.SSLMode = getString("AUDIT_DB.SSL_MODE", config.AuditDB.SSLMode)
+
 	return &config, nil
+}
+
+func getString(key string, defaultValue string) string {
+	if val := viper.GetString(key); val != "" {
+		return val
+	}
+	return defaultValue
+}
+
+func getInt(key string, defaultValue int) int {
+	if val := viper.GetInt(key); val != 0 {
+		return val
+	}
+	return defaultValue
 }
 
 // 设置默认配置值

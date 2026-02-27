@@ -24,6 +24,7 @@ type Repositories struct {
 	TableField       MdTableFieldRepository
 	Model            MdModelRepository
 	ModelField       MdModelFieldRepository
+	Procedure        MdModelProcedureRepository
 	FieldEnhancement MdModelFieldEnhancementRepository
 	QueryTemplate    MdQueryTemplateRepository
 	QueryCondition   MdQueryConditionRepository
@@ -41,6 +42,7 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		TableField:       NewMdTableFieldRepository(db),
 		Model:            NewMdModelRepository(db),
 		ModelField:       NewMdModelFieldRepository(db),
+		Procedure:        NewMdModelProcedureRepository(db),
 		FieldEnhancement: NewMdModelFieldEnhancementRepository(db),
 		QueryTemplate:    NewMdQueryTemplateRepository(db),
 		QueryCondition:   NewMdQueryConditionRepository(db),

@@ -153,13 +153,13 @@
                     </div>
                 </template>
                 <el-table :data="loginLogs" style="width: 100%" size="small" max-height="280">
-                    <el-table-column prop="user_account" label="用户账号" width="120" />
-                    <el-table-column prop="user_name" label="用户名称" width="100" />
-                    <el-table-column prop="login_ip" label="登录IP" width="130" />
+                    <el-table-column prop="account" label="用户账号" width="120" />
+                    <el-table-column prop="user_id" label="用户ID" width="100" />
+                    <el-table-column prop="client_ip" label="登录IP" width="130" />
                     <el-table-column prop="login_status" label="状态" width="80">
                         <template #default="scope">
-                            <el-tag :type="scope.row.login_status === 1 ? 'success' : 'danger'" size="small">
-                                {{ scope.row.login_status === 1 ? '成功' : '失败' }}
+                            <el-tag :type="scope.row.login_status === 1 ? 'success' : (scope.row.login_status === 2 ? 'info' : 'danger')" size="small">
+                                {{ scope.row.login_status === 1 ? '成功' : (scope.row.login_status === 2 ? '退出' : '失败') }}
                             </el-tag>
                         </template>
                     </el-table-column>
@@ -179,10 +179,16 @@
                     </div>
                 </template>
                 <el-table :data="operationLogs" style="width: 100%" size="small" max-height="280">
-                    <el-table-column prop="user_account" label="操作用户" width="100" />
-                    <el-table-column prop="module" label="模块" width="80" />
-                    <el-table-column prop="action" label="操作" width="80" />
-                    <el-table-column prop="description" label="描述" show-overflow-tooltip />
+                    <el-table-column prop="user_id" label="操作用户" width="100" />
+                    <el-table-column prop="source" label="模块" width="100" />
+                    <el-table-column prop="method" label="操作" width="80">
+                        <template #default="scope">
+                            <el-tag :type="getMethodTag(scope.row.method)" size="small">
+                                {{ scope.row.method }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="path" label="描述" show-overflow-tooltip />
                     <el-table-column prop="create_at" label="操作时间" width="160">
                         <template #default="scope">
                             {{ formatTime(scope.row.create_at) }}
@@ -252,10 +258,20 @@ const formatTime = (time: string) => {
     })
 }
 
+const getMethodTag = (method: string) => {
+    switch (method?.toUpperCase()) {
+        case 'GET': return 'info'
+        case 'POST': return 'success'
+        case 'PUT': return 'warning'
+        case 'DELETE': return 'danger'
+        default: return ''
+    }
+}
+
 const loadStats = async () => {
     try {
-        const res = await getDashboardStats()
-        stats.value = res
+        const res: any = await getDashboardStats()
+        stats.value = res.data || res
     } catch (error: any) {
         ElMessage.error(error.message || '加载统计数据失败')
     }
@@ -263,8 +279,8 @@ const loadStats = async () => {
 
 const loadLoginLogs = async () => {
     try {
-        const res = await getRecentLoginLogs()
-        loginLogs.value = res || []
+        const res: any = await getRecentLoginLogs()
+        loginLogs.value = res.data || res || []
     } catch (error: any) {
         console.error('加载登录日志失败:', error)
     }
@@ -272,8 +288,8 @@ const loadLoginLogs = async () => {
 
 const loadOperationLogs = async () => {
     try {
-        const res = await getRecentOperationLogs()
-        operationLogs.value = res || []
+        const res: any = await getRecentOperationLogs()
+        operationLogs.value = res.data || res || []
     } catch (error: any) {
         console.error('加载操作日志失败:', error)
     }
@@ -284,16 +300,16 @@ const loadChartData = async () => {
     loading.value.chart = true
     try {
         // 并行加载所有图表数据
-        const [trend, status, operation, org] = await Promise.all([
+        const [trendRes, statusRes, operationRes, orgRes] = await Promise.all([
             getLoginTrend(),
             getUserStatusDistribution(),
             getOperationStats(),
             getOrgDistribution()
         ])
-        loginTrendData.value = trend || []
-        userStatusData.value = status || { active: 0, inactive: 0, locked: 0, pending: 0 }
-        operationStatsData.value = operation || { create: 0, update: 0, delete: 0, query: 0, export: 0 }
-        orgDistributionData.value = org || []
+        loginTrendData.value = (trendRes as any).data || trendRes || []
+        userStatusData.value = (statusRes as any).data || statusRes || { active: 0, inactive: 0, locked: 0, pending: 0 }
+        operationStatsData.value = (operationRes as any).data || operationRes || { create: 0, update: 0, delete: 0, query: 0, export: 0 }
+        orgDistributionData.value = (orgRes as any).data || orgRes || []
     } catch (error: any) {
         console.error('加载图表数据失败:', error)
     } finally {
@@ -302,11 +318,11 @@ const loadChartData = async () => {
 }
 
 const goToLoginLogs = () => {
-    router.push('/audit/login-log')
+    router.push('/system/audit/login')
 }
 
 const goToOperationLogs = () => {
-    router.push('/audit/operation-log')
+    router.push('/system/audit/operation')
 }
 
 // 图表引用

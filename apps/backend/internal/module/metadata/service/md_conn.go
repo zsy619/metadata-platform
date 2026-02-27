@@ -2,13 +2,12 @@ package service
 
 import (
 	"errors"
-
 	"fmt"
-
 	"metadata-platform/internal/module/metadata/adapter"
 	"metadata-platform/internal/module/metadata/model"
 	"metadata-platform/internal/module/metadata/repository"
 	"metadata-platform/internal/utils"
+	"strings"
 )
 
 // MdConnService 数据连接服务接口
@@ -27,12 +26,14 @@ type MdConnService interface {
 	PreviewTableData(conn *model.MdConn, schema, table string, limit int) ([]map[string]interface{}, error)
 	GetSchemas(conn *model.MdConn) ([]string, error)
 	ExecuteSQLForColumns(conn *model.MdConn, query string, params map[string]interface{}) ([]adapter.ColumnInfo, error)
+	GetProcedures(conn *model.MdConn, schema string) ([]adapter.ProcedureInfo, error)
+	GetFunctions(conn *model.MdConn, schema string) ([]adapter.ProcedureInfo, error)
 }
 
 // mdConnService 数据连接服务实现
 type mdConnService struct {
-	connRepo   repository.MdConnRepository
-	snowflake  *utils.Snowflake
+	connRepo  repository.MdConnRepository
+	snowflake *utils.Snowflake
 }
 
 // NewMdConnService 创建数据连接服务实例
@@ -114,8 +115,9 @@ func (s *mdConnService) GetConnsByParentID(parentID string) ([]model.MdConn, err
 
 // getExtractor 根据数据连接获取元数据提取器
 func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtractor, error) {
-	switch conn.ConnKind {
-	case "MySQL", "TiDB", "OceanBase", "Doris", "StarRocks":
+	connKind := strings.ToLower(conn.ConnKind)
+	switch connKind {
+	case "mysql", "tidb", "oceanbase", "doris", "starrocks":
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			conn.ConnUser,
 			conn.ConnPassword,
@@ -124,7 +126,7 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnDatabase,
 		)
 		return adapter.NewMySQLExtractor(dsn)
-	case "PostgreSQL", "OpenGauss", "Kingbase":
+	case "postgresql", "opengauss", "kingbase":
 		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			conn.ConnHost,
 			conn.ConnPort,
@@ -133,7 +135,7 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnDatabase,
 		)
 		return adapter.NewPostgreSQLExtractor(dsn)
-	case "SQL Server":
+	case "sql server", "sqlserver":
 		dsn := fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s",
 			conn.ConnUser,
 			conn.ConnPassword,
@@ -142,7 +144,7 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnDatabase,
 		)
 		return adapter.NewSQLServerExtractor(dsn)
-	case "Oracle":
+	case "oracle":
 		dsn := fmt.Sprintf("%s/%s@%s:%d/%s",
 			conn.ConnUser,
 			conn.ConnPassword,
@@ -151,11 +153,10 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnDatabase,
 		)
 		return adapter.NewOracleExtractor(dsn)
-	case "SQLite":
-		// SQLite 使用文件路径作为 DSN
-		dsn := conn.ConnHost // 假设 ConnHost 存储文件路径
+	case "sqlite":
+		dsn := conn.ConnHost
 		return adapter.NewSQLiteExtractor(dsn)
-	case "ClickHouse":
+	case "clickhouse":
 		dsn := fmt.Sprintf("clickhouse://%s:%s@%s:%d/%s",
 			conn.ConnUser,
 			conn.ConnPassword,
@@ -164,7 +165,7 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnDatabase,
 		)
 		return adapter.NewClickHouseExtractor(dsn)
-	case "DM":
+	case "dm", "dameng":
 		dsn := fmt.Sprintf("dm://%s:%s@%s:%d",
 			conn.ConnUser,
 			conn.ConnPassword,
@@ -172,7 +173,7 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnPort,
 		)
 		return adapter.NewDamengExtractor(dsn)
-	case "MongoDB":
+	case "mongodb":
 		dsn := fmt.Sprintf("mongodb://%s:%s@%s:%d/%s",
 			conn.ConnUser,
 			conn.ConnPassword,
@@ -181,7 +182,7 @@ func (s *mdConnService) getExtractor(conn *model.MdConn) (adapter.MetadataExtrac
 			conn.ConnDatabase,
 		)
 		return adapter.NewMongoDBExtractor(dsn)
-	case "Redis":
+	case "redis":
 		dsn := fmt.Sprintf("redis://%s:%s@%s:%d/%s",
 			conn.ConnUser,
 			conn.ConnPassword,
@@ -314,6 +315,34 @@ func (s *mdConnService) ExecuteSQLForColumns(conn *model.MdConn, query string, p
 	// 这里暂且只支持无参或简单按序 (需前端保证)
 	var args []interface{}
 	// TODO: 实现命名参数解析
-	
+
 	return extractor.GetQueryColumns(query, args)
+}
+
+// GetProcedures 获取存储过程列表
+func (s *mdConnService) GetProcedures(conn *model.MdConn, schema string) ([]adapter.ProcedureInfo, error) {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return nil, err
+	}
+	defer extractor.Close()
+
+	if schema == "" {
+		schema = conn.ConnDatabase
+	}
+	return extractor.GetProcedures(schema)
+}
+
+// GetFunctions 获取函数列表
+func (s *mdConnService) GetFunctions(conn *model.MdConn, schema string) ([]adapter.ProcedureInfo, error) {
+	extractor, err := s.getExtractor(conn)
+	if err != nil {
+		return nil, err
+	}
+	defer extractor.Close()
+
+	if schema == "" {
+		schema = conn.ConnDatabase
+	}
+	return extractor.GetFunctions(schema)
 }

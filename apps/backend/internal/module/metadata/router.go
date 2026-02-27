@@ -3,17 +3,17 @@ package metadata
 import (
 	"context"
 	"fmt"
-	"metadata-platform/internal/module/audit/queue"
-	"metadata-platform/internal/module/metadata/api"
-	"metadata-platform/internal/module/metadata/repository"
-	"metadata-platform/internal/module/metadata/service"
-	"metadata-platform/internal/utils"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"gorm.io/gorm"
 
 	globalMiddleware "metadata-platform/internal/middleware"
+	"metadata-platform/internal/module/audit/queue"
+	"metadata-platform/internal/module/metadata/api"
+	"metadata-platform/internal/module/metadata/repository"
+	"metadata-platform/internal/module/metadata/service"
+	"metadata-platform/internal/utils"
 )
 
 // RegisterRoutes 注册元数据模块路由
@@ -51,6 +51,7 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 	tableHandler := api.NewMdTableHandler(services.Table)
 	fieldHandler := api.NewMdTableFieldHandler(services.TableField)
 	modelHandler := api.NewMdModelHandler(services.Model)
+	procHandler := api.NewMdModelProcedureHandler(services.Procedure)
 	queryHandler := api.NewDataQueryHandler(services.CRUD, services.Model)
 	templateHandler := api.NewQueryTemplateHandler(services.QueryTemplate)
 	enhancementHandler := api.NewFieldEnhancementHandler(services.FieldEnhancement)
@@ -97,6 +98,8 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		connGroup.GET("/:id/views", connHandler.GetViews)
 		connGroup.GET("/:id/tables/:table/structure", connHandler.GetTableStructure)
 		connGroup.GET("/:id/tables/:table/preview", connHandler.PreviewTableData)
+		connGroup.GET("/:id/procedures", connHandler.GetProcedures)
+		connGroup.GET("/:id/functions", connHandler.GetFunctions)
 	}
 
 	// 表路由
@@ -120,6 +123,18 @@ func RegisterRoutes(r *server.Hertz, db *gorm.DB, auditDB *gorm.DB, auditQueue *
 		fieldGroup.GET("", fieldHandler.GetAllFields)
 		fieldGroup.GET("/table/:table_id", fieldHandler.GetFieldsByTableID)
 		fieldGroup.DELETE("/table/:table_id", fieldHandler.DeleteFieldsByTableID)
+	}
+
+	// 存储过程/函数路由
+	procGroup := metadataGroup.Group("/procedures")
+	{
+		procGroup.POST("", procHandler.CreateProcedure)
+		procGroup.GET("/:id", procHandler.GetProcedureByID)
+		procGroup.PUT("/:id", procHandler.UpdateProcedure)
+		procGroup.DELETE("/:id", procHandler.DeleteProcedure)
+		procGroup.GET("", procHandler.GetAllProcedures)
+		procGroup.GET("/conn/:conn_id", procHandler.GetProceduresByConnID)
+		procGroup.GET("/:id/params", procHandler.GetParamsByProcID)
 	}
 
 	// 模型路由

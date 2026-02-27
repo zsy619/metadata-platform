@@ -16,7 +16,7 @@
  - 3: 本部门数据权限
  - 4: 本部门及以下数据权限
  
- Date: 2026-02-17
+ Date: 2026-02-27
 */
 
 SET NAMES utf8mb4;
@@ -374,16 +374,55 @@ INSERT INTO `sso_menu` (
     0, 1, '1', '0', 'system'
 );
 
--- 元数据维护 > 表与视图 (三级目录)
+-- 元数据维护 > 表列表 (三级菜单)
 INSERT INTO `sso_menu` (
     `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
     `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
     `url`, `method`, `target`, `remark`, `sort`, `tier`, 
     `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
 ) VALUES (
-    'MENU_MAINTENANCE_TABLE', 'MENU_METADATA_MAINTENANCE', 'metadata-platform', '表与视图', 'metadata:maintenance:table',
-    1, '1', 1, 'M', 'fa-table-cells',
-    '/metadata/maintenance/table', 'GET', '', '表与视图', 1, 3,
+    'MENU_MAINTENANCE_TABLE', 'MENU_METADATA_MAINTENANCE', 'metadata-platform', '表列表', 'metadata:maintenance:table',
+    1, '1', 1, 'C', 'fa-table',
+    '/metadata/maintenance/table', 'GET', '', '表列表', 1, 3,
+    0, 1, '1', '0', 'system'
+);
+
+-- 元数据维护 > 视图列表 (三级菜单)
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'MENU_MAINTENANCE_VIEW', 'MENU_METADATA_MAINTENANCE', 'metadata-platform', '视图列表', 'metadata:maintenance:view',
+    1, '1', 1, 'C', 'fa-table-columns',
+    '/metadata/maintenance/view', 'GET', '', '视图列表', 2, 3,
+    0, 1, '1', '0', 'system'
+);
+
+-- 元数据维护 > 存储过程 (三级菜单)
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'MENU_MAINTENANCE_PROCEDURE', 'MENU_METADATA_MAINTENANCE', 'metadata-platform', '存储过程', 'metadata:maintenance:procedure',
+    1, '1', 1, 'C', 'fa-database',
+    '/metadata/maintenance/procedure', 'GET', '', '存储过程', 3, 3,
+    0, 1, '1', '0', 'system'
+);
+
+-- 元数据维护 > 函数 (三级菜单)
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'MENU_MAINTENANCE_FUNCTION', 'MENU_METADATA_MAINTENANCE', 'metadata-platform', '函数', 'metadata:maintenance:function',
+    1, '1', 1, 'C', 'fa-calculator',
+    '/metadata/maintenance/function', 'GET', '', '函数', 4, 3,
     0, 1, '1', '0', 'system'
 );
 
@@ -396,7 +435,7 @@ INSERT INTO `sso_menu` (
 ) VALUES (
     'MENU_MAINTENANCE_FIELD', 'MENU_METADATA_MAINTENANCE', 'metadata-platform', '字段列表', 'metadata:maintenance:field',
     1, '1', 1, 'M', 'fa-ticket',
-    '/metadata/maintenance/field', 'GET', '', '字段列表', 2, 3,
+    '/metadata/maintenance/field', 'GET', '', '字段列表', 5, 3,
     0, 1, '1', '0', 'system'
 );
 
@@ -482,19 +521,6 @@ INSERT INTO `sso_menu` (
 -- 四级菜单
 -- ============================================
 
--- 表与视图 > 表视图列表 (四级菜单)
-INSERT INTO `sso_menu` (
-    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
-    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
-    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
-    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
-) VALUES (
-    'MENU_TABLE_LIST', 'MENU_MAINTENANCE_TABLE', 'metadata-platform', '表视图列表', 'metadata:maintenance:table:list',
-    1, '1', 1, 'C', 'fa-list',
-    '/metadata/maintenance/table/list', 'GET', '', '表视图列表', 1, 4,
-    0, 1, '1', '0', 'system'
-);
-
 -- 字段列表 > 字段列表 (四级菜单)
 INSERT INTO `sso_menu` (
     `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
@@ -558,6 +584,250 @@ INSERT INTO `sso_menu` (
     'BTN_DATASOURCE_TEST', 'MENU_DATASOURCE_LIST', 'metadata-platform', '测试连接', 'metadata:datasource:test',
     1, '1', 1, 'F', '',
     '', 'POST', '', '测试数据源连接按钮', 4, 4,
+    0, 1, '1', '0', 'system'
+);
+
+-- 表列表按钮权限
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_TABLE_SYNC', 'MENU_MAINTENANCE_TABLE', 'metadata-platform', '同步表', 'metadata:table:sync',
+    1, '1', 1, 'F', '',
+    '', 'POST', '', '同步表按钮', 1, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_TABLE_SAVE', 'MENU_MAINTENANCE_TABLE', 'metadata-platform', '保存表', 'metadata:table:save',
+    1, '1', 1, 'F', '',
+    '', 'POST', '', '保存表按钮', 2, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_TABLE_EDIT', 'MENU_MAINTENANCE_TABLE', 'metadata-platform', '编辑表', 'metadata:table:edit',
+    1, '1', 1, 'F', '',
+    '', 'PUT', '', '编辑表按钮', 3, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_TABLE_DELETE', 'MENU_MAINTENANCE_TABLE', 'metadata-platform', '删除表', 'metadata:table:delete',
+    1, '1', 1, 'F', '',
+    '', 'DELETE', '', '删除表按钮', 4, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_TABLE_VIEW', 'MENU_MAINTENANCE_TABLE', 'metadata-platform', '查看详情', 'metadata:table:view',
+    1, '1', 1, 'F', '',
+    '', 'GET', '', '查看表详情按钮', 5, 4,
+    0, 1, '1', '0', 'system'
+);
+
+-- 视图列表按钮权限
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_VIEW_SYNC', 'MENU_MAINTENANCE_VIEW', 'metadata-platform', '同步视图', 'metadata:view:sync',
+    1, '1', 1, 'F', '',
+    '', 'POST', '', '同步视图按钮', 1, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_VIEW_SAVE', 'MENU_MAINTENANCE_VIEW', 'metadata-platform', '保存视图', 'metadata:view:save',
+    1, '1', 1, 'F', '',
+    '', 'POST', '', '保存视图按钮', 2, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_VIEW_EDIT', 'MENU_MAINTENANCE_VIEW', 'metadata-platform', '编辑视图', 'metadata:view:edit',
+    1, '1', 1, 'F', '',
+    '', 'PUT', '', '编辑视图按钮', 3, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_VIEW_DELETE', 'MENU_MAINTENANCE_VIEW', 'metadata-platform', '删除视图', 'metadata:view:delete',
+    1, '1', 1, 'F', '',
+    '', 'DELETE', '', '删除视图按钮', 4, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_VIEW_VIEW', 'MENU_MAINTENANCE_VIEW', 'metadata-platform', '查看详情', 'metadata:view:view',
+    1, '1', 1, 'F', '',
+    '', 'GET', '', '查看视图详情按钮', 5, 4,
+    0, 1, '1', '0', 'system'
+);
+
+-- 存储过程按钮权限
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_PROCEDURE_SYNC', 'MENU_MAINTENANCE_PROCEDURE', 'metadata-platform', '同步存储过程', 'metadata:procedure:sync',
+    1, '1', 1, 'F', '',
+    '', 'POST', '', '同步存储过程按钮', 1, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_PROCEDURE_SAVE', 'MENU_MAINTENANCE_PROCEDURE', 'metadata-platform', '保存存储过程', 'metadata:procedure:save',
+    1, '1', 1, 'F', '',
+    '', 'POST', '', '保存存储过程按钮', 2, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_PROCEDURE_EDIT', 'MENU_MAINTENANCE_PROCEDURE', 'metadata-platform', '编辑存储过程', 'metadata:procedure:edit',
+    1, '1', 1, 'F', '',
+    '', 'PUT', '', '编辑存储过程按钮', 3, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_PROCEDURE_DELETE', 'MENU_MAINTENANCE_PROCEDURE', 'metadata-platform', '删除存储过程', 'metadata:procedure:delete',
+    1, '1', 1, 'F', '',
+    '', 'DELETE', '', '删除存储过程按钮', 4, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_PROCEDURE_VIEW', 'MENU_MAINTENANCE_PROCEDURE', 'metadata-platform', '查看详情', 'metadata:procedure:view',
+    1, '1', 1, 'F', '',
+    '', 'GET', '', '查看存储过程详情按钮', 5, 4,
+    0, 1, '1', '0', 'system'
+);
+
+-- 函数按钮权限
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_FUNCTION_SYNC', 'MENU_MAINTENANCE_FUNCTION', 'metadata-platform', '同步函数', 'metadata:function:sync',
+    1, '1', 1, 'F', '',
+    '', 'POST', '', '同步函数按钮', 1, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_FUNCTION_SAVE', 'MENU_MAINTENANCE_FUNCTION', 'metadata-platform', '保存函数', 'metadata:function:save',
+    1, '1', 1, 'F', '',
+    '', 'POST', '', '保存函数按钮', 2, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_FUNCTION_EDIT', 'MENU_MAINTENANCE_FUNCTION', 'metadata-platform', '编辑函数', 'metadata:function:edit',
+    1, '1', 1, 'F', '',
+    '', 'PUT', '', '编辑函数按钮', 3, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_FUNCTION_DELETE', 'MENU_MAINTENANCE_FUNCTION', 'metadata-platform', '删除函数', 'metadata:function:delete',
+    1, '1', 1, 'F', '',
+    '', 'DELETE', '', '删除函数按钮', 4, 4,
+    0, 1, '1', '0', 'system'
+);
+
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'BTN_FUNCTION_VIEW', 'MENU_MAINTENANCE_FUNCTION', 'metadata-platform', '查看详情', 'metadata:function:view',
+    1, '1', 1, 'F', '',
+    '', 'GET', '', '查看函数详情按钮', 5, 4,
     0, 1, '1', '0', 'system'
 );
 

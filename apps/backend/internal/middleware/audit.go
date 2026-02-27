@@ -40,6 +40,11 @@ func AuditMiddleware(auditSvc service.AuditService, source string) app.HandlerFu
 			userID = uid.(string)
 		}
 
+		userAccount := ""
+		if username, exists := ctx.Get("username"); exists {
+			userAccount = username.(string)
+		}
+
 		tenantID := string(ctx.Request.Header.Get("X-Tenant-ID"))
 		if tenantID == "" {
 			if tid, exists := ctx.Get("tenant_id"); exists {
@@ -59,6 +64,7 @@ func AuditMiddleware(auditSvc service.AuditService, source string) app.HandlerFu
 		log := &model.SysOperationLog{
 			TraceID:        traceID,
 			UserID:         userID,
+			UserAccount:    userAccount,
 			TenantID:       tenantID,
 			Method:         string(ctx.Request.Method()),
 			Path:           string(ctx.Request.URI().Path()),

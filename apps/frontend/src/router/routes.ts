@@ -61,16 +61,27 @@ const routes: RouteRecordRaw[] = [
                 children: [
                     {
                         path: 'table',
-                        component: RouterView,
-                        meta: { title: '表与视图', icon: 'fa-table-cells' },
-                        children: [
-                            {
-                                path: 'list',
-                                name: 'MetadataTableList',
-                                component: () => import('@/views/metadata/table/List.vue'),
-                                meta: { title: '表视图列表', icon: 'fa-list' }
-                            }
-                        ]
+                        name: 'MetadataTableList',
+                        component: () => import('@/views/metadata/table/List.vue'),
+                        meta: { title: '表列表', icon: 'fa-table' }
+                    },
+                    {
+                        path: 'view',
+                        name: 'MetadataViewList',
+                        component: () => import('@/views/metadata/table/List.vue'),
+                        meta: { title: '视图列表', icon: 'fa-table-columns' }
+                    },
+                    {
+                        path: 'procedure',
+                        name: 'MetadataProcedureList',
+                        component: () => import('@/views/metadata/procedure/List.vue'),
+                        meta: { title: '存储过程', icon: 'fa-database' }
+                    },
+                    {
+                        path: 'function',
+                        name: 'MetadataFunctionList',
+                        component: () => import('@/views/metadata/procedure/List.vue'),
+                        meta: { title: '函数', icon: 'fa-calculator' }
                     },
                     {
                         path: 'field',

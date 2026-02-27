@@ -34,7 +34,11 @@
                         </template>
                     </el-table-column>
                     <el-table-column prop="path" label="路径" show-overflow-tooltip />
-                    <el-table-column prop="user_id" label="操作人" width="120" align="center" />
+                    <el-table-column prop="user_account" label="操作人" width="150" align="center">
+                        <template #default="scope">
+                            {{ scope.row.user_account || scope.row.user_id || '-' }}
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="client_ip" label="IP" width="140" align="center" />
                     <el-table-column prop="status" label="状态" width="80" align="center">
                         <template #default="scope">
@@ -68,6 +72,7 @@
             <el-descriptions :column="2" border v-if="currentLog">
                 <el-descriptions-item label="追踪ID" :span="2">{{ currentLog.trace_id }}</el-descriptions-item>
                 <el-descriptions-item label="所属租户">{{ currentLog.tenant_id || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="操作人账户">{{ currentLog.user_account || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="操作人ID">{{ currentLog.user_id }}</el-descriptions-item>
                 <el-descriptions-item label="来源模块">{{ currentLog.source }}</el-descriptions-item>
                 <el-descriptions-item label="请求方法">
@@ -109,6 +114,7 @@ const route = useRoute()
 interface SysOperationLog {
     trace_id: string
     user_id: string
+    user_account?: string
     tenant_id?: string
     source: string
     method: string

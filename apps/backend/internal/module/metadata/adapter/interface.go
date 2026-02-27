@@ -41,6 +41,18 @@ type IndexInfo struct {
 	Type        string   `json:"type"`
 }
 
+// ProcedureInfo 存储过程/函数信息
+type ProcedureInfo struct {
+	Name        string `json:"name"`        // 名称
+	Type        string `json:"type"`        // 类型: PROCEDURE 或 FUNCTION
+	Definition  string `json:"definition"`  // 定义/代码
+	Comment     string `json:"comment"`     // 注释
+	ReturnType  string `json:"return_type"` // 返回类型 (仅函数有)
+	Parameters  string `json:"parameters"`  // 参数列表
+	Schema      string `json:"schema"`      // 模式
+	Language    string `json:"language"`    // 语言
+}
+
 // MetadataExtractor 元数据提取接口
 type MetadataExtractor interface {
 	// TestConnection 测试连接
@@ -67,6 +79,12 @@ type MetadataExtractor interface {
 	
 	// GetQueryColumns 获取查询结果的列信息（不返回数据）
 	GetQueryColumns(query string, params []interface{}) ([]ColumnInfo, error)
+
+	// GetProcedures 获取存储过程列表
+	GetProcedures(schema string) ([]ProcedureInfo, error)
+
+	// GetFunctions 获取函数列表
+	GetFunctions(schema string) ([]ProcedureInfo, error)
 
 	// Close 关闭连接
 	Close() error

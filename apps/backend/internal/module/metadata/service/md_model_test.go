@@ -2,12 +2,13 @@ package service
 
 import (
 	"errors"
-	"metadata-platform/internal/module/metadata/adapter"
-	"metadata-platform/internal/module/metadata/model"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"metadata-platform/internal/module/metadata/adapter"
+	"metadata-platform/internal/module/metadata/model"
 )
 
 // MockModelRepo
@@ -50,7 +51,6 @@ func (m *MockModelRepo) SaveVisualModel(md *model.MdModel, tables []model.MdMode
 	return m.Called(md, tables, fields, joins, joinFields, wheres, orders, groups, havings).Error(0)
 }
 
-
 // MockModelSqlRepo
 type MockModelSqlRepo struct {
 	mock.Mock
@@ -76,6 +76,7 @@ func (m *MockModelParamRepo) Create(param *model.MdModelParam) error { return m.
 func (m *MockModelParamRepo) BatchCreate(params []model.MdModelParam) error {
 	return m.Called(params).Error(0)
 }
+
 func (m *MockModelParamRepo) GetByModelID(modelID string) ([]model.MdModelParam, error) {
 	args := m.Called(modelID)
 	if args.Get(0) == nil {
@@ -165,6 +166,14 @@ func (m *MockConnService) GetSchemas(conn *model.MdConn) ([]string, error) {
 
 func (m *MockConnService) ExecuteSQLForColumns(conn *model.MdConn, query string, params map[string]interface{}) ([]adapter.ColumnInfo, error) {
 	return m.Called(conn, query, params).Get(0).([]adapter.ColumnInfo), m.Called(conn, query, params).Error(1)
+}
+
+func (m *MockConnService) GetProcedures(conn *model.MdConn, schema string) ([]adapter.ProcedureInfo, error) {
+	return m.Called(conn, schema).Get(0).([]adapter.ProcedureInfo), m.Called(conn, schema).Error(1)
+}
+
+func (m *MockConnService) GetFunctions(conn *model.MdConn, schema string) ([]adapter.ProcedureInfo, error) {
+	return m.Called(conn, schema).Get(0).([]adapter.ProcedureInfo), m.Called(conn, schema).Error(1)
 }
 
 func TestMdModelService_BuildFromTable(t *testing.T) {

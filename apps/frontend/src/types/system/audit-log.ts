@@ -8,8 +8,10 @@ export interface SysOperationLog extends BaseEntity {
     traceID: string;
     /** 用户ID */
     userID: string;
+    /** 用户账户 */
+    userAccount?: string;
     /** 用户名 */
-    userName: string;
+    userName?: string;
     /** 请求方法 */
     method: string;
     /** 请求路径 */

@@ -409,3 +409,43 @@ func (h *MdConnHandler) GetSchemas(c context.Context, ctx *app.RequestContext) {
 
 	utils.SuccessResponse(ctx, schemas)
 }
+
+// GetProcedures 获取存储过程列表
+func (h *MdConnHandler) GetProcedures(c context.Context, ctx *app.RequestContext) {
+	id := ctx.Param("id")
+	schema := ctx.Query("schema")
+
+	conn, err := h.connService.GetConnByID(id)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusNotFound, "数据连接不存在")
+		return
+	}
+
+	procedures, err := h.connService.GetProcedures(conn, schema)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, procedures)
+}
+
+// GetFunctions 获取函数列表
+func (h *MdConnHandler) GetFunctions(c context.Context, ctx *app.RequestContext) {
+	id := ctx.Param("id")
+	schema := ctx.Query("schema")
+
+	conn, err := h.connService.GetConnByID(id)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusNotFound, "数据连接不存在")
+		return
+	}
+
+	functions, err := h.connService.GetFunctions(conn, schema)
+	if err != nil {
+		utils.ErrorResponse(ctx, consts.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(ctx, functions)
+}

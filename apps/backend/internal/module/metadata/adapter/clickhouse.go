@@ -49,7 +49,7 @@ func (e *ClickHouseExtractor) GetTables(schema string) ([]TableInfo, error) {
 		WHERE database = ?
 		ORDER BY name
 	`
-	
+
 	rows, err := e.db.Query(query, schema)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (e *ClickHouseExtractor) GetViews(schema string) ([]ViewInfo, error) {
 		WHERE database = ? AND engine = 'View'
 		ORDER BY name
 	`
-	
+
 	rows, err := e.db.Query(query, schema)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (e *ClickHouseExtractor) GetColumns(schema, table string) ([]ColumnInfo, er
 		WHERE database = ? AND table = ?
 		ORDER BY position
 	`
-	
+
 	rows, err := e.db.Query(query, schema, table)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (e *ClickHouseExtractor) GetColumns(schema, table string) ([]ColumnInfo, er
 		var c ColumnInfo
 		var defaultExpr string
 		var isInPrimaryKey uint8
-		
+
 		if err := rows.Scan(
 			&c.Name, &c.Type, &c.Length,
 			&c.IsNullable, &defaultExpr, &c.Comment,
@@ -131,13 +131,13 @@ func (e *ClickHouseExtractor) GetColumns(schema, table string) ([]ColumnInfo, er
 		); err != nil {
 			return nil, err
 		}
-		
+
 		if defaultExpr != "" {
 			c.DefaultValue = defaultExpr
 		}
 		c.IsPrimaryKey = isInPrimaryKey == 1
 		c.IsAutoIncrement = false // ClickHouse 不支持自增
-		
+
 		columns = append(columns, c)
 	}
 	return columns, nil
@@ -163,16 +163,16 @@ func (e *ClickHouseExtractor) PreviewData(schema, table string, limit int) ([]ma
 	count := len(columns)
 	values := make([]interface{}, count)
 	valuePtrs := make([]interface{}, count)
-	
+
 	for i := range columns {
 		valuePtrs[i] = &values[i]
 	}
 
 	var result []map[string]interface{}
-	
+
 	for rows.Next() {
 		rows.Scan(valuePtrs...)
-		
+
 		entry := make(map[string]interface{})
 		for i, col := range columns {
 			var v interface{}
@@ -187,12 +187,23 @@ func (e *ClickHouseExtractor) PreviewData(schema, table string, limit int) ([]ma
 		}
 		result = append(result, entry)
 	}
-	
+
 	return result, nil
 }
+
 // GetQueryColumns 获取查询结果的列信息
 func (e *ClickHouseExtractor) GetQueryColumns(query string, params []interface{}) ([]ColumnInfo, error) {
 	return nil, fmt.Errorf("method GetQueryColumns not implemented for this adapter")
+}
+
+// GetProcedures 获取存储过程列表
+func (e *ClickHouseExtractor) GetProcedures(schema string) ([]ProcedureInfo, error) {
+	return []ProcedureInfo{}, nil
+}
+
+// GetFunctions 获取函数列表
+func (e *ClickHouseExtractor) GetFunctions(schema string) ([]ProcedureInfo, error) {
+	return []ProcedureInfo{}, nil
 }
 
 // Close 关闭连接
