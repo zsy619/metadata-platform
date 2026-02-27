@@ -1,13 +1,13 @@
 <template>
-    <div class="sql-test-container container-padding">
+    <div class="table-view-test-container container-padding">
         <div class="page-header">
             <div class="header-left">
                 <el-icon :size="24" class="page-icon">
                     <Monitor />
                 </el-icon>
-                <h1 class="title">SQL 模型测试</h1>
+                <h1 class="title">表视图模型测试</h1>
             </div>
-            <el-tag type="info" effect="plain">验证动态查询接口与参数配置</el-tag>
+            <el-tag type="success" effect="plain">验证表视图模型查询接口与参数配置</el-tag>
         </div>
         <div class="content-wrapper" ref="wrapperRef">
             <div class="content-body">
@@ -21,8 +21,8 @@
                             </div>
                         </template>
                         <el-form :model="testForm" label-position="top">
-                            <el-form-item label="选择模型">
-                                <el-select v-model="selectedModelId" placeholder="请选择要测试的模型" filterable class="w-full" @change="handleModelChange">
+                            <el-form-item label="选择表视图模型">
+                                <el-select v-model="selectedModelId" placeholder="请选择要测试的表视图模型" filterable class="w-full" @change="handleModelChange">
                                     <el-option v-for="item in models" :key="item.id" :label="`${item.model_name || item.modelName} (${item.model_code || item.modelCode})`" :value="item.id" />
                                 </el-select>
                             </el-form-item>
@@ -292,9 +292,11 @@ const resultColumns = computed(() => {
 const initModels = async () => {
     try {
         const res: any = await getAllModels()
-        models.value = Array.isArray(res) ? res : (res.data || [])
+        // 只获取表视图模型 (model_kind = 2)
+        const allModels = Array.isArray(res) ? res : (res.data || [])
+        models.value = allModels.filter((m: any) => (m.model_kind === 2 || m.modelKind === 2))
     } catch (err) {
-        ElMessage.error('获取模型列表失败')
+        ElMessage.error('获取表视图模型列表失败')
     }
 }
 
@@ -379,7 +381,7 @@ const performQuery = async () => {
 </script>
 
 <style scoped>
-.sql-test-container {
+.table-view-test-container {
     background-color: var(--el-bg-color-page);
 }
 
@@ -406,7 +408,7 @@ const performQuery = async () => {
 }
 
 .page-icon {
-    color: #6366f1;
+    color: #10b981;
 }
 
 .config-card,
@@ -486,7 +488,7 @@ const performQuery = async () => {
 
 .resize-handle:hover,
 .resize-handle:active {
-    background-color: var(--el-color-primary-light-8);
+    background-color: var(--el-color-success-light-8);
 }
 
 .resize-handle::after {
@@ -591,8 +593,8 @@ const performQuery = async () => {
 }
 
 .tab-trigger.active {
-    color: #4f46e5;
-    border-bottom-color: #4f46e5;
+    color: #10b981;
+    border-bottom-color: #10b981;
 }
 
 .result-meta {
@@ -601,7 +603,7 @@ const performQuery = async () => {
 }
 
 .highlight {
-    color: #4f46e5;
+    color: #10b981;
     font-weight: 600;
 }
 

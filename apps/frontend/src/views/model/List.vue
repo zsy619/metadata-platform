@@ -199,6 +199,8 @@ const handleEdit = (row: Model) => {
     const kind = row.modelKind ?? row.model_kind
     if (kind === 1) {
         router.push(`/metadata/model/edit-sql/${row.id}`)
+    } else if (kind === 2) {
+        router.push(`/metadata/model/visual-edit/${row.id}`)
     } else {
         router.push(`/metadata/model/${row.id}/edit`)
     }

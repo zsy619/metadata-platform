@@ -465,6 +465,19 @@ INSERT INTO `sso_menu` (
     0, 1, '1', '0', 'system'
 );
 
+-- 模型维护 > 表视图模型测试 (三级菜单)
+INSERT INTO `sso_menu` (
+    `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 
+    `status`, `data_range`, `is_visible`, `menu_type`, `icon`, 
+    `url`, `method`, `target`, `remark`, `sort`, `tier`, 
+    `is_deleted`, `is_system`, `tenant_id`, `create_id`, `create_by`
+) VALUES (
+    'MENU_MODEL_TABLE_VIEW_TEST', 'MENU_METADATA_MODEL', 'metadata-platform', '表视图模型测试', 'metadata:model:table-view-test',
+    1, '1', 1, 'C', 'fa-table',
+    '/metadata/model/table-view-test', 'GET', '', '表视图模型测试', 3, 3,
+    0, 1, '1', '0', 'system'
+);
+
 -- 审计日志 > 登录日志 (三级菜单)
 INSERT INTO `sso_menu` (
     `id`, `parent_id`, `app_code`, `menu_name`, `menu_code`, 

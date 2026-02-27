@@ -117,6 +117,12 @@ const routes: RouteRecordRaw[] = [
                         meta: { title: 'SQL模型测试', icon: 'fa-desktop' }
                     },
                     {
+                        path: 'table-view-test',
+                        name: 'ModelTableViewTest',
+                        component: () => import('@/views/model/TableViewTest.vue'),
+                        meta: { title: '表视图模型测试', icon: 'fa-table' }
+                    },
+                    {
                         path: 'create',
                         name: 'ModelCreate',
                         component: () => import('@/views/model/Create.vue'),
