@@ -101,7 +101,7 @@ func (b *SQLBuilder) LoadModelData(modelID string) (*ModelData, error) {
 
 	// 加载关联字段
 	var joinFields []*model.MdModelJoinField
-	if err := b.db.Where("tenant_id = ? AND join_id IN (?)", md.TenantID, b.db.Table("md_model_join").Select("id").Where("model_id = ?", modelID)).Order("`order` asc").Find(&joinFields).Error; err != nil && err != gorm.ErrRecordNotFound {
+	if err := b.db.Where("tenant_id = ? AND join_id IN (?)", md.TenantID, b.db.Table("md_model_join").Select("id").Where("model_id = ?", modelID)).Order(`"order" asc`).Find(&joinFields).Error; err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
 	data.JoinFields = joinFields
@@ -247,7 +247,7 @@ func (b *SQLBuilder) buildSelectClause(data *ModelData) (string, error) {
 			if alias == "" {
 				alias = field.ColumnName
 			}
-			expr += " AS `" + alias + "`"
+			expr += " AS \"" + alias + "\""
 		}
 
 		expressions = append(expressions, expr)
@@ -260,9 +260,9 @@ func (b *SQLBuilder) buildSelectClause(data *ModelData) (string, error) {
 func (b *SQLBuilder) buildFieldExpression(field *model.MdModelField) string {
 	columnExpr := ""
 	if field.TableNameStr != "" {
-		columnExpr = "`" + field.TableNameStr + "`.`" + field.ColumnName + "`"
+		columnExpr = `"` + field.TableNameStr + `"."` + field.ColumnName + `"`
 	} else {
-		columnExpr = "`" + field.ColumnName + "`"
+		columnExpr = `"` + field.ColumnName + `"`
 	}
 
 	if field.Func != "" {
@@ -300,9 +300,9 @@ func (b *SQLBuilder) buildFromClause(data *ModelData) (string, error) {
 
 	tableName := ""
 	if mainTable.TableSchema != "" {
-		tableName = "`" + mainTable.TableSchema + "`.`" + mainTable.TableNameStr + "`"
+		tableName = `"` + mainTable.TableSchema + `"."` + mainTable.TableNameStr + `"`
 	} else {
-		tableName = "`" + mainTable.TableNameStr + "`"
+		tableName = `"` + mainTable.TableNameStr + `"`
 	}
 
 	return "FROM " + tableName, nil
@@ -352,9 +352,9 @@ func (b *SQLBuilder) generateJoinSQL(sb *strings.Builder, parentID string, joinM
 		sb.WriteString(" ")
 
 		if j.JoinTableSchema != "" {
-			sb.WriteString("`" + j.JoinTableSchema + "`.`" + j.JoinTableNameStr + "`")
+			sb.WriteString(`"` + j.JoinTableSchema + `"."` + j.JoinTableNameStr + `"`)
 		} else {
-			sb.WriteString("`" + j.JoinTableNameStr + "`")
+			sb.WriteString(`"` + j.JoinTableNameStr + `"`)
 		}
 		sb.WriteString(" ON ")
 
@@ -398,9 +398,9 @@ func (b *SQLBuilder) buildJoinConditions(sb *strings.Builder, j *model.MdModelJo
 		// 构建左侧表达式 (主表字段)
 		leftExpr := ""
 		if j.TableNameStr != "" {
-			leftExpr = "`" + j.TableNameStr + "`.`" + jf.ColumnName + "`"
+			leftExpr = `"` + j.TableNameStr + `"."` + jf.ColumnName + `"`
 		} else {
-			leftExpr = "`" + jf.ColumnName + "`"
+			leftExpr = `"` + jf.ColumnName + `"`
 		}
 		if jf.Func != "" {
 			if strings.Contains(jf.Func, "%s") {
@@ -413,9 +413,9 @@ func (b *SQLBuilder) buildJoinConditions(sb *strings.Builder, j *model.MdModelJo
 		// 构建右侧表达式 (关联表字段)
 		rightExpr := ""
 		if j.JoinTableNameStr != "" {
-			rightExpr = "`" + j.JoinTableNameStr + "`.`" + jf.JoinColumnName + "`"
+			rightExpr = `"` + j.JoinTableNameStr + `"."` + jf.JoinColumnName + `"`
 		} else {
-			rightExpr = "`" + jf.JoinColumnName + "`"
+			rightExpr = `"` + jf.JoinColumnName + `"`
 		}
 		if jf.JoinFunc != "" {
 			if strings.Contains(jf.JoinFunc, "%s") {
@@ -485,9 +485,9 @@ func (b *SQLBuilder) buildWhereClause(data *ModelData, params map[string]any) (s
 func (b *SQLBuilder) buildSingleCondition(w *model.MdModelWhere, params map[string]any) (string, []any) {
 	leftExpr := ""
 	if w.TableNameStr != "" {
-		leftExpr = "`" + w.TableNameStr + "`.`" + w.ColumnName + "`"
+		leftExpr = `"` + w.TableNameStr + `"."` + w.ColumnName + `"`
 	} else {
-		leftExpr = "`" + w.ColumnName + "`"
+		leftExpr = `"` + w.ColumnName + `"`
 	}
 	if w.Func != "" {
 		if strings.Contains(w.Func, "%s") {
@@ -578,9 +578,9 @@ func (b *SQLBuilder) buildGroupByClause(data *ModelData) (string, error) {
 	for _, g := range data.Groups {
 		expr := ""
 		if g.TableNameStr != "" {
-			expr = "`" + g.TableNameStr + "`.`" + g.ColumnName + "`"
+			expr = `"` + g.TableNameStr + `"."` + g.ColumnName + `"`
 		} else {
-			expr = "`" + g.ColumnName + "`"
+			expr = `"` + g.ColumnName + `"`
 		}
 
 		if g.Func != "" {
@@ -636,9 +636,9 @@ func (b *SQLBuilder) buildHavingClause(data *ModelData, params map[string]any) (
 func (b *SQLBuilder) buildHavingCondition(h *model.MdModelHaving, params map[string]any) (string, []any) {
 	leftExpr := ""
 	if h.TableNameStr != "" {
-		leftExpr = "`" + h.TableNameStr + "`.`" + h.ColumnName + "`"
+		leftExpr = `"` + h.TableNameStr + `"."` + h.ColumnName + `"`
 	} else {
-		leftExpr = "`" + h.ColumnName + "`"
+		leftExpr = `"` + h.ColumnName + `"`
 	}
 
 	if h.Func != "" {
@@ -697,9 +697,10 @@ func (b *SQLBuilder) buildOrderByClause(data *ModelData) (string, error) {
 	for _, o := range data.Orders {
 		expr := ""
 		if o.TableNameStr != "" {
-			expr = "`" + o.TableNameStr + "`.`" + o.ColumnName + "`"
+			// PostgreSQL 使用双引号引用标识符
+			expr = `"` + o.TableNameStr + `"."` + o.ColumnName + `"`
 		} else {
-			expr = "`" + o.ColumnName + "`"
+			expr = `"` + o.ColumnName + `"`
 		}
 
 		if o.Func != "" {

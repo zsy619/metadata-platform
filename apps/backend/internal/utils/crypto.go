@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 
@@ -21,4 +22,14 @@ func ComparePasswordSM3(hashedPassword, password, salt string) bool {
 	pass := EncryptPasswordSM3(password, salt)
 	fmt.Printf("ComparePasswordSM3===>%s %s %s %s \n", password, salt, pass, hashedPassword)
 	return pass == hashedPassword
+}
+
+// EncodeBase64 将字节数组编码为Base64字符串
+func EncodeBase64(data []byte) string {
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+// DecodeBase64 将Base64字符串解码为字节数组
+func DecodeBase64(s string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(s)
 }

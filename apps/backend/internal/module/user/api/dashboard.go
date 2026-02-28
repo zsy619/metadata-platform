@@ -14,13 +14,15 @@ import (
 
 type DashboardHandler struct {
 	db           *gorm.DB
+	auditDB      *gorm.DB
 	repos        *repository.Repositories
 	auditService auditService.AuditService
 }
 
-func NewDashboardHandler(db *gorm.DB, repos *repository.Repositories, auditService auditService.AuditService) *DashboardHandler {
+func NewDashboardHandler(db *gorm.DB, auditDB *gorm.DB, repos *repository.Repositories, auditService auditService.AuditService) *DashboardHandler {
 	return &DashboardHandler{
 		db:           db,
+		auditDB:      auditDB,
 		repos:        repos,
 		auditService: auditService,
 	}
@@ -113,11 +115,11 @@ func (h *DashboardHandler) GetLoginTrend(c context.Context, ctx *app.RequestCont
 
 		var successCount, failCount int64
 
-		h.db.Table("sys_login_log").
+		h.auditDB.Table("sys_login_log").
 			Where("create_at >= ? AND create_at < ? AND login_status = ?", startTime, endTime, 1).
 			Count(&successCount)
 
-		h.db.Table("sys_login_log").
+		h.auditDB.Table("sys_login_log").
 			Where("create_at >= ? AND create_at < ? AND login_status = ?", startTime, endTime, 0).
 			Count(&failCount)
 
@@ -152,11 +154,11 @@ func (h *DashboardHandler) GetUserStatusDistribution(c context.Context, ctx *app
 func (h *DashboardHandler) GetOperationStats(c context.Context, ctx *app.RequestContext) {
 	var create, update, delete, query, export int64
 
-	h.db.Table("sys_operation_log").Where("action = ?", "create").Count(&create)
-	h.db.Table("sys_operation_log").Where("action = ?", "update").Count(&update)
-	h.db.Table("sys_operation_log").Where("action = ?", "delete").Count(&delete)
-	h.db.Table("sys_operation_log").Where("action = ?", "query").Count(&query)
-	h.db.Table("sys_operation_log").Where("action = ?", "export").Count(&export)
+	h.auditDB.Table("sys_operation_log").Where("action = ?", "create").Count(&create)
+	h.auditDB.Table("sys_operation_log").Where("action = ?", "update").Count(&update)
+	h.auditDB.Table("sys_operation_log").Where("action = ?", "delete").Count(&delete)
+	h.auditDB.Table("sys_operation_log").Where("action = ?", "query").Count(&query)
+	h.auditDB.Table("sys_operation_log").Where("action = ?", "export").Count(&export)
 
 	utils.SuccessResponse(ctx, OperationStats{
 		Create: create,

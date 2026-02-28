@@ -2,12 +2,10 @@ import Layout from '@/layouts/DefaultLayout.vue'
 import { h } from 'vue'
 import { RouterView as VueRouterView, type RouteRecordRaw } from 'vue-router'
 
-// Wrapper component for nested routes to avoid "router-view inside transition" warning
 const RouterView = {
     name: 'RouterViewWrapper',
     render: () => h(VueRouterView)
 }
-
 
 const routes: RouteRecordRaw[] = [
     {
@@ -232,8 +230,46 @@ const routes: RouteRecordRaw[] = [
         path: '/sso',
         component: Layout,
         meta: { title: 'SSO管理', icon: 'fa-key' },
-        redirect: '/sso/tenant',
+        redirect: '/sso/config/protocol',
         children: [
+            {
+                path: 'config',
+                component: RouterView,
+                meta: { title: 'SSO配置', icon: 'fa-gear' },
+                redirect: '/sso/config/protocol',
+                children: [
+                    {
+                        path: 'protocol',
+                        name: 'SSOProtocol',
+                        component: () => import('@/views/sso/config/ProtocolConfig.vue'),
+                        meta: { title: '协议配置', icon: 'fa-plug' }
+                    },
+                    {
+                        path: 'client',
+                        name: 'SSOClient',
+                        component: () => import('@/views/sso/config/ClientConfig.vue'),
+                        meta: { title: '客户端配置', icon: 'fa-desktop' }
+                    },
+                    {
+                        path: 'key',
+                        name: 'SSOKey',
+                        component: () => import('@/views/sso/config/KeyManager.vue'),
+                        meta: { title: '密钥管理', icon: 'fa-lock' }
+                    },
+                    {
+                        path: 'mapping',
+                        name: 'SSOMapping',
+                        component: () => import('@/views/sso/config/FieldMapping.vue'),
+                        meta: { title: '字段映射', icon: 'fa-exchange-alt' }
+                    },
+                    {
+                        path: 'session',
+                        name: 'SSOSession',
+                        component: () => import('@/views/sso/config/SessionManager.vue'),
+                        meta: { title: '会话管理', icon: 'fa-clock' }
+                    }
+                ]
+            },
             {
                 path: 'tenant',
                 name: 'SSOTenant',
@@ -244,13 +280,13 @@ const routes: RouteRecordRaw[] = [
                 path: 'app',
                 name: 'SSOApp',
                 component: () => import('@/views/sso/app/App.vue'),
-                meta: { title: '应用列表', icon: 'fa-desktop' }
+                meta: { title: '应用列表', icon: 'fa-th-large' }
             },
             {
                 path: 'org',
                 name: 'SSOOrg',
                 component: () => import('@/views/sso/org/Org.vue'),
-                meta: { title: '组织管理', icon: 'fa-school' }
+                meta: { title: '组织管理', icon: 'fa-sitemap' }
             },
             {
                 path: 'orgKind',
@@ -274,7 +310,7 @@ const routes: RouteRecordRaw[] = [
                 path: 'role',
                 name: 'SSORole',
                 component: () => import('@/views/sso/role/Role.vue'),
-                meta: { title: '角色管理', icon: 'fa-user' }
+                meta: { title: '角色管理', icon: 'fa-user-shield' }
             },
             {
                 path: 'roleGroup',

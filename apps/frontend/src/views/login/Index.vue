@@ -7,7 +7,25 @@
                     <DataAnalysis />
                 </el-icon>
             </div>
-            <h1 class="brand-title m-t-md">元数据平台</h1>
+            <div class="brand-title m-t-md">
+                <div class="hanzi-container">
+                    <div id="hanzi-元" class="hanzi-item">
+                        <span class="fallback-hanzi">元</span>
+                    </div>
+                    <div id="hanzi-数" class="hanzi-item">
+                        <span class="fallback-hanzi">数</span>
+                    </div>
+                    <div id="hanzi-据" class="hanzi-item">
+                        <span class="fallback-hanzi">据</span>
+                    </div>
+                    <div id="hanzi-平" class="hanzi-item">
+                        <span class="fallback-hanzi">平</span>
+                    </div>
+                    <div id="hanzi-台" class="hanzi-item">
+                        <span class="fallback-hanzi">台</span>
+                    </div>
+                </div>
+            </div>
         </header>
         <!-- 欢迎文字 -->
         <section class="welcome-section m-t-lg">
@@ -137,6 +155,13 @@ import {
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import HanziWriter from 'hanzi-writer'
+// 导入所需的汉字数据
+import 'hanzi-writer-data/元'
+import 'hanzi-writer-data/数'
+import 'hanzi-writer-data/据'
+import 'hanzi-writer-data/平'
+import 'hanzi-writer-data/台'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -219,11 +244,86 @@ const handleRegister = async () => {
 
 const handleSocialLogin = (type: string) => ElMessage.info(`正在连接${type}授权服务...`)
 
-onMounted(() => {
+onMounted(async () => {
     const user = localStorage.getItem('username')
     if (user) { loginForm.username = user; loginForm.remember = true }
     refreshCaptcha()
+    
+    // 异步加载汉字动画，不阻塞页面
+    setTimeout(async () => {
+        try {
+            console.log('开始初始化汉字动画')
+            const hanzis = ['元', '数', '据', '平', '台']
+            
+            // 为每个汉字创建动画，但不等待全部完成
+            hanzis.forEach((hanzi, index) => {
+                setTimeout(() => {
+                    try {
+                        initSingleHanzi(hanzi, index)
+                    } catch (err) {
+                        console.error(`初始化汉字 ${hanzi} 失败:`, err)
+                        // 如果动画失败，直接显示汉字文本
+                        showFallbackHanzi(hanzi)
+                    }
+                }, index * 300)
+            })
+        } catch (error) {
+            console.error('汉字动画初始化失败:', error)
+        }
+    }, 100)
 })
+
+// 初始化单个汉字
+const initSingleHanzi = (hanzi: string, _index: number) => {
+    const element = document.getElementById(`hanzi-${hanzi}`)
+    if (!element) return
+    
+    const isMobile = window.innerWidth < 480
+    const hanziSize = isMobile ? 24 : 36
+    
+    const hanziConfig = {
+        width: hanziSize,
+        height: hanziSize,
+        strokeColor: '#1e293b',
+        outlineColor: '#e2e8f0',
+        strokeWidth: isMobile ? 1.5 : 2,
+        delayBetweenStrokes: 150,
+        showOutline: true,
+        showCharacter: false,
+        radicalColor: '#3b82f6',
+        strokeAnimationSpeed: 1.5
+    }
+    
+    try {
+        console.log(`初始化汉字动画: ${hanzi}`)
+        // 先清空元素内容，准备动画
+        element.innerHTML = ''
+        
+        const writer = HanziWriter.create(`hanzi-${hanzi}`, hanzi, hanziConfig)
+        
+        // 尝试动画，如果失败则显示备用文本
+        writer.animateCharacter({
+            onComplete: () => {
+                console.log(`动画完成: ${hanzi}`)
+                writer.showCharacter({ duration: 500 })
+            }
+        })
+    } catch (error) {
+        console.error(`初始化汉字 ${hanzi} 异常:`, error)
+        showFallbackHanzi(hanzi)
+    }
+}
+
+// 显示单个备用汉字
+const showFallbackHanzi = (hanzi: string) => {
+    const element = document.getElementById(`hanzi-${hanzi}`)
+    if (element) {
+        element.innerHTML = `<span style="font-size: 24px; font-weight: 600; color: #1e293b;">${hanzi}</span>`
+        if (window.innerWidth >= 480) {
+            element.firstElementChild?.setAttribute('style', 'font-size: 36px; font-weight: 600; color: #1e293b;')
+        }
+    }
+}
 </script>
 <style scoped>
 .login-card {
@@ -274,10 +374,44 @@ onMounted(() => {
 }
 
 .brand-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #1e293b;
     margin-top: 12px;
+}
+
+.hanzi-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+.hanzi-item {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+}
+
+.fallback-hanzi {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1;
+    display: inline-block;
+}
+
+@media (min-width: 480px) {
+    .hanzi-item {
+        width: 36px;
+        height: 36px;
+    }
+    .fallback-hanzi {
+        font-size: 36px;
+    }
+}
+
+@media (min-width: 768px) {
+    .hanzi-container {
+        gap: 16px;
+    }
 }
 
 .welcome-section {

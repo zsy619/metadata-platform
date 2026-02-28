@@ -13,6 +13,7 @@ import (
 	audit "metadata-platform/internal/module/audit"
 	auditQueuePkg "metadata-platform/internal/module/audit/queue"
 	metadata "metadata-platform/internal/module/metadata"
+	sso "metadata-platform/internal/module/sso"
 	user "metadata-platform/internal/module/user"
 	"metadata-platform/internal/utils"
 )
@@ -50,6 +51,7 @@ func main() {
 	fmt.Fprintln(os.Stderr, "DEBUG: DB connections retrieved. Starting migrations...")
 	migrateMetadataDatabase(metadataDB)
 	migrateUserDatabase(userDB)
+	migrateSSODatabase(userDB)
 	migrateAuditDatabase(auditDB)
 
 	// 5.1 初始化 Casbin 权限管理
@@ -124,6 +126,14 @@ func migrateAuditDatabase(db *gorm.DB) {
 		utils.SugarLogger.Errorf("Failed to migrate audit database: %v", err)
 	} else {
 		utils.SugarLogger.Info("Audit database migration completed successfully")
+	}
+}
+
+func migrateSSODatabase(db *gorm.DB) {
+	if err := sso.Migrate(db); err != nil {
+		utils.SugarLogger.Errorf("Failed to migrate SSO database: %v", err)
+	} else {
+		utils.SugarLogger.Info("SSO database migration completed successfully")
 	}
 }
 

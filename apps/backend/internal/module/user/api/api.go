@@ -35,7 +35,7 @@ type SsoHandler struct {
 }
 
 // NewSsoHandler 创建用户模块处理器集合
-func NewSsoHandler(db *gorm.DB, services *service.Services, auditQueue *queue.AuditLogQueue, repos *repository.Repositories) *SsoHandler {
+func NewSsoHandler(db *gorm.DB, auditDB *gorm.DB, services *service.Services, auditQueue *queue.AuditLogQueue, repos *repository.Repositories) *SsoHandler {
 	return &SsoHandler{
 		UserHandler:        NewSsoUserHandler(services.User, auditQueue),
 		TenantHandler:      NewSsoTenantHandler(services.Tenant, auditQueue),
@@ -52,7 +52,7 @@ func NewSsoHandler(db *gorm.DB, services *service.Services, auditQueue *queue.Au
 		UserAddressHandler: NewSsoUserAddressHandler(services.UserAddress, auditQueue),
 		UserContactHandler: NewSsoUserContactHandler(services.UserContact, auditQueue),
 		UserSocialHandler:  NewSsoUserSocialHandler(services.UserSocial, auditQueue),
-		DashboardHandler:   NewDashboardHandler(db, repos, services.Audit),
+		DashboardHandler:   NewDashboardHandler(db, auditDB, repos, services.Audit),
 		AuditService:       services.Audit,
 	}
 }

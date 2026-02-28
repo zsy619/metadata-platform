@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"metadata-platform/internal/module/metadata/engine"
 	"metadata-platform/internal/module/metadata/repository"
 	"metadata-platform/internal/utils"
@@ -72,7 +73,7 @@ func (s *masterDetailService) CreateMasterDetail(ctx context.Context, masterMode
 	if err != nil {
 		return err
 	}
-	
+
 	db, err := s.executor.GetConnection(masterModel.ConnID)
 	if err != nil {
 		return err
@@ -100,19 +101,19 @@ func (s *masterDetailService) CreateMasterDetail(ctx context.Context, masterMode
 	// 假设 dataValidator 或者 builder 能够识别主键，但是 Create 返回的是 data map。
 	// 如果是自增ID，CreateWithTx 目前的实现可能没有把 ID 回填到 map 中（如果是 executor 执行的 insert）。
 	// 目前的 SQLBuilder 生成的 insert 语句 和 SQLExecutor 的 execution 并没有自动获取 LastInsertId 并回填。
-	
+
 	// 这里是一个潜在的坑: 如果主键是自增的，我们需要获取它。
 	// 如果主键是 UUID (客户端生成或者 validator 生成)，那么 map 里已经有了。
-	
+
 	// 为了演示完整性，我们假设主键在 masterData 中已经存在（例如 UUID），或者底层支持回填。
 	// 如果需要支持自增，Metadata模块应该配置为 "服务端生成UUID" 或 "客户端提供"。
 	// 暂时假设: 主键字段名为 'id' 且已在 createdMaster 中 (如果 Create 只有 data copy, 那么必须在 data 中)
-	
+
 	// 在实际生产中，Executor 应该 Scan 插入后的 ID，或者使用 RETURNING (Postgres) / LastInsertId (MySQL)。
 	// 目前的 Execute 方法没有返回 ID。
 	// 这是一个已知限制，我们在 Phase 3 应该考虑增强 SQLExecutor 或者是要求 UUID。
-	
-	masterID := ""
+
+	var masterID string
 	if id, ok := createdMaster["id"]; ok {
 		masterID = utils.ToString(id)
 	} else {
@@ -128,7 +129,7 @@ func (s *masterDetailService) CreateMasterDetail(ctx context.Context, masterMode
 			// 设置外键
 			detailList[i][relation.ForeignKey] = masterID
 		}
-		
+
 		_, err := s.crudSvc.BatchCreateWithTx(ctx, detailModelID, detailList, tx)
 		if err != nil {
 			tx.Rollback()

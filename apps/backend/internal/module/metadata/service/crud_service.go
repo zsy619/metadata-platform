@@ -2,754 +2,538 @@ package service
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
-	auditModel "metadata-platform/internal/module/audit/model"
-	auditService "metadata-platform/internal/module/audit/service"
-	"metadata-platform/internal/module/metadata/engine"
-	"metadata-platform/internal/module/metadata/model"
-	"metadata-platform/internal/utils"
+	"strconv"
 	"strings"
-	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"metadata-platform/internal/module/audit/service"
+	"metadata-platform/internal/module/metadata/engine"
 )
 
-// CRUDService 通用数据操作服务接口
+// CRUDService CRUD服务接口
 type CRUDService interface {
 	Create(ctx context.Context, modelID string, data map[string]any) (map[string]any, error)
-	Get(modelID string, id string) (map[string]any, error)
-	Update(ctx context.Context, modelID string, id string, data map[string]any) error
-	Delete(ctx context.Context, modelID string, id string) error
-	List(modelID string, queryParams map[string]any) ([]map[string]any, int64, error)
+	CreateWithTx(ctx context.Context, modelID string, data map[string]any, tx *gorm.DB) (map[string]any, error)
+	Get(modelID, id string) (map[string]any, error)
+	Update(ctx context.Context, modelID, id string, data map[string]any) error
+	Delete(ctx context.Context, modelID, id string) error
+	List(modelID string, params map[string]any) ([]map[string]any, int64, error)
 	BatchCreate(modelID string, dataList []map[string]any) ([]map[string]any, error)
+	BatchCreateWithTx(ctx context.Context, modelID string, dataList []map[string]any, tx *gorm.DB) ([]map[string]any, error)
 	BatchDelete(modelID string, ids []string) error
 	Statistics(modelID string, queryParams map[string]any) (map[string]int64, error)
 	Aggregate(modelID string, queryParams map[string]any) ([]map[string]any, error)
 	BuildSQLFromData(data *engine.ModelData, params map[string]any) (string, []any, error)
 	ExecuteModelData(data *engine.ModelData, params map[string]any) ([]map[string]any, int64, error)
-
-	// 事务支持方法
-	CreateWithTx(ctx context.Context, modelID string, data map[string]any, tx *gorm.DB) (map[string]any, error)
-	UpdateWithTx(ctx context.Context, modelID string, id string, data map[string]any, tx *gorm.DB) error
-	BatchCreateWithTx(ctx context.Context, modelID string, dataList []map[string]any, tx *gorm.DB) ([]map[string]any, error)
-	BatchDeleteWithTx(ctx context.Context, modelID string, ids []string, tx *gorm.DB) error
 }
 
+// crudService CRUD服务实现
 type crudService struct {
-	builder         *engine.SQLBuilder
-	executor        *engine.SQLExecutor
-	validator       DataValidator
-	templateService QueryTemplateService
-	auditService    auditService.AuditService
+	sqlBuilder       *engine.SQLBuilder
+	sqlExecutor      *engine.SQLExecutor
+	validator        DataValidator
+	queryTemplateSvc QueryTemplateService
+	auditSvc         service.AuditService
 }
 
-// NewCRUDService 创建通用数据操作服务实例
+// NewCRUDService 创建CRUD服务实例
 func NewCRUDService(
-	builder *engine.SQLBuilder,
-	executor *engine.SQLExecutor,
+	sqlBuilder *engine.SQLBuilder,
+	sqlExecutor *engine.SQLExecutor,
 	validator DataValidator,
-	templateService QueryTemplateService,
-	auditService auditService.AuditService,
+	queryTemplateSvc QueryTemplateService,
+	auditSvc service.AuditService,
 ) CRUDService {
 	return &crudService{
-		builder:         builder,
-		executor:        executor,
-		validator:       validator,
-		templateService: templateService,
-		auditService:    auditService,
+		sqlBuilder:       sqlBuilder,
+		sqlExecutor:      sqlExecutor,
+		validator:        validator,
+		queryTemplateSvc: queryTemplateSvc,
+		auditSvc:         auditSvc,
 	}
 }
 
-// Create 插入数据
+// Create 创建数据
 func (s *crudService) Create(ctx context.Context, modelID string, data map[string]any) (map[string]any, error) {
-	modelData, err := s.builder.LoadModelData(modelID)
+	// 1. 加载模型
+	md, err := s.sqlBuilder.LoadModelData(modelID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("加载模型失败: %w", err)
 	}
 
-	// 0. 执行校验
-	if err := s.validator.Validate(modelID, modelData.Fields, data); err != nil {
-		return nil, err
+	// 2. 验证数据
+	if err := s.validator.Validate(modelID, md.Fields, data); err != nil {
+		return nil, fmt.Errorf("数据验证失败: %w", err)
 	}
 
-	// 1. 找到主表
-	var mainTable *model.MdModelTable
-	for _, t := range modelData.Tables {
-		if t.IsMain {
-			mainTable = t
-			break
+	// 3. 构建插入SQL
+	sql, args, err := s.buildInsertSQL(md, data)
+	if err != nil {
+		return nil, fmt.Errorf("构建插入SQL失败: %w", err)
+	}
+
+	// 4. 执行SQL
+	connID := s.getConnID(md)
+	result, err := s.sqlExecutor.Execute(connID, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("执行插入失败: %w", err)
+	}
+
+	// 5. 获取插入后的ID
+	id := ""
+	if len(result) > 0 {
+		if idValue, ok := result[0]["id"]; ok {
+			id = fmt.Sprintf("%v", idValue)
 		}
 	}
-	if mainTable == nil && len(modelData.Tables) > 0 {
-		mainTable = modelData.Tables[0]
-	}
-	if mainTable == nil {
-		return nil, fmt.Errorf("no table defined for model %s", modelID)
-	}
-
-	// 2. 构造 INSERT 语句
-	tableName := s.getTableName(mainTable)
-
-	fields := make([]string, 0)
-	placeholders := make([]string, 0)
-	args := make([]any, 0)
-
-	for k, v := range data {
-		fields = append(fields, "`"+k+"`")
-		placeholders = append(placeholders, "?")
-		args = append(args, v)
+	if id == "" {
+		// 尝试从data中获取ID
+		if idValue, ok := data[s.getPrimaryKey(md)]; ok {
+			id = fmt.Sprintf("%v", idValue)
+		} else {
+			return nil, errors.New("无法获取插入后的ID")
+		}
 	}
 
-	sqlStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
-		tableName,
-		joinString(fields, ", "),
-		joinString(placeholders, ", "))
-
-	_, err = s.executor.Execute(mainTable.ConnID, sqlStr, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. 记录审计日志
-	s.recordAudit(ctx, modelID, "", "CREATE", nil, data)
-
-	return data, nil
+	// 6. 查询插入后的数据
+	return s.Get(modelID, id)
 }
 
-// Get 查询单条数据
-func (s *crudService) Get(modelID string, id string) (map[string]any, error) {
-	modelData, err := s.builder.LoadModelData(modelID)
+// Get 获取数据
+func (s *crudService) Get(modelID, id string) (map[string]any, error) {
+	// 1. 加载模型
+	md, err := s.sqlBuilder.LoadModelData(modelID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("加载模型失败: %w", err)
 	}
 
-	pkField := s.getPrimaryKey(modelData)
-	sqlStr, args, err := s.builder.BuildSQL(modelID, nil)
+	// 2. 构建查询SQL
+	sql, args, err := s.buildGetSQL(md, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("构建查询SQL失败: %w", err)
 	}
 
-	// 添加针对 ID 的过滤
-	if strings.Contains(strings.ToUpper(sqlStr), " WHERE ") {
-		sqlStr += " AND `" + pkField + "` = ?"
-	} else {
-		sqlStr += " WHERE `" + pkField + "` = ?"
-	}
-	args = append(args, id)
-
-	results, err := s.executor.Execute(modelData.Model.ConnID, sqlStr, args...)
+	// 3. 执行SQL
+	connID := s.getConnID(md)
+	result, err := s.sqlExecutor.Execute(connID, sql, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("执行查询失败: %w", err)
 	}
 
-	if len(results) == 0 {
+	// 4. 处理结果
+	if len(result) == 0 {
 		return nil, nil
 	}
 
-	return results[0], nil
+	return result[0], nil
 }
 
 // Update 更新数据
-func (s *crudService) Update(ctx context.Context, modelID string, id string, data map[string]any) error {
-	// 获取变更前数据 (Audit)
-	beforeData, _ := s.Get(modelID, id)
-
-	modelData, err := s.builder.LoadModelData(modelID)
+func (s *crudService) Update(ctx context.Context, modelID, id string, data map[string]any) error {
+	// 1. 加载模型
+	md, err := s.sqlBuilder.LoadModelData(modelID)
 	if err != nil {
-		return err
+		return fmt.Errorf("加载模型失败: %w", err)
 	}
 
-	// 0. 执行校验
-	if err := s.validator.Validate(modelID, modelData.Fields, data); err != nil {
-		return err
+	// 2. 验证数据
+	if err := s.validator.Validate(modelID, md.Fields, data); err != nil {
+		return fmt.Errorf("数据验证失败: %w", err)
 	}
 
-	pkField := s.getPrimaryKey(modelData)
-	mainTable := s.getMainTable(modelData)
-	if mainTable == nil {
-		return fmt.Errorf("no table defined for model %s", modelID)
-	}
-
-	tableName := s.getTableName(mainTable)
-
-	setClauses := make([]string, 0)
-	args := make([]any, 0)
-
-	for k, v := range data {
-		if k == pkField {
-			continue
-		} // 不更新主键
-		setClauses = append(setClauses, "`"+k+"` = ?")
-		args = append(args, v)
-	}
-
-	sqlStr := fmt.Sprintf("UPDATE %s SET %s WHERE `%s` = ?",
-		tableName,
-		joinString(setClauses, ", "),
-		pkField)
-	args = append(args, id)
-
-	_, err = s.executor.Execute(mainTable.ConnID, sqlStr, args...)
+	// 3. 构建更新SQL
+	sql, args, err := s.buildUpdateSQL(md, id, data)
 	if err != nil {
-		return err
+		return fmt.Errorf("构建更新SQL失败: %w", err)
 	}
 
-	// 记录审计日志
-	s.recordAudit(ctx, modelID, id, "UPDATE", beforeData, data)
+	// 4. 执行SQL
+	connID := s.getConnID(md)
+	_, err = s.sqlExecutor.Execute(connID, sql, args...)
+	if err != nil {
+		return fmt.Errorf("执行更新失败: %w", err)
+	}
 
 	return nil
 }
 
 // Delete 删除数据
-func (s *crudService) Delete(ctx context.Context, modelID string, id string) error {
-	// 获取变更前数据 (Audit)
-	beforeData, _ := s.Get(modelID, id)
-
-	modelData, err := s.builder.LoadModelData(modelID)
+func (s *crudService) Delete(ctx context.Context, modelID, id string) error {
+	// 1. 加载模型
+	md, err := s.sqlBuilder.LoadModelData(modelID)
 	if err != nil {
-		return err
+		return fmt.Errorf("加载模型失败: %w", err)
 	}
 
-	pkField := s.getPrimaryKey(modelData)
-	mainTable := s.getMainTable(modelData)
-	if mainTable == nil {
-		return fmt.Errorf("no table defined for model %s", modelID)
-	}
-
-	tableName := s.getTableName(mainTable)
-
-	sqlStr := fmt.Sprintf("DELETE FROM %s WHERE `%s` = ?", tableName, pkField)
-	_, err = s.executor.Execute(mainTable.ConnID, sqlStr, id)
+	// 2. 构建删除SQL
+	sql, args, err := s.buildDeleteSQL(md, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("构建删除SQL失败: %w", err)
 	}
 
-	// 记录审计日志
-	s.recordAudit(ctx, modelID, id, "DELETE", beforeData, nil)
+	// 3. 执行SQL
+	connID := s.getConnID(md)
+	_, err = s.sqlExecutor.Execute(connID, sql, args...)
+	if err != nil {
+		return fmt.Errorf("执行删除失败: %w", err)
+	}
 
 	return nil
 }
 
-// BatchCreate 批量插入数据
-func (s *crudService) BatchCreate(modelID string, dataList []map[string]any) ([]map[string]any, error) {
-	if len(dataList) == 0 {
-		return nil, nil
-	}
-
-	modelData, err := s.builder.LoadModelData(modelID)
+// List 查询列表
+func (s *crudService) List(modelID string, params map[string]any) ([]map[string]any, int64, error) {
+	// 1. 加载模型
+	md, err := s.sqlBuilder.LoadModelData(modelID)
 	if err != nil {
-		return nil, err
+		return nil, 0, fmt.Errorf("加载模型失败: %w", err)
 	}
 
-	mainTable := s.getMainTable(modelData)
-	if mainTable == nil {
-		return nil, fmt.Errorf("no table defined for model %s", modelID)
+	// 2. 构建查询SQL
+	sql, countSql, args, err := s.buildListSQL(md, params)
+	if err != nil {
+		return nil, 0, fmt.Errorf("构建查询SQL失败: %w", err)
 	}
-	tableName := s.getTableName(mainTable)
 
-	allFields := make(map[string]bool)
+	connID := s.getConnID(md)
+
+	// 3. 执行计数查询
+	var total int64
+	if countSql != "" {
+		countResult, err := s.sqlExecutor.Execute(connID, countSql, args...)
+		if err != nil {
+			return nil, 0, fmt.Errorf("执行计数查询失败: %w", err)
+		}
+		if len(countResult) > 0 {
+			total = s.toInt64(countResult[0]["count"])
+		}
+	}
+
+	// 4. 执行列表查询
+	result, err := s.sqlExecutor.Execute(connID, sql, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("执行列表查询失败: %w", err)
+	}
+
+	return result, total, nil
+}
+
+// CreateWithTx 在事务中创建数据
+func (s *crudService) CreateWithTx(ctx context.Context, modelID string, data map[string]any, tx *gorm.DB) (map[string]any, error) {
+	// 1. 加载模型
+	md, err := s.sqlBuilder.LoadModelData(modelID)
+	if err != nil {
+		return nil, fmt.Errorf("加载模型失败: %w", err)
+	}
+
+	// 2. 验证数据
+	if err := s.validator.Validate(modelID, md.Fields, data); err != nil {
+		return nil, fmt.Errorf("数据验证失败: %w", err)
+	}
+
+	// 3. 构建插入SQL
+	sql, args, err := s.buildInsertSQL(md, data)
+	if err != nil {
+		return nil, fmt.Errorf("构建插入SQL失败: %w", err)
+	}
+
+	// 4. 在事务中执行SQL
+	result, err := s.sqlExecutor.ExecuteWithTx(tx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("执行插入失败: %w", err)
+	}
+
+	// 5. 获取插入后的ID
+	id := ""
+	if len(result) > 0 {
+		if idValue, ok := result[0]["id"]; ok {
+			id = fmt.Sprintf("%v", idValue)
+		}
+	}
+	if id == "" {
+		// 尝试从data中获取ID
+		if idValue, ok := data[s.getPrimaryKey(md)]; ok {
+			id = fmt.Sprintf("%v", idValue)
+		} else {
+			return nil, errors.New("无法获取插入后的ID")
+		}
+	}
+
+	// 6. 查询插入后的数据
+	return s.Get(modelID, id)
+}
+
+// BatchCreate 批量创建
+func (s *crudService) BatchCreate(modelID string, dataList []map[string]any) ([]map[string]any, error) {
+	results := make([]map[string]any, 0, len(dataList))
 	for _, data := range dataList {
-		if err := s.validator.Validate(modelID, modelData.Fields, data); err != nil {
+		result, err := s.Create(context.Background(), modelID, data)
+		if err != nil {
 			return nil, err
 		}
-		for k := range data {
-			allFields[k] = true
-		}
+		results = append(results, result)
 	}
+	return results, nil
+}
 
-	fieldList := make([]string, 0, len(allFields))
-	for f := range allFields {
-		fieldList = append(fieldList, "`"+f+"`")
-	}
-
-	placeholders := make([]string, 0, len(dataList))
-	args := make([]any, 0, len(dataList)*len(fieldList))
-
-	rowPlaceholder := "(" + strings.Repeat("?,", len(fieldList))
-	rowPlaceholder = rowPlaceholder[:len(rowPlaceholder)-1] + ")"
-
+// BatchCreateWithTx 在事务中批量创建
+func (s *crudService) BatchCreateWithTx(ctx context.Context, modelID string, dataList []map[string]any, tx *gorm.DB) ([]map[string]any, error) {
+	results := make([]map[string]any, 0, len(dataList))
 	for _, data := range dataList {
-		placeholders = append(placeholders, rowPlaceholder)
-		for _, f := range fieldList {
-			cleanField := f[1 : len(f)-1]
-			args = append(args, data[cleanField])
+		result, err := s.CreateWithTx(ctx, modelID, data, tx)
+		if err != nil {
+			return nil, err
 		}
+		results = append(results, result)
 	}
-
-	sqlStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s",
-		tableName,
-		strings.Join(fieldList, ", "),
-		strings.Join(placeholders, ", "))
-
-	_, err = s.executor.Execute(mainTable.ConnID, sqlStr, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return dataList, nil
+	return results, nil
 }
 
-// BatchDelete 批量删除数据
+// BatchDelete 批量删除
 func (s *crudService) BatchDelete(modelID string, ids []string) error {
-	if len(ids) == 0 {
-		return nil
-	}
-
-	modelData, err := s.builder.LoadModelData(modelID)
-	if err != nil {
-		return err
-	}
-
-	pkField := s.getPrimaryKey(modelData)
-	mainTable := s.getMainTable(modelData)
-	if mainTable == nil {
-		return fmt.Errorf("no table defined for model %s", modelID)
-	}
-	tableName := s.getTableName(mainTable)
-
-	placeholders := strings.Repeat("?,", len(ids))
-	placeholders = placeholders[:len(placeholders)-1]
-
-	sqlStr := fmt.Sprintf("DELETE FROM %s WHERE `%s` IN (%s)", tableName, pkField, placeholders)
-
-	anyIds := make([]any, len(ids))
-	for i, id := range ids {
-		anyIds[i] = id
-	}
-
-	_, err = s.executor.Execute(mainTable.ConnID, sqlStr, anyIds...)
-	return err
-}
-
-func (s *crudService) getPrimaryKey(data *engine.ModelData) string {
-	for _, f := range data.Fields {
-		if f.IsPrimaryKey {
-			return f.ColumnName
+	for _, id := range ids {
+		if err := s.Delete(context.Background(), modelID, id); err != nil {
+			return err
 		}
 	}
-	return "id" // 默认退回到 id
+	return nil
 }
 
-func joinString(slice []string, sep string) string {
-	res := ""
-	for i, s := range slice {
-		if i > 0 {
-			res += sep
-		}
-		res += s
-	}
-	return res
-}
-
-// List 分页查询
-func (s *crudService) List(modelID string, queryParams map[string]any) ([]map[string]any, int64, error) {
-	modelData, err := s.builder.LoadModelData(modelID)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// 应用过滤逻辑
-	s.applyListFilters(modelData, queryParams)
-
-	// 使用 BuildSQL 而不是 BuildFromMetadata，让 SQLBuilder 根据 model_kind 自动选择构建方式
-	sqlStr, args, err := s.builder.BuildSQL(modelID, queryParams)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// 获取总数
-	count, err := s.executor.ExecuteCount(modelData.Model.ConnID, sqlStr, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// 执行查询
-	results, err := s.executor.Execute(modelData.Model.ConnID, sqlStr, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return results, count, nil
-}
-
-// Statistics 简单统计
+// Statistics 统计查询
 func (s *crudService) Statistics(modelID string, queryParams map[string]any) (map[string]int64, error) {
-	modelData, err := s.builder.LoadModelData(modelID)
+	// 1. 加载模型
+	md, err := s.sqlBuilder.LoadModelData(modelID)
+	if err != nil {
+		return nil, fmt.Errorf("加载模型失败: %w", err)
+	}
+
+	connID := s.getConnID(md)
+
+	// 2. 构建基础SQL
+	sql, _, err := s.sqlBuilder.BuildSQL(modelID, queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("构建SQL失败: %w", err)
+	}
+
+	// 3. 执行统计查询
+	stats := make(map[string]int64)
+
+	// 总记录数
+	countSQL := fmt.Sprintf("SELECT COUNT(*) as count FROM (%s) AS t", sql)
+	countResult, err := s.sqlExecutor.Execute(connID, countSQL)
 	if err != nil {
 		return nil, err
 	}
-
-	s.applyListFilters(modelData, queryParams)
-
-	sqlStr, args, err := s.builder.BuildSQL(modelID, queryParams)
-	if err != nil {
-		return nil, err
+	if len(countResult) > 0 {
+		stats["total"] = s.toInt64(countResult[0]["count"])
 	}
 
-	count, err := s.executor.ExecuteCount(modelData.Model.ConnID, sqlStr, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return map[string]int64{"total": count}, nil
+	return stats, nil
 }
 
 // Aggregate 聚合查询
 func (s *crudService) Aggregate(modelID string, queryParams map[string]any) ([]map[string]any, error) {
-	return nil, nil
-}
-
-// BuildSQLFromData 从模型数据构建 SQL
-func (s *crudService) BuildSQLFromData(data *engine.ModelData, params map[string]any) (string, []any, error) {
-	// 应用过滤逻辑 (params 里的 views filters etc)
-	// applyListFilters 需要 modelData，如果 modelData 是从请求构造的，Wheres 可能为空或需要合并
-	// 这里假设 data 已经包含了所有 Wheres (from Visual Builder config)
-	// 但 params 可能包含额外的运行时 filters (e.g. from data preview grid filter)
-	// 所以我们还是调用一下 applyListFilters
-	s.applyListFilters(data, params)
-
-	return s.builder.BuildFromMetadata(data, params)
-}
-
-// ExecuteModelData 执行模型数据查询
-func (s *crudService) ExecuteModelData(data *engine.ModelData, params map[string]any) ([]map[string]any, int64, error) {
-	// 1. 构建 SQL
-	sqlStr, args, err := s.BuildSQLFromData(data, params)
+	// 1. 加载模型
+	md, err := s.sqlBuilder.LoadModelData(modelID)
 	if err != nil {
-		return nil, 0, err
+		return nil, fmt.Errorf("加载模型失败: %w", err)
 	}
 
-	// 2. 获取总数 (可选，如果只是预览可能不需要 count，但为了分页 grid 最好有)
-	// BuildSQLFromData 返回的是完整 SQL。如果带了 limit，count 需要移除 limit 吗？
-	// executor.ExecuteCount 通常需要 COUNT(*) 语句。
-	// 简单起见，预览数据暂时只返回结果，count 返回 -1 或 0 如果不做分页。
-	// 或者我们可以简单 wrap 一层 select count(*) from (sqlStr) as tmp
-	count, err := s.executor.ExecuteCount(data.Model.ConnID, sqlStr, args...)
-	// 如果 sqlStr 已经包含了复杂的 order by，count 可能有点慢，但在预览场景下应该接受。
-	// 注意：ExecuteCount 内部实现可能并不总是能完美 wrap。
-	// 这里我们暂且忽略 Count 错误，或者对于预览只返回数据列表。
-    // 为了 Grid 分页，最好有 Count。
-    if err != nil {
-        // Log error but proceed? Or fail?
-        // Let's optimize: for preview, maybe just get data.
-        count = 0 
-    }
+	connID := s.getConnID(md)
+
+	// 2. 构建基础SQL
+	sql, args, err := s.sqlBuilder.BuildSQL(modelID, queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("构建SQL失败: %w", err)
+	}
 
 	// 3. 执行查询
-	results, err := s.executor.Execute(data.Model.ConnID, sqlStr, args...)
+	return s.sqlExecutor.Execute(connID, sql, args...)
+}
+
+// BuildSQLFromData 从ModelData构建SQL
+func (s *crudService) BuildSQLFromData(data *engine.ModelData, params map[string]any) (string, []any, error) {
+	return s.sqlBuilder.BuildSQL(data.Model.ID, params)
+}
+
+// ExecuteModelData 执行ModelData查询
+func (s *crudService) ExecuteModelData(data *engine.ModelData, params map[string]any) ([]map[string]any, int64, error) {
+	connID := s.getConnID(data)
+
+	// 1. 构建SQL
+	sql, args, err := s.sqlBuilder.BuildSQL(data.Model.ID, params)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return results, count, nil
-}
-
-// applyListFilters 提取 List 中重复的过滤逻辑
-func (s *crudService) applyListFilters(modelData *engine.ModelData, queryParams map[string]any) {
-	// 1. 应用查询模板
-	templateID := ""
-	if queryParams != nil {
-		if tid, ok := queryParams["query_template_id"].(string); ok {
-			templateID = tid
-		}
-	}
-
-	if templateID != "" {
-		s.templateService.ApplyTemplate(templateID, modelData)
-	} else {
-		defTemplate, _ := s.templateService.GetDefaultTemplate(modelData.Model.ID)
-		if defTemplate != nil {
-			s.templateService.ApplyTemplate(defTemplate.ID, modelData)
-		}
-	}
-
-	// 2. 合并动态过滤条件
-	if queryParams != nil {
-		if filters, ok := queryParams["filters"].([]any); ok {
-			for _, item := range filters {
-				if f, ok := item.(map[string]any); ok {
-					where := &model.MdModelWhere{
-						TableNameStr: utils.ToString(f["table_name"]),
-						ColumnName:   utils.ToString(f["column_name"]),
-						Operator2:    utils.ToString(f["operator"]),
-						Value1:       utils.ToString(f["value"]),
-					}
-					if where.Operator1 == "" {
-						where.Operator1 = "AND"
-					}
-					modelData.Wheres = append(modelData.Wheres, where)
-				}
-			}
-		}
-	}
-}
-
-// recordAudit 辅助记录审计日志
-func (s *crudService) recordAudit(ctx context.Context, modelID, recordID, action string, before, after map[string]any) {
-	if s.auditService == nil {
-		return
-	}
-
-	// 从 context 获取 trace info
-	var traceID string
-	if v := ctx.Value("trace_id"); v != nil {
-		traceID = utils.ToString(v)
-	}
-
-	// 序列化 json
-	var beforeJSON, afterJSON string
-	if before != nil {
-		if b, err := json.Marshal(before); err == nil {
-			beforeJSON = string(b)
-		}
-	}
-	if after != nil {
-		if b, err := json.Marshal(after); err == nil {
-			afterJSON = string(b)
-		}
-	}
-
-	s.auditService.RecordDataChange(ctx, &auditModel.SysDataChangeLog{
-		ID:         uuid.New().String(), // Ensure uuid import
-		TraceID:    traceID,
-		ModelID:    modelID,
-		RecordID:   recordID,
-		Action:     action,
-		BeforeData: beforeJSON,
-		AfterData:  afterJSON,
-		CreateBy:   "system", // Improve: get user from context
-		Source:     "metadata", // 明确标识来源
-		CreateAt:   time.Now(),
-	})
-}
-
-// ------------------------------------------------------------------------------------------------
-// Transactional Methods
-// ------------------------------------------------------------------------------------------------
-
-func (s *crudService) CreateWithTx(ctx context.Context, modelID string, data map[string]any, tx *gorm.DB) (map[string]any, error) {
-	modelData, err := s.builder.LoadModelData(modelID)
+	// 2. 执行计数查询
+	var total int64
+	countSQL := fmt.Sprintf("SELECT COUNT(*) as count FROM (%s) AS t", sql)
+	countResult, err := s.sqlExecutor.Execute(connID, countSQL, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+	if len(countResult) > 0 {
+		total = s.toInt64(countResult[0]["count"])
 	}
 
-	if err := s.validator.Validate(modelID, modelData.Fields, data); err != nil {
-		return nil, err
+	// 3. 执行列表查询
+	results, err := s.sqlExecutor.Execute(connID, sql, args...)
+	if err != nil {
+		return nil, 0, err
 	}
 
-	mainTable := s.getMainTable(modelData)
-	if mainTable == nil {
-		return nil, fmt.Errorf("no table defined for model %s", modelID)
+	return results, total, nil
+}
+
+// 辅助方法
+
+func (s *crudService) getConnID(md *engine.ModelData) string {
+	if md.Model != nil && md.Model.ConnID != "" {
+		return md.Model.ConnID
+	}
+	// 从主表获取连接ID
+	for _, t := range md.Tables {
+		if t.IsMain && t.ConnID != "" {
+			return t.ConnID
+		}
+	}
+	return ""
+}
+
+func (s *crudService) getPrimaryKey(md *engine.ModelData) string {
+	for _, f := range md.Fields {
+		if f.IsPrimaryKey {
+			return f.ColumnName
+		}
+	}
+	return "id"
+}
+
+func (s *crudService) toInt64(v any) int64 {
+	switch val := v.(type) {
+	case int64:
+		return val
+	case int:
+		return int64(val)
+	case int32:
+		return int64(val)
+	case float64:
+		return int64(val)
+	case float32:
+		return int64(val)
+	case string:
+		if i, err := strconv.ParseInt(val, 10, 64); err == nil {
+			return i
+		}
+	}
+	return 0
+}
+
+func (s *crudService) buildInsertSQL(md *engine.ModelData, data map[string]any) (string, []any, error) {
+	var columns []string
+	var placeholders []string
+	var args []any
+
+	for _, field := range md.Fields {
+		if val, ok := data[field.ColumnName]; ok {
+			columns = append(columns, "`"+field.ColumnName+"`")
+			placeholders = append(placeholders, "?")
+			args = append(args, val)
+		}
 	}
 
-	tableName := s.getTableName(mainTable)
-
-	fields := make([]string, 0)
-	placeholders := make([]string, 0)
-	args := make([]any, 0)
-
-	for k, v := range data {
-		fields = append(fields, "`"+k+"`")
-		placeholders = append(placeholders, "?")
-		args = append(args, v)
+	if len(columns) == 0 {
+		return "", nil, errors.New("no columns to insert")
 	}
 
-	sqlStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
+	// 获取主表名
+	tableName := s.getMainTableName(md)
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
 		tableName,
-		joinString(fields, ", "),
-		joinString(placeholders, ", "))
-
-	_, err = s.executor.ExecuteWithTx(tx, sqlStr, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Record audit
-	s.recordAudit(ctx, modelID, "", "CREATE_TX", nil, data)
-
-	return data, nil
-}
-
-func (s *crudService) UpdateWithTx(ctx context.Context, modelID string, id string, data map[string]any, tx *gorm.DB) error {
-	// 获取变更前数据 (Audit) - 注意：事务内查询应该使用 txExecutor，但 Get 没 exposing withTx?
-	// 简单实现：使用 id 查，如果事务隔离级别允许读取已提交，或者就是查旧值。
-	// 但这里我们没有 GetWithTx.
-	// 优化：暂时略过 BeforeData 获取，或者假设事务内不影响旧数据读取（只要没改id）
-	// 或者 we assume we update an existing record visible to outside or same txn?
-	// 事务内 visible? Get uses `s.executor.Execute` which uses a NEW connection/session unless we propagate tx context.
-	// Since Get creates new connection from pool (via ConnID), it won't see changes in current tx unless committed.
-	// But `UpdateWithTx` is updating it. Before updating it, the old data is in DB. Get() reads from DB.
-	// So calling Get() here is safe to get "Before" state, provided we haven't updated it yet in this txn.
-	// Wait, we are *inside* UpdateWithTx, before executing update SQL. So Get() returns "Before" state.
-	// But `s.Get` uses `s.executor.Execute`. `s.executor` gets connection by ConnID.
-	// `CreateMasterDetail` starts a tx on a connection.
-	// If `Get` uses a DIFFERENT connection, it sees committed data.
-	// If `CreateMasterDetail` locks the rows (e.g. SelectForUpdate), `Get` might block?
-	// Usually Update doesn't block Reader (MVCC).
-
-	beforeData, _ := s.Get(modelID, id)
-	modelData, err := s.builder.LoadModelData(modelID)
-	if err != nil {
-		return err
-	}
-
-	if err := s.validator.Validate(modelID, modelData.Fields, data); err != nil {
-		return err
-	}
-
-	pkField := s.getPrimaryKey(modelData)
-	mainTable := s.getMainTable(modelData)
-	if mainTable == nil {
-		return fmt.Errorf("no table defined for model %s", modelID)
-	}
-	tableName := s.getTableName(mainTable)
-
-	setClauses := make([]string, 0)
-	args := make([]any, 0)
-
-	for k, v := range data {
-		if k == pkField {
-			continue
-		}
-		setClauses = append(setClauses, "`"+k+"` = ?")
-		args = append(args, v)
-	}
-
-	sqlStr := fmt.Sprintf("UPDATE %s SET %s WHERE `%s` = ?",
-		tableName,
-		joinString(setClauses, ", "),
-		pkField)
-	args = append(args, id)
-
-	_, err = s.executor.ExecuteWithTx(tx, sqlStr, args...)
-	if err == nil {
-		s.recordAudit(ctx, modelID, id, "UPDATE_TX", beforeData, data)
-	}
-	return err
-}
-
-func (s *crudService) BatchCreateWithTx(ctx context.Context, modelID string, dataList []map[string]any, tx *gorm.DB) ([]map[string]any, error) {
-	if len(dataList) == 0 {
-		return nil, nil
-	}
-
-	modelData, err := s.builder.LoadModelData(modelID)
-	if err != nil {
-		return nil, err
-	}
-
-	mainTable := s.getMainTable(modelData)
-	if mainTable == nil {
-		return nil, fmt.Errorf("no table defined for model %s", modelID)
-	}
-	tableName := s.getTableName(mainTable)
-
-	allFields := make(map[string]bool)
-	for _, data := range dataList {
-		if err := s.validator.Validate(modelID, modelData.Fields, data); err != nil {
-			return nil, err
-		}
-		for k := range data {
-			allFields[k] = true
-		}
-	}
-
-	fieldList := make([]string, 0, len(allFields))
-	for f := range allFields {
-		fieldList = append(fieldList, "`"+f+"`")
-	}
-
-	placeholders := make([]string, 0, len(dataList))
-	args := make([]any, 0, len(dataList)*len(fieldList))
-
-	rowPlaceholder := "(" + strings.Repeat("?,", len(fieldList))
-	rowPlaceholder = rowPlaceholder[:len(rowPlaceholder)-1] + ")"
-
-	for _, data := range dataList {
-		placeholders = append(placeholders, rowPlaceholder)
-		for _, f := range fieldList {
-			cleanField := f[1 : len(f)-1]
-			args = append(args, data[cleanField])
-		}
-	}
-
-	sqlStr := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s",
-		tableName,
-		strings.Join(fieldList, ", "),
+		strings.Join(columns, ", "),
 		strings.Join(placeholders, ", "))
 
-	_, err = s.executor.ExecuteWithTx(tx, sqlStr, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	// 批量审计
-	// 记录一次操作，包含 list count? 或者 逐条？
-	// 逐条太慢。
-	// AuditService.RecordDataChange 只支持单条。
-	// 这里这做简化：只记录 Action=BATCH_CREATE, Before=nil, After={"count": len(dataList)}
-	// 或者循环调用 recordAudit
-
-	// 暂时只记录最后一条或者 summary
-	s.recordAudit(ctx, modelID, "BATCH", "BATCH_CREATE_TX", nil, map[string]any{"count": len(dataList)})
-
-	return dataList, nil
+	return sql, args, nil
 }
 
-func (s *crudService) BatchDeleteWithTx(ctx context.Context, modelID string, ids []string, tx *gorm.DB) error {
-	if len(ids) == 0 {
-		return nil
-	}
+func (s *crudService) buildGetSQL(md *engine.ModelData, id string) (string, []any, error) {
+	tableName := s.getMainTableName(md)
+	primaryKey := s.getPrimaryKey(md)
 
-	modelData, err := s.builder.LoadModelData(modelID)
-	if err != nil {
-		return err
-	}
-
-	pkField := s.getPrimaryKey(modelData)
-	mainTable := s.getMainTable(modelData)
-	if mainTable == nil {
-		return fmt.Errorf("no table defined for model %s", modelID)
-	}
-	tableName := s.getTableName(mainTable)
-
-	placeholders := strings.Repeat("?,", len(ids))
-	placeholders = placeholders[:len(placeholders)-1]
-
-	sqlStr := fmt.Sprintf("DELETE FROM %s WHERE `%s` IN (%s)", tableName, pkField, placeholders)
-
-	anyIds := make([]any, len(ids))
-	for i, id := range ids {
-		anyIds[i] = id
-	}
-
-	_, err = s.executor.ExecuteWithTx(tx, sqlStr, anyIds...)
-	if err == nil {
-		s.recordAudit(ctx, modelID, "BATCH", "BATCH_DELETE_TX", nil, map[string]any{"ids": ids})
-	}
-	return err
+	sql := fmt.Sprintf("SELECT * FROM %s WHERE `%s` = ?", tableName, primaryKey)
+	return sql, []any{id}, nil
 }
 
-func (s *crudService) getMainTable(modelData *engine.ModelData) *model.MdModelTable {
-	var mainTable *model.MdModelTable
-	for _, t := range modelData.Tables {
-		if t.IsMain {
-			mainTable = t
-			break
+func (s *crudService) buildUpdateSQL(md *engine.ModelData, id string, data map[string]any) (string, []any, error) {
+	var setClauses []string
+	var args []any
+
+	primaryKey := s.getPrimaryKey(md)
+
+	for _, field := range md.Fields {
+		if field.ColumnName == primaryKey {
+			continue // 跳过主键
+		}
+		if val, ok := data[field.ColumnName]; ok {
+			setClauses = append(setClauses, fmt.Sprintf("`%s` = ?", field.ColumnName))
+			args = append(args, val)
 		}
 	}
-	if mainTable == nil && len(modelData.Tables) > 0 {
-		mainTable = modelData.Tables[0]
+
+	if len(setClauses) == 0 {
+		return "", nil, errors.New("no columns to update")
 	}
-	return mainTable
+
+	tableName := s.getMainTableName(md)
+	sql := fmt.Sprintf("UPDATE %s SET %s WHERE `%s` = ?",
+		tableName,
+		strings.Join(setClauses, ", "),
+		primaryKey)
+	args = append(args, id)
+
+	return sql, args, nil
 }
 
-func (s *crudService) getTableName(mainTable *model.MdModelTable) string {
-	tableName := "`" + mainTable.TableNameStr + "`"
-	if mainTable.TableSchema != "" {
-		tableName = "`" + mainTable.TableSchema + "`.`" + mainTable.TableNameStr + "`"
+func (s *crudService) buildDeleteSQL(md *engine.ModelData, id string) (string, []any, error) {
+	tableName := s.getMainTableName(md)
+	primaryKey := s.getPrimaryKey(md)
+
+	sql := fmt.Sprintf("DELETE FROM %s WHERE `%s` = ?", tableName, primaryKey)
+	return sql, []any{id}, nil
+}
+
+func (s *crudService) buildListSQL(md *engine.ModelData, params map[string]any) (string, string, []any, error) {
+	// 使用 SQLBuilder 构建查询
+	sql, args, err := s.sqlBuilder.BuildSQL(md.Model.ID, params)
+	if err != nil {
+		return "", "", nil, err
 	}
-	return tableName
+
+	// 构建计数SQL
+	countSQL := fmt.Sprintf("SELECT COUNT(*) as count FROM (%s) AS t", sql)
+
+	return sql, countSQL, args, nil
+}
+
+func (s *crudService) getMainTableName(md *engine.ModelData) string {
+	for _, t := range md.Tables {
+		if t.IsMain {
+			if t.TableSchema != "" {
+				return fmt.Sprintf("`%s`.`%s`", t.TableSchema, t.TableNameStr)
+			}
+			return "`" + t.TableNameStr + "`"
+		}
+	}
+	if len(md.Tables) > 0 {
+		t := md.Tables[0]
+		if t.TableSchema != "" {
+			return fmt.Sprintf("`%s`.`%s`", t.TableSchema, t.TableNameStr)
+		}
+		return "`" + t.TableNameStr + "`"
+	}
+	return ""
 }
