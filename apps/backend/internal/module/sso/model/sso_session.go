@@ -6,10 +6,12 @@ import "time"
 type SessionStatus string
 
 const (
-	SessionStatusActive   SessionStatus = "active"   // 活跃
-	SessionStatusInactive SessionStatus = "inactive" // 不活跃
-	SessionStatusExpired  SessionStatus = "expired"  // 已过期
-	SessionStatusRevoked  SessionStatus = "revoked"  // 已撤销
+	SessionStatusActive    SessionStatus = "active"     // 活跃
+	SessionStatusInactive  SessionStatus = "inactive"   // 不活跃
+	SessionStatusExpired   SessionStatus = "expired"    // 已过期
+	SessionStatusRevoked   SessionStatus = "revoked"    // 已撤销
+	SessionStatusPending   SessionStatus = "pending"    // 待处理
+	SessionStatusLoggedOut SessionStatus = "logged_out" // 已登出
 )
 
 // SsoSession SSO会话模型
@@ -30,8 +32,9 @@ type SsoSession struct {
 	IPAddress        string        `json:"ip_address" gorm:"size:64;column:ip_address;comment:IP地址"`
 	UserAgent        string        `json:"user_agent" gorm:"size:512;column:user_agent;comment:用户代理"`
 	DeviceInfo       string        `json:"device_info" gorm:"type:text;column:device_info;comment:设备信息(JSON)"`
-	LocationInfo     string        `json:"location_info" gorm:"type:text;column:location_info;comment:位置信息(JSON)"`
-	Scopes           string        `json:"scopes" gorm:"type:text;column:scopes;comment:授权范围(JSON数组)"`
+	LocationInfo     string        `json:"location_info" gorm:"type:text;column:location_info;comment:位置信息 (JSON)"`
+	Scopes           string        `json:"scopes" gorm:"type:text;column:scopes;comment:授权范围 (JSON 数组)"`
+	ExtraData        string        `json:"extra_data" gorm:"type:text;column:extra_data;comment:额外数据 (JSON)"`
 	IsDeleted        bool          `json:"is_deleted" gorm:"default:false;column:is_deleted;comment:是否删除"`
 	TenantID         string        `json:"tenant_id" gorm:"index;type:varchar(64);not null;default:'1';column:tenant_id;comment:租户ID"`
 	CreateAt         time.Time     `json:"create_at" gorm:"column:create_at;autoCreateTime;comment:创建时间"`

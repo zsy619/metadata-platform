@@ -51,8 +51,12 @@
                         </template>
                     </el-table-column>
                     <el-table-column prop="remark" label="备注" min-width="200" show-overflow-tooltip />
-                    <el-table-column prop="create_at" label="创建时间" width="170" />
-                    <el-table-column label="操作" width="150" fixed="right" align="center">
+                    <el-table-column prop="create_at" label="创建时间" width="200">
+                        <template #default="scope">
+                            {{ formatDateTime(scope.row.create_at) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="200" fixed="right" align="center">
                         <template #default="scope">
                             <el-button type="primary" size="small" :icon="Edit" @click="handleEdit(scope.row)" text bg>编辑</el-button>
                             <el-button type="danger" size="small" :icon="Delete" @click="handleDelete(scope.row)" text bg>删除</el-button>
@@ -105,9 +109,28 @@ const getProtocolTypeLabel = (type: string) => {
     return typeMap[type?.toLowerCase()] || type
 }
 
-const getProtocolTypeType = (type: string) => {
+const getProtocolTypeType = (type: string | undefined) => {
+    if (!type) return 'info'
     const typeMap: Record<string, string> = { oidc: 'primary', saml: 'success', ldap: 'warning', cas: 'info' }
-    return typeMap[type?.toLowerCase()] || ''
+    return typeMap[type.toLowerCase()] || 'info'
+}
+
+// 格式化日期时间
+const formatDateTime = (dateTime: string | undefined) => {
+    if (!dateTime) return ''
+    try {
+        const date = new Date(dateTime)
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+        const seconds = String(date.getSeconds()).padStart(2, '0')
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    } catch (error) {
+        console.error('格式化日期失败:', error)
+        return dateTime
+    }
 }
 
 const fetchData = async () => {
