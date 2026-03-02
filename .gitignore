@@ -48,3 +48,5 @@ docs/参考界面
 .gemini
 .claude
 apps/backend/internal/module/metadata/adapter/dummy_impl.go.txt
+docs/单点登录
+docs/markdown编辑器

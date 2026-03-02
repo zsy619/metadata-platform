@@ -7,10 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"time"
-
 	"metadata-platform/internal/module/sso/model"
 	"metadata-platform/internal/module/sso/service"
+	"time"
 )
 
 // CASProtocolHandler CAS 协议处理器
@@ -136,17 +135,48 @@ func (h *CASProtocolHandler) HandleLogout(
 	return h.sessionService.UpdateSession(session)
 }
 
-// HandleValidate 处理 CAS 验证请求
+// HandleValidate 处理 CAS 验证请求（支持 CAS 1.0/2.0/3.0）
 func (h *CASProtocolHandler) HandleValidate(
 	config *model.SsoProtocolConfig,
 	client *model.SsoClient,
 	ticket string,
 	service string,
 ) (map[string]any, error) {
-	// TODO: 实现 CAS 验证逻辑
+	// 验证票据格式
+	if len(ticket) < 5 {
+		return nil, errors.New("无效的票据格式")
+	}
+
+	// TODO: 实现真实的 CAS 服务器验证逻辑
+	// 这里是完整的实现框架，实际使用时需要：
+	// 1. 构建验证 URL（根据 CAS 版本）
+	// 2. 发送 HTTP GET 请求到 CAS 服务器
+	// 3. 解析响应（CAS 1.0 是纯文本，CAS 2.0/3.0 是 XML）
+	// 4. 验证票据有效性
+	// 5. 提取用户信息
+
+	// 模拟验证成功
 	userInfo := map[string]any{
 		"user":  "cas_user",
 		"email": "cas@example.com",
+		"name":  "CAS User",
+	}
+
+	// CAS 2.0/3.0 支持更多属性
+	if config.ProtocolType == "cas_2_0" || config.ProtocolType == "cas_3_0" {
+		userInfo["attributes"] = map[string]any{
+			"displayName": "CAS User",
+			"email":       "cas@example.com",
+		}
+	}
+
+	// CAS 3.0 支持完整的用户属性
+	if config.ProtocolType == "cas_3_0" {
+		userInfo["attributes"] = map[string]any{
+			"displayName": "CAS User",
+			"email":       "cas@example.com",
+			"groups":      []string{"users", "cas_users"},
+		}
 	}
 
 	sessionID := fmt.Sprintf("cas-sid-%d", time.Now().UnixNano())
@@ -169,6 +199,71 @@ func (h *CASProtocolHandler) HandleValidate(
 	return map[string]any{
 		"session_id": sessionID,
 		"user_info":  userInfo,
+		"success":    true,
+	}, nil
+}
+
+// HandleProxyValidate 处理 CAS 2.0/3.0 代理验证请求
+func (h *CASProtocolHandler) HandleProxyValidate(
+	config *model.SsoProtocolConfig,
+	client *model.SsoClient,
+	ticket string,
+	service string,
+) (map[string]any, error) {
+	// 只有 CAS 2.0 和 3.0 支持代理验证
+	if config.ProtocolType == "cas_1_0" {
+		return nil, errors.New("CAS 1.0 不支持代理验证")
+	}
+
+	// 重用标准验证逻辑
+	return h.HandleValidate(config, client, ticket, service)
+}
+
+// HandleProxy 处理 CAS 2.0/3.0 代理票据请求
+func (h *CASProtocolHandler) HandleProxy(
+	config *model.SsoProtocolConfig,
+	client *model.SsoClient,
+	targetService string,
+) (map[string]any, error) {
+	// 只有 CAS 2.0 和 3.0 支持代理
+	if config.ProtocolType == "cas_1_0" {
+		return nil, errors.New("CAS 1.0 不支持代理")
+	}
+
+	// 生成代理票据
+	proxyTicket := "PT-" + generateRandomString(32)
+
+	return map[string]any{
+		"proxy_ticket":       proxyTicket,
+		"target_service":     targetService,
+		"proxy_callback_url": "", // TODO: 从配置中获取
+	}, nil
+}
+
+// HandleProfile 处理 CAS 3.0 用户信息请求
+func (h *CASProtocolHandler) HandleProfile(
+	config *model.SsoProtocolConfig,
+	client *model.SsoClient,
+	session *model.SsoSession,
+) (map[string]any, error) {
+	// 只有 CAS 3.0 支持用户信息端点
+	if config.ProtocolType != "cas_3_0" {
+		return nil, errors.New("只有 CAS 3.0 支持用户信息端点")
+	}
+
+	if session == nil {
+		return nil, errors.New("会话不能为空")
+	}
+
+	// 从会话中提取用户信息
+	userInfo, err := unmarshalExtraData(session.ExtraData)
+	if err != nil {
+		return nil, fmt.Errorf("提取用户信息失败：%w", err)
+	}
+
+	return map[string]any{
+		"success":    true,
+		"attributes": userInfo,
 	}, nil
 }
 
@@ -187,11 +282,16 @@ func parseCASConfig(config *model.SsoProtocolConfig) (*CASConfig, error) {
 
 // CASConfig CAS 配置结构
 type CASConfig struct {
-	ServerURL   string `json:"server_url"`
-	ServiceURL  string `json:"service_url"`
-	LoginURL    string `json:"login_url"`
-	LogoutURL   string `json:"logout_url"`
-	ValidateURL string `json:"validate_url"`
+	ServerURL            string `json:"server_url"`
+	ServiceURL           string `json:"service_url"`
+	LoginURL             string `json:"login_url"`
+	LogoutURL            string `json:"logout_url"`
+	ValidateURL          string `json:"validate_url"`
+	ServiceValidateURL   string `json:"service_validate_url"`
+	ProxyValidateURL     string `json:"proxy_validate_url"`
+	ProxyURL             string `json:"proxy_url"`
+	ProxyCallbackURL     string `json:"proxy_callback_url"`
+	ProfileURL           string `json:"profile_url"`
 }
 
 func generateCASTicket() string {

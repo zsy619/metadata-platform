@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
+	"metadata-platform/internal/module/audit/queue"
+	"metadata-platform/internal/module/monitor"
 	"os"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -10,9 +12,10 @@ import (
 	"gorm.io/gorm"
 
 	audit "metadata-platform/internal/module/audit"
-	"metadata-platform/internal/module/audit/queue"
+
+	document "metadata-platform/internal/module/document"
 	metadata "metadata-platform/internal/module/metadata"
-	"metadata-platform/internal/module/monitor"
+
 	sso "metadata-platform/internal/module/sso"
 	user "metadata-platform/internal/module/user"
 )
@@ -27,6 +30,9 @@ func RegisterModuleRoutes(h *server.Hertz, metadataDB, userDB, auditDB *gorm.DB,
 	fmt.Fprintln(os.Stderr, ">>> Registering SSO routes...")
 	registerSSORoutes(h, userDB)
 	fmt.Fprintln(os.Stderr, ">>> SSO routes registered successfully")
+	fmt.Fprintln(os.Stderr, ">>> Registering Document routes...")
+	registerDocumentRoutes(h, userDB)
+	fmt.Fprintln(os.Stderr, ">>> Document routes registered successfully")
 	registerAuditRoutes(h, auditDB, auditQueue)
 	fmt.Fprintln(os.Stderr, ">>> Audit routes registered")
 	monitor.RegisterRoutesWithDB(h, userDB, auditDB)
@@ -64,4 +70,8 @@ func registerAuditRoutes(h *server.Hertz, db *gorm.DB, auditQueue *queue.AuditLo
 
 func registerSSORoutes(h *server.Hertz, db *gorm.DB) {
 	sso.RegisterRoutes(h, db)
+}
+
+func registerDocumentRoutes(h *server.Hertz, db *gorm.DB) {
+	document.RegisterRoutes(h, db)
 }

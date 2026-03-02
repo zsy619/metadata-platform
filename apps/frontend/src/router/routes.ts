@@ -9,6 +9,12 @@ const RouterView = {
 
 const routes: RouteRecordRaw[] = [
     {
+        path: '/login',
+        name: 'Login',
+        component: () => import('@/views/login/Index.vue'),
+        meta: { title: '登录', hidden: true }
+    },
+    {
         path: '/',
         component: Layout,
         redirect: '/home/dashboard',
@@ -379,14 +385,48 @@ const routes: RouteRecordRaw[] = [
         ]
     },
     {
-        path: '/login',
-        component: () => import('@/layouts/AuthLayout.vue'),
+        path: '/docs',
+        component: Layout,
+        meta: { title: '系统文档', icon: 'fa-book' },
+        redirect: '/docs/list',
         children: [
             {
-                path: '',
-                name: 'Login',
-                component: () => import('@/views/login/Index.vue'),
-                meta: { title: '登录' }
+                path: 'list',
+                name: 'DocumentList',
+                component: () => import('@/views/docs/DocList.vue'),
+                meta: { title: '文档列表', icon: 'fa-list' }
+            },
+            {
+                path: ':id',
+                name: 'DocumentDetail',
+                component: () => import('@/views/docs/DocDetail.vue'),
+                meta: { title: '文档详情', hidden: true }
+            }
+        ]
+    },
+    {
+        path: '/documents',
+        component: Layout,
+        meta: { title: '文档管理', icon: 'fa-file-lines' },
+        redirect: '/documents/list',
+        children: [
+            {
+                path: 'list',
+                name: 'DocumentManageList',
+                component: () => import('@/views/document/List.vue'),
+                meta: { title: '文档目录', icon: 'fa-folder-tree' }
+            },
+            {
+                path: 'create',
+                name: 'DocumentCreate',
+                component: () => import('@/views/document/Create.vue'),
+                meta: { title: '新建文档', icon: 'fa-plus', hidden: true }
+            },
+            {
+                path: ':id/edit',
+                name: 'DocumentEdit',
+                component: () => import('@/views/document/Create.vue'),
+                meta: { title: '编辑文档', hidden: true }
             }
         ]
     },

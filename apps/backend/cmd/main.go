@@ -12,6 +12,7 @@ import (
 	"metadata-platform/internal/middleware"
 	audit "metadata-platform/internal/module/audit"
 	auditQueuePkg "metadata-platform/internal/module/audit/queue"
+	document "metadata-platform/internal/module/document"
 	metadata "metadata-platform/internal/module/metadata"
 	sso "metadata-platform/internal/module/sso"
 	user "metadata-platform/internal/module/user"
@@ -52,6 +53,7 @@ func main() {
 	migrateMetadataDatabase(metadataDB)
 	migrateUserDatabase(userDB)
 	migrateSSODatabase(userDB)
+	migrateDocumentDatabase(userDB)
 	migrateAuditDatabase(auditDB)
 
 	// 5.1 初始化 Casbin 权限管理
@@ -111,6 +113,17 @@ func migrateMetadataDatabase(db *gorm.DB) {
 	} else {
 		utils.SugarLogger.Info("Metadata database migration completed successfully")
 	}
+
+	// 文档模块数据库迁移
+	if err := document.MigrateDatabase(db); err != nil {
+		utils.SugarLogger.Errorf("Failed to migrate document database: %v", err)
+	} else {
+		utils.SugarLogger.Info("Document database migration completed successfully")
+	}
+	// 播种子数据
+	if err := document.SeedDatabase(db); err != nil {
+		utils.SugarLogger.Errorf("Failed to seed document database: %v", err)
+	}
 }
 
 func migrateUserDatabase(db *gorm.DB) {
@@ -134,6 +147,30 @@ func migrateSSODatabase(db *gorm.DB) {
 		utils.SugarLogger.Errorf("Failed to migrate SSO database: %v", err)
 	} else {
 		utils.SugarLogger.Info("SSO database migration completed successfully")
+	}
+}
+
+func migrateDocumentDatabase(db *gorm.DB) {
+	if err := document.MigrateDatabase(db); err != nil {
+		utils.SugarLogger.Errorf("Failed to migrate Document database: %v", err)
+	} else {
+		utils.SugarLogger.Info("Document database migration completed successfully")
+		// 播种子数据
+		if err := document.SeedDatabase(db); err != nil {
+			utils.SugarLogger.Errorf("Failed to seed Document database: %v", err)
+		}
+		// 初始化菜单数据
+		if err := document.InitMenus(db); err != nil {
+			utils.SugarLogger.Errorf("Failed to initialize Document menus: %v", err)
+		} else {
+			utils.SugarLogger.Info("Document menus initialized successfully")
+		}
+		// 修复文件夹路径（如果有旧数据）
+		if err := document.FixFolderPaths(db); err != nil {
+			utils.SugarLogger.Warnf("Failed to fix document folder paths: %v", err)
+		} else {
+			utils.SugarLogger.Info("Document folder paths checked/fixed")
+		}
 	}
 }
 
