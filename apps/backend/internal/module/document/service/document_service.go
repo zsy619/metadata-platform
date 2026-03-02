@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"metadata-platform/internal/module/document/model"
 	"metadata-platform/internal/module/document/repository"
+	"metadata-platform/internal/utils"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 // DocumentService 文档服务接口
@@ -21,24 +20,24 @@ type DocumentService interface {
 	GetDocumentByID(id string) (*model.Document, error)
 	GetDocumentByPath(path string) (*model.Document, error)
 	GetDocumentList(page, pageSize int, category, keyword string) ([]*model.Document, int64, error)
-	
+
 	// 分类管理
 	GetCategories() ([]*model.DocumentCategory, error)
-	
+
 	// 搜索
 	SearchDocuments(keyword string, category string, limit int) ([]*model.Document, error)
-	
+
 	// 下载
 	GetDocumentContent(id string) (string, error)
-	
+
 	// 收藏管理
 	ToggleFavorite(ctx context.Context, documentID string) (bool, error)
 	GetMyFavorites(ctx context.Context) ([]*model.Document, error)
-	
+
 	// 阅读进度
 	UpdateReadProgress(ctx context.Context, documentID string, position int) error
 	GetMyReadProgress(ctx context.Context, documentID string) (*model.DocumentReadProgress, error)
-	
+
 	// 版本管理
 	GetDocumentVersions(documentID string) ([]*model.DocumentVersion, error)
 	RestoreVersion(documentID string, version int) (*model.Document, error)
@@ -59,11 +58,11 @@ func NewDocumentService(repo repository.DocumentRepository) DocumentService {
 // CreateDocument 创建文档
 func (s *documentService) CreateDocument(ctx context.Context, doc *model.Document) (*model.Document, error) {
 	// 生成 ID
-	doc.ID = uuid.New().String()
-	
+	doc.ID = utils.GetSnowflake().GenerateIDString()
+
 	// 计算文档大小
 	doc.Size = int64(len(doc.Content))
-	
+
 	// 解析标签
 	if doc.Tags != "" {
 		if !strings.HasPrefix(doc.Tags, "[") {
@@ -73,18 +72,18 @@ func (s *documentService) CreateDocument(ctx context.Context, doc *model.Documen
 			doc.Tags = string(tagsJSON)
 		}
 	}
-	
+
 	// 生成目录
 	doc.TOC = s.generateTOC(doc.Content)
-	
+
 	// 创建文档
 	if err := s.repo.Create(doc); err != nil {
 		return nil, fmt.Errorf("failed to create document: %w", err)
 	}
-	
+
 	// 创建初始版本
 	version := &model.DocumentVersion{
-		ID:         uuid.New().String(),
+		ID:         utils.GetSnowflake().GenerateIDString(),
 		DocumentID: doc.ID,
 		Version:    1,
 		Content:    doc.Content,
@@ -95,7 +94,7 @@ func (s *documentService) CreateDocument(ctx context.Context, doc *model.Documen
 		// 记录错误但不中断流程
 		fmt.Printf("Failed to create document version: %v\n", err)
 	}
-	
+
 	return doc, nil
 }
 
@@ -106,7 +105,7 @@ func (s *documentService) UpdateDocument(ctx context.Context, id string, doc *mo
 	if err != nil {
 		return nil, fmt.Errorf("document not found: %w", err)
 	}
-	
+
 	// 更新字段
 	oldDoc.Title = doc.Title
 	oldDoc.Category = doc.Category
@@ -116,21 +115,21 @@ func (s *documentService) UpdateDocument(ctx context.Context, id string, doc *mo
 	oldDoc.Tags = doc.Tags
 	oldDoc.Version = oldDoc.Version + 1
 	oldDoc.UpdatedBy = s.getCurrentUserID(ctx)
-	
+
 	// 计算大小
 	oldDoc.Size = int64(len(doc.Content))
-	
+
 	// 生成目录
 	oldDoc.TOC = s.generateTOC(doc.Content)
-	
+
 	// 保存更新
 	if err := s.repo.Update(oldDoc); err != nil {
 		return nil, fmt.Errorf("failed to update document: %w", err)
 	}
-	
+
 	// 创建新版本
 	version := &model.DocumentVersion{
-		ID:         uuid.New().String(),
+		ID:         utils.GetSnowflake().GenerateIDString(),
 		DocumentID: id,
 		Version:    oldDoc.Version,
 		Content:    doc.Content,
@@ -141,7 +140,7 @@ func (s *documentService) UpdateDocument(ctx context.Context, id string, doc *mo
 	if err := s.repo.CreateVersion(version); err != nil {
 		fmt.Printf("Failed to create document version: %v\n", err)
 	}
-	
+
 	return oldDoc, nil
 }
 
@@ -156,14 +155,14 @@ func (s *documentService) GetDocumentByID(id string) (*model.Document, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 增加阅读次数
 	go func() {
 		if err := s.repo.IncrementViewCount(id); err != nil {
 			fmt.Printf("Failed to increment view count: %v\n", err)
 		}
 	}()
-	
+
 	return doc, nil
 }
 
@@ -183,7 +182,7 @@ func (s *documentService) GetDocumentList(page, pageSize int, category, keyword 
 	if pageSize > 100 {
 		pageSize = 100
 	}
-	
+
 	return s.repo.GetList(page, pageSize, category, keyword)
 }
 
@@ -200,7 +199,7 @@ func (s *documentService) SearchDocuments(keyword string, category string, limit
 	if limit > 100 {
 		limit = 100
 	}
-	
+
 	return s.repo.Search(keyword, category, limit)
 }
 
@@ -212,13 +211,13 @@ func (s *documentService) GetDocumentContent(id string) (string, error) {
 // ToggleFavorite 切换收藏状态
 func (s *documentService) ToggleFavorite(ctx context.Context, documentID string) (bool, error) {
 	userID := s.getCurrentUserID(ctx)
-	
+
 	// 检查是否已收藏
 	favorited, err := s.repo.IsFavorited(documentID, userID)
 	if err != nil {
 		return false, err
 	}
-	
+
 	if favorited {
 		// 取消收藏
 		if err := s.repo.RemoveFavorite(documentID, userID); err != nil {
@@ -243,14 +242,14 @@ func (s *documentService) GetMyFavorites(ctx context.Context) ([]*model.Document
 // UpdateReadProgress 更新阅读进度
 func (s *documentService) UpdateReadProgress(ctx context.Context, documentID string, position int) error {
 	userID := s.getCurrentUserID(ctx)
-	
+
 	if position < 0 {
 		position = 0
 	}
 	if position > 100 {
 		position = 100
 	}
-	
+
 	return s.repo.UpdateReadProgress(documentID, userID, position)
 }
 
@@ -272,7 +271,7 @@ func (s *documentService) RestoreVersion(documentID string, version int) (*model
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var targetVersion *model.DocumentVersion
 	for _, v := range versions {
 		if v.Version == version {
@@ -280,27 +279,27 @@ func (s *documentService) RestoreVersion(documentID string, version int) (*model
 			break
 		}
 	}
-	
+
 	if targetVersion == nil {
 		return nil, errors.New("version not found")
 	}
-	
+
 	// 获取原文档
 	doc, err := s.repo.GetByID(documentID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 恢复内容
 	doc.Content = targetVersion.Content
 	doc.Size = targetVersion.Size
 	doc.Version = doc.Version + 1
-	
+
 	// 保存
 	if err := s.repo.Update(doc); err != nil {
 		return nil, err
 	}
-	
+
 	return doc, nil
 }
 
@@ -308,7 +307,7 @@ func (s *documentService) RestoreVersion(documentID string, version int) (*model
 func (s *documentService) generateTOC(content string) string {
 	lines := strings.Split(content, "\n")
 	toc := []map[string]interface{}{}
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "#") {
@@ -321,7 +320,7 @@ func (s *documentService) generateTOC(content string) string {
 					break
 				}
 			}
-			
+
 			if level <= 3 { // 只处理 1-3 级标题
 				title := strings.TrimSpace(strings.TrimPrefix(line, strings.Repeat("#", level)))
 				toc = append(toc, map[string]interface{}{
@@ -331,7 +330,7 @@ func (s *documentService) generateTOC(content string) string {
 			}
 		}
 	}
-	
+
 	tocJSON, _ := json.Marshal(toc)
 	return string(tocJSON)
 }
@@ -345,11 +344,11 @@ func (s *documentService) getCurrentUserID(ctx context.Context) string {
 	if userID == nil {
 		return "system"
 	}
-	
+
 	if uid, ok := userID.(string); ok {
 		return uid
 	}
-	
+
 	return "system"
 }
 
@@ -358,18 +357,18 @@ func (s *documentService) ValidateDocument(doc *model.Document) error {
 	if doc.Title == "" {
 		return errors.New("title is required")
 	}
-	
+
 	if doc.Category == "" {
 		return errors.New("category is required")
 	}
-	
+
 	if doc.Path == "" {
 		return errors.New("path is required")
 	}
-	
+
 	if doc.Content == "" {
 		return errors.New("content is required")
 	}
-	
+
 	return nil
 }

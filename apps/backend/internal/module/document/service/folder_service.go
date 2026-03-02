@@ -2,12 +2,13 @@ package service
 
 import (
 	"errors"
-	"metadata-platform/internal/module/document/model"
-	"metadata-platform/internal/module/document/repository"
 	"strings"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/google/uuid"
+
+	"metadata-platform/internal/utils"
+	"metadata-platform/internal/module/document/model"
+	"metadata-platform/internal/module/document/repository"
 )
 
 // DocumentFolderService 文档目录服务接口
@@ -51,7 +52,7 @@ func (s *documentFolderService) CreateFolder(ctx *app.RequestContext, folder *mo
 	}
 	
 	// 先生成 ID（用于路径生成）
-	folder.ID = uuid.New().String()
+	folder.ID = utils.GetSnowflake().GenerateIDString()
 	
 	// 生成路径（处理空字符串的情况）
 	if folder.ParentID != "" && folder.ParentID != "null" {

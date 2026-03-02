@@ -7,13 +7,11 @@
                 <span>文档目录</span>
             </div>
             <div class="toolbar-actions">
-                <el-button type="primary" size="small" @click="handleCreateRootFolder" circle>
+                <el-button type="primary" size="small" @click="handleCreateRootFolder" class="create-root-btn" circle title="新建根目录">
                     <font-awesome-icon icon="fa-solid fa-folder-plus" />
-                    <span>新建根目录</span>
                 </el-button>
-                <el-button size="small" @click="refreshTree" circle>
+                <el-button size="small" @click="refreshTree" class="refresh-btn" circle title="刷新">
                     <font-awesome-icon icon="fa-solid fa-arrows-rotate" />
-                    <span>刷新</span>
                 </el-button>
             </div>
         </div>
@@ -701,14 +699,55 @@ const emit = defineEmits<{
         .toolbar-actions {
             display: flex;
             gap: 8px;
+            align-items: center;
             
             .el-button {
-                font-size: 13px;
+                font-size: 14px;
                 transition: all 0.2s ease;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 
                 &:hover {
                     transform: translateY(-1px);
+                    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
                 }
+            }
+            
+            .create-root-btn {
+                background: linear-gradient(135deg, #409EFF, #69b1ff);
+                border: none;
+                
+                &:hover {
+                    background: linear-gradient(135deg, #337ecc, #409EFF);
+                }
+            }
+            
+            .refresh-btn {
+                background: #f5f7fa;
+                border: 1px solid #dcdfe6;
+                color: #606266;
+                
+                &:hover {
+                    background: #ecf5ff;
+                    border-color: #c6e2ff;
+                    color: #409EFF;
+                }
+                
+                &:active {
+                    animation: rotate 1s ease-in-out;
+                }
+            }
+        }
+        
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
             }
         }
     }

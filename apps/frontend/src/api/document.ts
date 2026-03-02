@@ -16,21 +16,31 @@ import type { DocumentInfo, DocumentDetail, DocumentQueryParams } from '@/types/
  * @param params.pageSize 每页数量
  */
 export const getDocumentList = async (params?: DocumentQueryParams): Promise<any> => {
-  return request({
+  const response = await request({
     url: '/api/documents',
     method: 'get',
     params
   })
+  // 检查响应结构，如果有data字段，则返回data
+  if (response && response.data) {
+    return response.data
+  }
+  return response
 }
 
 /**
  * 获取所有文档分类
  */
 export const getDocumentCategories = async (): Promise<any> => {
-  return request({
+  const response = await request({
     url: '/api/documents/categories',
     method: 'get'
   })
+  // 检查响应结构，如果有data字段，则返回data
+  if (response && response.data) {
+    return response.data
+  }
+  return response
 }
 
 // ==================== 文档详情 API ====================
@@ -40,10 +50,22 @@ export const getDocumentCategories = async (): Promise<any> => {
  * @param id 文档 ID
  */
 export const getDocumentById = async (id: string): Promise<DocumentDetail> => {
-  return request({
-    url: `/api/documents/${id}`,
-    method: 'get'
-  })
+  console.log('调用getDocumentById，文档ID:', id)
+  try {
+    const response = await request({
+      url: `/api/documents/${id}`,
+      method: 'get'
+    })
+    console.log('API响应:', response)
+    // 检查响应结构，如果有data字段，则返回data
+    if (response && response.data) {
+      return response.data
+    }
+    return response
+  } catch (error) {
+    console.error('API调用失败:', error)
+    throw error
+  }
 }
 
 /**

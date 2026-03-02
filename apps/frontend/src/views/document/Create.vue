@@ -209,11 +209,15 @@ const formRules = reactive({
 
 // 生命周期
 onMounted(() => {
+    console.log('进入onMounted钩子')
+    console.log('路由参数:', route.params)
+    console.log('是否是编辑模式:', isEditMode.value)
     loadCategories()
     loadFolderTree()
     
     // 如果是编辑模式，加载文档数据
     if (isEditMode.value) {
+        console.log('调用loadDocumentForEdit函数')
         loadDocumentForEdit()
     } else {
         // 如果是新建模式，检查是否有路由状态传递的文件夹信息
@@ -246,10 +250,14 @@ const loadFolderTree = async () => {
 
 // 加载文档用于编辑
 const loadDocumentForEdit = async () => {
+    console.log('进入loadDocumentForEdit函数')
+    console.log('路由参数:', route.params)
     loading.value = true
     try {
         const docId = route.params.id as string
+        console.log('文档ID:', docId)
         const doc: DocumentDetail = await getDocumentById(docId)
+        console.log('获取到的文档数据:', doc)
         
         // 填充表单数据
         documentForm.title = doc.title
@@ -273,7 +281,9 @@ const loadDocumentForEdit = async () => {
         }
         
         documentForm.isPublished = true // 默认 true
+        console.log('表单数据填充完成:', documentForm)
     } catch (error: any) {
+        console.error('加载文档失败:', error)
         ElMessage.error('加载文档失败：' + (error.message || '未知错误'))
         router.push('/documents/list')
     } finally {

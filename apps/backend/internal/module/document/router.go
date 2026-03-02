@@ -11,7 +11,7 @@ import (
 // RegisterRoutes 注册文档模块路由
 func RegisterRoutes(h *server.Hertz, db *gorm.DB) {
 	utils.SugarLogger.Info("Initializing document module...")
-	
+
 	// 初始化 Handler（api 包内部会创建 Repository 和 Service）
 	handler := api.NewDocumentHandler(db)
 	folderHandler := api.NewDocumentFolderHandler(db)
@@ -67,37 +67,37 @@ func RegisterRoutes(h *server.Hertz, db *gorm.DB) {
 		// 获取阅读进度
 		docGroup.GET("/:id/progress", handler.GetMyReadProgress)
 	}
-	
+
 	// 文件夹管理路由组
 	folderGroup := h.Group("/api/documents/folders")
 	{
 		// 获取文件夹树
 		folderGroup.GET("/tree", folderHandler.GetFolderTree)
-		
+
 		// 获取文件夹列表
 		folderGroup.GET("", folderHandler.GetFolderList)
-		
+
 		// 根据路径获取文件夹
 		folderGroup.GET("/by-path", folderHandler.GetFolderByPath)
-		
+
 		// 根据 ID 获取文件夹
 		folderGroup.GET("/:id", folderHandler.GetFolderByID)
-		
+
 		// 创建文件夹
 		folderGroup.POST("", folderHandler.CreateFolder)
-		
+
 		// 更新文件夹
 		folderGroup.PUT("/:id", folderHandler.UpdateFolder)
-		
+
 		// 删除文件夹
 		folderGroup.DELETE("/:id", folderHandler.DeleteFolder)
-		
+
 		// 移动文件夹
 		folderGroup.POST("/:id/move", folderHandler.MoveFolder)
-		
+
 		// 复制文件夹
 		folderGroup.POST("/:id/copy", folderHandler.CopyFolder)
 	}
-	
+
 	utils.SugarLogger.Info("Document routes registered successfully")
 }

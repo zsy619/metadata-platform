@@ -51,58 +51,59 @@
                         </div>
                         
                         <div class="toolbar-actions">
-                            <el-button type="primary" @click="handleCreateDocument">
-                                <el-icon><DocumentAdd /></el-icon>
-                                新建文档
+                            <el-button type="primary" @click="handleCreateDocument" circle title="新建文档">
+                                <font-awesome-icon icon="fa-solid fa-file-plus" />
                             </el-button>
                         </div>
                     </div>
                     
                     <!-- 文档列表 -->
-                    <el-table
-                        v-loading="loading"
-                        :data="documentList"
-                        style="width: 100%"
-                        @row-click="handleRowClick"
-                    >
-                        <el-table-column prop="title" label="标题" min-width="300">
-                            <template #default="{ row }">
-                                <div class="document-title">
-                                    <el-icon class="doc-icon"><Document /></el-icon>
-                                    <span>{{ row.title }}</span>
-                                </div>
-                            </template>
-                        </el-table-column>
-                        <el-table-column prop="category" label="分类" width="120">
-                            <template #default="{ row }">
-                                <el-tag size="small">{{ row.category || '未分类' }}</el-tag>
-                            </template>
-                        </el-table-column>
-                        <el-table-column prop="path" label="路径" width="250" show-overflow-tooltip />
-                        <el-table-column prop="version" label="版本" width="80" align="center">
-                            <template #default="{ row }">
-                                v{{ row.version || 1 }}
-                            </template>
-                        </el-table-column>
-                        <el-table-column prop="updatedAt" label="更新时间" width="160">
-                            <template #default="{ row }">
-                                {{ formatDate(row.updatedAt) }}
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="操作" width="200" fixed="right">
-                            <template #default="{ row }">
-                                <el-button link type="primary" size="small" @click.stop="handleViewDocument(row)">
-                                    查看
-                                </el-button>
-                                <el-button link type="primary" size="small" @click.stop="handleEditDocument(row)">
-                                    编辑
-                                </el-button>
-                                <el-button link type="danger" size="small" @click.stop="handleDeleteDocument(row)">
-                                    删除
-                                </el-button>
-                            </template>
-                        </el-table-column>
-                    </el-table>
+                    <div class="table-container">
+                        <el-table
+                            v-loading="loading"
+                            :data="documentList"
+                            style="width: 100%"
+                            @row-click="handleRowClick"
+                        >
+                            <el-table-column prop="title" label="标题" min-width="300">
+                                <template #default="{ row }">
+                                    <div class="document-title">
+                                        <el-icon class="doc-icon"><Document /></el-icon>
+                                        <span>{{ row.title }}</span>
+                                    </div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="category" label="分类" width="120">
+                                <template #default="{ row }">
+                                    <el-tag size="small">{{ row.category || '未分类' }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="path" label="路径" width="250" show-overflow-tooltip />
+                            <el-table-column prop="version" label="版本" width="80" align="center">
+                                <template #default="{ row }">
+                                    v{{ row.version || 1 }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="updatedAt" label="更新时间" width="160">
+                                <template #default="{ row }">
+                                    {{ formatDate(row.updatedAt) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="200" fixed="right">
+                                <template #default="{ row }">
+                                    <el-button link type="primary" size="small" @click.stop="handleViewDocument(row)">
+                                        查看
+                                    </el-button>
+                                    <el-button link type="primary" size="small" @click.stop="handleEditDocument(row)">
+                                        编辑
+                                    </el-button>
+                                    <el-button link type="danger" size="small" @click.stop="handleDeleteDocument(row)">
+                                        删除
+                                    </el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </div>
                     
                     <!-- 分页 -->
                     <div class="document-pagination">
@@ -119,16 +120,76 @@
                 </div>
             </el-main>
         </el-container>
+        
+        <!-- 查看文档详情 - 全屏弹窗 -->
+        <el-dialog
+            v-model="viewDialogVisible"
+            :title="currentDocument?.title"
+            fullscreen
+            :close-on-click-modal="false"
+            class="document-view-dialog"
+        >
+            <div class="document-view-content" v-if="currentDocument">
+                <div class="document-meta">
+                    <div class="meta-item">
+                        <el-tag size="small">{{ currentDocument.category }}</el-tag>
+                    </div>
+                    <div class="meta-item">
+                        <el-icon><Document /></el-icon>
+                        <span>创建：{{ formatDate(currentDocument.createdAt) }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <el-icon><Document /></el-icon>
+                        <span>更新：{{ formatDate(currentDocument.updatedAt) }}</span>
+                    </div>
+                    <div class="meta-item" v-if="currentDocument.tags && currentDocument.tags.length">
+                        <el-tag
+                            v-for="tag in currentDocument.tags"
+                            :key="tag"
+                            size="small"
+                            style="margin-right: 4px"
+                        >
+                            {{ tag }}
+                        </el-tag>
+                    </div>
+                </div>
+                
+                <el-divider />
+                
+                <div class="document-description" v-if="currentDocument.description">
+                    <strong>文档描述：</strong>
+                    <p>{{ currentDocument.description }}</p>
+                </div>
+                
+                <div class="document-body">
+                    <div v-html="renderMarkdown(currentDocument.content || '')" class="markdown-content"></div>
+                </div>
+            </div>
+            
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button @click="viewDialogVisible = false">关闭</el-button>
+                    <el-button
+                        type="primary"
+                        @click="handleEditDocument"
+                        v-if="currentDocument"
+                    >
+                        编辑
+                    </el-button>
+                </div>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { deleteDocument, getDocumentCategories, getDocumentList } from '@/api/document'
+import { deleteDocument, getDocumentById, getDocumentCategories, getDocumentList } from '@/api/document'
 import FolderTree from '@/components/document/FolderTree.vue'
 import type { DocumentCategory, DocumentInfo } from '@/types/document'
 import type { DocumentFolderTree } from '@/types/document-folder'
-import { Document, DocumentAdd, Search } from '@element-plus/icons-vue'
+import { Document, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { marked } from 'marked'
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -147,6 +208,10 @@ const currentFolder = ref<DocumentFolderTree | null>(null)
 
 // 面包屑列表
 const breadcrumbList = ref<{ name: string; path: string }[]>([])
+
+// 查看文档弹窗
+const viewDialogVisible = ref(false)
+const currentDocument = ref<DocumentInfo | null>(null)
 
 // 分页
 const pagination = reactive({
@@ -281,16 +346,35 @@ const handleRowClick = (row: DocumentInfo) => {
 /**
  * 查看文档
  */
-const handleViewDocument = (row: DocumentInfo) => {
-    ElMessage.info('查看文档：' + row.title)
-    // TODO: 跳转到文档详情页
+const handleViewDocument = async (row: DocumentInfo) => {
+    try {
+        // 加载文档详情
+        const res: any = await getDocumentById(row.id)
+        const documentDetail = res.data || res
+        
+        // 设置当前文档
+        currentDocument.value = documentDetail
+        
+        // 打开全屏弹窗
+        viewDialogVisible.value = true
+    } catch (error: any) {
+        ElMessage.error('加载文档失败：' + (error.message || '未知错误'))
+    }
 }
 
 /**
  * 编辑文档
  */
-const handleEditDocument = (row: DocumentInfo) => {
-    router.push(`/documents/${row.id}/edit`)
+const handleEditDocument = (row?: DocumentInfo) => {
+    // 如果没有传入 row，使用当前文档
+    const docId = row?.id || currentDocument.value?.id
+    if (!docId) return
+    
+    viewDialogVisible.value = false
+    router.push({
+        name: 'DocumentEdit',
+        params: { id: docId }
+    })
 }
 
 /**
@@ -319,20 +403,9 @@ const handleDeleteDocument = async (row: DocumentInfo) => {
 }
 
 /**
- * 分页变化
- */
-const handleSizeChange = () => {
-    loadDocumentList()
-}
-
-const handlePageChange = () => {
-    loadDocumentList()
-}
-
-/**
  * 格式化日期
  */
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-'
     const date = new Date(dateStr)
     return date.toLocaleString('zh-CN', {
@@ -342,6 +415,25 @@ const formatDate = (dateStr: string) => {
         hour: '2-digit',
         minute: '2-digit'
     })
+}
+
+/**
+ * 渲染 Markdown
+ */
+const renderMarkdown = (content?: string) => {
+    if (!content) return ''
+    return marked(content) as string
+}
+
+/**
+ * 分页变化
+ */
+const handleSizeChange = () => {
+    loadDocumentList()
+}
+
+const handlePageChange = () => {
+    loadDocumentList()
 }
 </script>
 
@@ -354,6 +446,7 @@ const formatDate = (dateStr: string) => {
     .document-container {
         height: 100vh;
         width: 100%;
+        display: flex;
         
         .document-aside {
             border-right: 1px solid #e4e7ed;
@@ -362,20 +455,25 @@ const formatDate = (dateStr: string) => {
             display: flex;
             flex-direction: column;
             width: 280px !important; // 固定宽度
+            height: calc(100vh - 74px); // 减去顶部导航栏高度
         }
         
         .document-main {
             background: #f5f7fa;
             padding: 20px;
-            overflow: hidden;
+            overflow: auto;
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 16px;
+            min-height: 0;
+            height: calc(100vh - 60px); // 减去顶部导航栏高度
             
             .document-list-container {
-                height: 100%;
+                flex: 1;
                 display: flex;
                 flex-direction: column;
+                gap: 16px;
                 
                 .document-breadcrumb {
                     padding: 12px 16px;
@@ -383,7 +481,6 @@ const formatDate = (dateStr: string) => {
                     border-radius: 8px;
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
                     font-size: 14px;
-                    margin-bottom: 16px;
                     
                     :deep(.el-breadcrumb__item) {
                         font-weight: 500;
@@ -402,7 +499,6 @@ const formatDate = (dateStr: string) => {
                     background: #fff;
                     border-radius: 8px;
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                    margin-bottom: 16px;
                     
                     .toolbar-left {
                         display: flex;
@@ -422,40 +518,48 @@ const formatDate = (dateStr: string) => {
                     }
                 }
                 
-                :deep(.el-table) {
+                .table-container {
                     flex: 1;
                     background: #fff;
                     border-radius: 8px;
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
                     overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    min-height: 0;
                     
-                    th {
-                        background: #fafafa;
-                        font-weight: 600;
-                        color: #606266;
-                        font-size: 14px;
-                        border-bottom: 1px solid #ebeef5;
-                    }
-                    
-                    td {
-                        padding: 14px 0;
-                        border-bottom: 1px solid #f2f6fc;
-                    }
-                    
-                    .el-table__body tr:hover {
-                        background: #f5f7fa;
-                    }
-                    
-                    .document-title {
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        font-weight: 500;
-                        color: #303133;
+                    :deep(.el-table) {
+                        flex: 1;
+                        overflow: hidden;
                         
-                        .doc-icon {
-                            color: #409EFF;
-                            font-size: 16px;
+                        th {
+                            background: #fafafa;
+                            font-weight: 600;
+                            color: #606266;
+                            font-size: 14px;
+                            border-bottom: 1px solid #ebeef5;
+                        }
+                        
+                        td {
+                            padding: 14px 0;
+                            border-bottom: 1px solid #f2f6fc;
+                        }
+                        
+                        .el-table__body tr:hover {
+                            background: #f5f7fa;
+                        }
+                        
+                        .document-title {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            font-weight: 500;
+                            color: #303133;
+                            
+                            .doc-icon {
+                                color: #409EFF;
+                                font-size: 16px;
+                            }
                         }
                     }
                 }
@@ -467,7 +571,6 @@ const formatDate = (dateStr: string) => {
                     background: #fff;
                     border-radius: 8px;
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                    margin-top: 16px;
                     
                     :deep(.el-pagination) {
                         padding: 0;

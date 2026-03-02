@@ -70,6 +70,10 @@ export interface DocumentInfo {
    * 阅读进度（可选）
    */
   readProgress?: number
+  /**
+   * 文档内容
+   */
+  content?: string
 }
 
 /**
