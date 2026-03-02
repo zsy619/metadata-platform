@@ -1,5 +1,6 @@
 <template>
-    <div class="login-card" role="main">
+    <div class="login-container">
+        <div class="login-card" role="main">
         <!-- 品牌头部 -->
         <header class="brand-header">
             <div class="accent-logo-box flex-center" aria-hidden="true">
@@ -100,6 +101,7 @@
                 免费注册
             </el-link>
         </footer>
+        </div>
     </div>
     <!-- 弹窗：注册 -->
     <el-dialog v-model="showRegisterDialog" title="注册新账号" width="460px" :close-on-click-modal="false" destroy-on-close>
@@ -326,15 +328,25 @@ const showFallbackHanzi = (hanzi: string) => {
 }
 </script>
 <style scoped>
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    width: 100%;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
+    padding: 20px;
+    box-sizing: border-box;
+}
+
 .login-card {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 16px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
     padding: 40px;
     width: 100%;
     max-width: 440px;
-    margin: 0 20px;
     animation: cardIn 0.5s ease-out;
 }
 
@@ -543,5 +555,77 @@ const showFallbackHanzi = (hanzi: string) => {
 
 .m-b-lg {
     margin-bottom: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+    .login-container {
+        padding: 10px;
+    }
+    
+    .login-card {
+        padding: 24px;
+        max-width: 100%;
+    }
+    
+    .brand-title {
+        margin-top: 8px;
+    }
+    
+    .welcome-section {
+        margin-bottom: 24px;
+    }
+    
+    .welcome-title {
+        font-size: 18px;
+    }
+    
+    .welcome-subtitle {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    .login-card {
+        padding: 32px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .login-card {
+        max-width: 480px;
+        padding: 48px;
+    }
+    
+    .welcome-title {
+        font-size: 22px;
+    }
+}
+
+/* 弹窗样式优化 */
+:deep(.el-dialog) {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+:deep(.el-dialog__header) {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    margin-right: 0;
+}
+
+:deep(.el-dialog__title) {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+}
+
+:deep(.el-dialog__body) {
+    padding: 24px;
+}
+
+:deep(.el-dialog__footer) {
+    padding: 16px 24px;
+    border-top: 1px solid var(--el-border-color-lighter);
 }
 </style>
