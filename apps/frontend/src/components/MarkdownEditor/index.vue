@@ -113,18 +113,25 @@
                         <font-awesome-icon :icon="['fas', 'image']" />
                     </el-button>
                 </el-tooltip>
-                <el-tooltip content="表格" placement="bottom">
-                    <el-popover
-                        placement="bottom"
-                        :width="200"
-                        trigger="click"
-                        popper-class="table-popover"
+                <div class="table-popover-wrapper">
+                    <el-tooltip content="表格" placement="bottom">
+                        <el-button 
+                            size="small" 
+                            class="toolbar-icon-btn"
+                            @click="toggleTablePopover"
+                            :class="{ 'active': showTablePopover }"
+                        >
+                            <font-awesome-icon :icon="['fas', 'table']" />
+                        </el-button>
+                    </el-tooltip>
+                    
+                    <!-- 自定义表格选择器弹出层 -->
+                    <div 
+                        v-show="showTablePopover" 
+                        class="table-popover-content"
+                        @mouseenter="showTablePopover = true"
+                        @mouseleave="showTablePopover = false"
                     >
-                        <template #reference>
-                            <el-button size="small" class="toolbar-icon-btn">
-                                <font-awesome-icon :icon="['fas', 'table']" />
-                            </el-button>
-                        </template>
                         <div class="table-grid-selector">
                             <div class="table-grid" @mousemove="handleGridMove" @click="handleGridSelect">
                                 <div 
@@ -146,8 +153,8 @@
                                 {{ selectedRows }} × {{ selectedCols }} 表格
                             </div>
                         </div>
-                    </el-popover>
-                </el-tooltip>
+                    </div>
+                </div>
                 <el-tooltip content="数学公式" placement="bottom">
                     <el-button size="small" @click="insertFormula" class="toolbar-icon-btn">
                         <font-awesome-icon :icon="['fas', 'square-root-variable']" />
@@ -342,6 +349,12 @@ const selectedRows = ref(1)
 const selectedCols = ref(1)
 const hoverRows = ref(1)
 const hoverCols = ref(1)
+const showTablePopover = ref(false)
+
+// 显示/隐藏表格选择器
+const toggleTablePopover = () => {
+    showTablePopover.value = !showTablePopover.value
+}
 
 // 历史记录（撤销/重做）
 const history = reactive({
@@ -702,6 +715,15 @@ const insertTable = () => {
     insertTableWithSize(3, 3) // 默认 3x3
 }
 
+const toggleFullscreen = () => {
+    isFullscreen.value = !isFullscreen.value
+    if (isFullscreen.value) {
+        document.documentElement.requestFullscreen?.()
+    } else {
+        document.exitFullscreen?.()
+    }
+}
+
 const scrollToHeading = (headingId: string) => {
     const element = document.getElementById(headingId)
     element?.scrollIntoView({ behavior: 'smooth' })
@@ -860,47 +882,73 @@ defineExpose({
             padding: 0 !important;
         }
         
-        .table-grid-selector {
-            padding: 8px;
+        .table-popover-wrapper {
+            position: relative;
+            display: inline-block;
             
-            .table-grid {
-                display: inline-block;
+            .table-popover-content {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                margin-top: 4px;
+                background: #fff;
                 border: 1px solid #e4e7ed;
-                border-radius: 3px;
-                overflow: hidden;
+                border-radius: 4px;
+                box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+                z-index: 2000;
+                padding: 8px;
+                white-space: nowrap;
                 
-                .table-row {
-                    display: flex;
-                    
-                    .table-cell {
-                        width: 20px;
-                        height: 20px;
+                .table-grid-selector {
+                    .table-grid {
+                        display: inline-block;
                         border: 1px solid #e4e7ed;
+                        border-radius: 3px;
+                        overflow: hidden;
                         background: #fff;
-                        cursor: pointer;
-                        transition: all 0.2s;
                         
-                        &.active {
-                            background: #409eff;
-                            border-color: #409eff;
+                        .table-row {
+                            display: flex;
+                            
+                            .table-cell {
+                                width: 20px;
+                                height: 20px;
+                                border: 1px solid #e4e7ed;
+                                background: #fff;
+                                cursor: pointer;
+                                transition: all 0.15s;
+                                box-sizing: border-box;
+                                
+                                &.active {
+                                    background: #409eff;
+                                    border-color: #409eff;
+                                }
+                                
+                                &:hover {
+                                    background: #ecf5ff;
+                                    border-color: #409eff;
+                                }
+                            }
                         }
-                        
-                        &:hover {
-                            background: #ecf5ff;
-                        }
+                    }
+                    
+                    .table-size-info {
+                        margin-top: 8px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #606266;
+                        padding: 4px;
+                        background: #f5f7fa;
+                        border-radius: 3px;
                     }
                 }
             }
-            
-            .table-size-info {
-                margin-top: 8px;
-                text-align: center;
-                font-size: 12px;
-                color: #606266;
-                padding: 4px;
-                background: #f5f7fa;
-                border-radius: 3px;
-            }
+        }
+        
+        .toolbar-icon-btn.active {
+            background: #ecf5ff;
+            border-color: #409eff;
+            color: #409eff;
         }
     }
     
