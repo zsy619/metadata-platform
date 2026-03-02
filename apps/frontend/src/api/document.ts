@@ -21,11 +21,44 @@ export const getDocumentList = async (params?: DocumentQueryParams): Promise<any
     method: 'get',
     params
   })
-  // 检查响应结构，如果有data字段，则返回data
+  console.log('文档列表 API 原始响应:', response)
+  console.log('文档列表 API 响应类型:', typeof response)
+  console.log('文档列表 API 响应是否有 data 字段:', response && 'data' in response)
+  
+  // 响应拦截器返回的是完整的 response 对象
+  // 后端返回的格式可能是：
+  // 1. { code: 0, data: [{...}], ... } - data 直接是数组
+  // 2. { code: 0, data: { list: [...], total: 1 }, ... } - data 是包含 list 和 total 的对象
   if (response && response.data) {
+    console.log('文档列表 API data 字段:', response.data)
+    console.log('文档列表 API data 字段类型:', typeof response.data)
+    console.log('文档列表 API data 字段是否是数组:', Array.isArray(response.data))
+    
+    // 如果 response.data 是数组，直接返回
+    if (Array.isArray(response.data)) {
+      console.log('文档列表 API 使用 response.data 数组，长度:', response.data.length)
+      return response.data
+    }
+    
+    // 如果 response.data 有 list 和 total 字段，返回 response.data
+    if (response.data.list !== undefined) {
+      console.log('文档列表 API 使用 response.data 对象')
+      return response.data
+    }
+    
+    // 否则返回 response.data
     return response.data
   }
-  return response
+  
+  // 如果响应本身就是数组，直接返回
+  if (Array.isArray(response)) {
+    console.log('文档列表 API 使用 response 数组')
+    return response
+  }
+  
+  // 默认返回空结构
+  console.log('文档列表 API 返回空结构')
+  return { list: [], total: 0 }
 }
 
 /**
@@ -36,11 +69,9 @@ export const getDocumentCategories = async (): Promise<any> => {
     url: '/api/documents/categories',
     method: 'get'
   })
-  // 检查响应结构，如果有data字段，则返回data
-  if (response && response.data) {
-    return response.data
-  }
-  return response
+  console.log('分类列表API响应:', response)
+  // 从完整的response对象中提取data
+  return response.data
 }
 
 // ==================== 文档详情 API ====================

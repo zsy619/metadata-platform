@@ -52,7 +52,7 @@
                         
                         <div class="toolbar-actions">
                             <el-button type="primary" @click="handleCreateDocument" circle title="新建文档">
-                                <font-awesome-icon icon="fa-solid fa-file-plus" />
+                                <FontAwesomeIcon icon="fa-solid fa-file-circle-plus" />
                             </el-button>
                         </div>
                     </div>
@@ -188,6 +188,7 @@ import FolderTree from '@/components/document/FolderTree.vue'
 import type { DocumentCategory, DocumentInfo } from '@/types/document'
 import type { DocumentFolderTree } from '@/types/document-folder'
 import { Document, Search } from '@element-plus/icons-vue'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { marked } from 'marked'
 import { onMounted, reactive, ref } from 'vue'
@@ -233,12 +234,37 @@ onMounted(() => {
  * 加载分类列表
  */
 const loadCategories = async () => {
+    console.log('开始加载分类...')
     try {
         const res: any = await getDocumentCategories()
-        // 根据实际 API 响应结构调整
-        categories.value = res.data || res || []
+        console.log('分类列表API响应:', res)
+        console.log('响应类型:', typeof res)
+        console.log('响应是否有data字段:', 'data' in res)
+        
+        // 检查响应结构
+        let categoriesData = []
+        if (res.data) {
+            // 如果响应有data字段，使用res.data
+            console.log('data字段类型:', typeof res.data)
+            console.log('data字段长度:', res.data.length)
+            console.log('data字段内容:', res.data)
+            categoriesData = res.data
+        } else if (Array.isArray(res)) {
+            // 如果响应本身是数组，直接使用
+            console.log('响应本身是数组，长度:', res.length)
+            console.log('响应内容:', res)
+            categoriesData = res
+        }
+        
+        // 设置分类数据
+        categories.value = categoriesData
+        console.log('处理后的分类列表:', categories.value)
+        console.log('处理后的分类列表长度:', categories.value.length)
     } catch (error: any) {
+        console.error('加载分类失败:', error)
         ElMessage.error('加载分类失败：' + (error.message || '未知错误'))
+    } finally {
+        console.log('分类加载完成')
     }
 }
 
@@ -249,6 +275,11 @@ const loadDocumentList = async () => {
     loadingText.value = '加载中...'
     loading.value = true
     try {
+        console.log('开始加载文档列表...')
+        console.log('当前分页参数:', pagination)
+        console.log('当前搜索关键词:', searchKeyword.value)
+        console.log('当前分类:', currentCategory.value)
+        
         const params: any = {
             page: pagination.page,
             pageSize: pagination.pageSize
@@ -262,14 +293,68 @@ const loadDocumentList = async () => {
             params.category = currentCategory.value
         }
         
+        console.log('请求参数:', params)
+        
         const res: any = await getDocumentList(params)
-        // 根据实际 API 响应结构调整
-        documentList.value = res.data || res.list || []
-        pagination.total = res.total || 0
+        console.log('文档列表 API 响应:', res)
+        console.log('响应类型:', typeof res)
+        console.log('响应是否是数组:', Array.isArray(res))
+        console.log('响应是否是对象:', res && typeof res === 'object')
+        
+        // 检查响应结构
+        let listData = []
+        let totalCount = 0
+        
+        // 如果响应是数组，直接使用
+        if (Array.isArray(res)) {
+            console.log('使用数组作为文档列表，长度:', res.length)
+            listData = res
+            totalCount = res.length
+        } 
+        // 如果响应是对象且有 list 字段
+        else if (res && typeof res === 'object') {
+            // 检查是否有 list 字段
+            if (res.list !== undefined) {
+                console.log('使用 res.list 作为文档列表')
+                listData = Array.isArray(res.list) ? res.list : []
+                totalCount = res.total || listData.length
+            } 
+            // 如果响应对象本身就是数据数组的包装对象（没有 list 字段），尝试直接使用
+            else {
+                console.log('响应对象没有 list 字段，尝试直接使用 res')
+                console.log('响应对象的键:', Object.keys(res))
+                // 如果响应对象有 data 字段且是数组，使用它
+                if (Array.isArray(res.data)) {
+                    console.log('使用 res.data 作为文档列表，长度:', res.data.length)
+                    listData = res.data
+                    totalCount = res.total || res.data.length
+                } else {
+                    console.log('无法解析响应结构，使用空数组')
+                    listData = []
+                    totalCount = 0
+                }
+            }
+        }
+        // 其他情况
+        else {
+            console.log('未知的响应结构，使用空数组')
+            listData = []
+            totalCount = 0
+        }
+        
+        documentList.value = listData
+        pagination.total = totalCount
+        console.log('处理后的文档列表:', documentList.value)
+        console.log('处理后的文档列表长度:', documentList.value.length)
+        console.log('处理后的总数量:', pagination.total)
     } catch (error: any) {
+        console.error('加载文档列表失败:', error)
+        console.error('错误详情:', error.message)
+        console.error('错误堆栈:', error.stack)
         ElMessage.error('加载文档列表失败：' + (error.message || '未知错误'))
     } finally {
         loading.value = false
+        console.log('文档列表加载完成')
     }
 }
 

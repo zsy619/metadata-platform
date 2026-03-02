@@ -3,17 +3,17 @@
         <!-- 工具栏 -->
         <div class="folder-toolbar">
             <div class="toolbar-title">
-                <font-awesome-icon icon="fa-solid fa-folder" class="title-icon" />
-                <span>文档目录</span>
-            </div>
-            <div class="toolbar-actions">
-                <el-button type="primary" size="small" @click="handleCreateRootFolder" class="create-root-btn" circle title="新建根目录">
-                    <font-awesome-icon icon="fa-solid fa-folder-plus" />
-                </el-button>
-                <el-button size="small" @click="refreshTree" class="refresh-btn" circle title="刷新">
-                    <font-awesome-icon icon="fa-solid fa-arrows-rotate" />
-                </el-button>
-            </div>
+                    <FontAwesomeIcon icon="fa-solid fa-folder" class="title-icon" />
+                    <span>文档目录</span>
+                </div>
+                <div class="toolbar-actions">
+                    <el-button type="primary" size="small" @click="handleCreateRootFolder" class="create-root-btn" circle title="新建根目录">
+                        <FontAwesomeIcon icon="fa-solid fa-folder-plus" />
+                    </el-button>
+                    <el-button size="small" @click="refreshTree" class="refresh-btn" circle title="刷新">
+                        <FontAwesomeIcon icon="fa-solid fa-arrows-rotate" />
+                    </el-button>
+                </div>
         </div>
 
         <!-- 文件夹树 -->
@@ -37,10 +37,10 @@
             >
                 <template #default="{ node, data }">
                     <div class="folder-tree-node">
-                        <font-awesome-icon icon="fa-solid fa-folder" class="folder-icon" />
+                        <FontAwesomeIcon icon="fa-solid fa-folder" class="folder-icon" />
                         <span class="folder-name">{{ node.label }}</span>
-                        <span v-if="data.docCount !== undefined" class="folder-doc-count">
-                            {{ data.docCount }}
+                        <span class="folder-doc-count">
+                            {{ data.docCount || 0 }}
                         </span>
                     </div>
                 </template>
@@ -56,28 +56,28 @@
         >
             <el-menu class="context-menu-list">
                 <el-menu-item @click="handleCreateSubFolder">
-                    <font-awesome-icon icon="fa-solid fa-folder-plus" />
+                    <FontAwesomeIcon icon="fa-solid fa-folder-plus" />
                     <span>新建子文件夹</span>
                 </el-menu-item>
                 <el-menu-item @click="handleCreateSiblingFolder">
-                    <font-awesome-icon icon="fa-solid fa-folder-plus" />
+                    <FontAwesomeIcon icon="fa-solid fa-folder-plus" />
                     <span>新建同级文件夹</span>
                 </el-menu-item>
                 <el-menu-item @click="handleRenameFolder">
-                    <font-awesome-icon icon="fa-solid fa-pen-to-square" />
+                    <FontAwesomeIcon icon="fa-solid fa-pen-to-square" />
                     <span>重命名</span>
                 </el-menu-item>
                 <el-menu-item @click="handleMoveFolder">
-                    <font-awesome-icon icon="fa-solid fa-arrow-right" />
+                    <FontAwesomeIcon icon="fa-solid fa-arrow-right" />
                     <span>移动</span>
                 </el-menu-item>
                 <el-menu-item @click="handleCopyFolder">
-                    <font-awesome-icon icon="fa-solid fa-copy" />
+                    <FontAwesomeIcon icon="fa-solid fa-copy" />
                     <span>复制</span>
                 </el-menu-item>
                 <div class="context-menu-divider" />
                 <el-menu-item @click="handleDeleteFolder" class="danger-item">
-                    <font-awesome-icon icon="fa-solid fa-trash" />
+                    <FontAwesomeIcon icon="fa-solid fa-trash" />
                     <span>删除</span>
                 </el-menu-item>
             </el-menu>
@@ -182,6 +182,7 @@ import {
 import type { CreateFolderParams, DocumentFolderTree, UpdateFolderParams } from '@/types/document-folder'
 
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 
 // ==================== 状态定义 ====================
@@ -253,8 +254,15 @@ const loadFolderTree = async () => {
     loading.value = true
     try {
         const res = await getFolderTree()
-        folderTree.value = res
+        console.log('FolderTree - 文件夹树API响应:', res)
+        console.log('FolderTree - 响应类型:', typeof res)
+        console.log('FolderTree - 响应是否是数组:', Array.isArray(res))
+        // 直接使用API返回的数据
+        folderTree.value = Array.isArray(res) ? res : []
+        console.log('FolderTree - 处理后的文件夹树:', folderTree.value)
+        console.log('FolderTree - 文件夹树长度:', folderTree.value.length)
     } catch (error: any) {
+        console.error('FolderTree - 加载文件夹树失败:', error)
         ElMessage.error('加载文件夹树失败：' + (error.message || '未知错误'))
     } finally {
         loading.value = false

@@ -85,14 +85,40 @@ export const getFolderList = async (params?: {
  * 获取文件夹树形结构
  * @param parentId 父文件夹 ID（可选，不传则从根节点开始）
  */
-export const getFolderTree = async (parentId?: string): Promise<DocumentFolderTree[]> => {
+export const getFolderTree = async (parentId?: string): Promise<any> => {
   const res: any = await request({
     url: '/api/documents/folders/tree',
     method: 'get',
     params: { parentId }
   })
-  // 后端返回格式：{ success: true, data: [...] }
-  return res.data || res || []
+  console.log('文件夹树 API 原始响应:', res)
+  console.log('文件夹树 API 响应类型:', typeof res)
+  console.log('文件夹树 API 响应是否有 data 字段:', res && 'data' in res)
+  
+  // 响应拦截器返回的是完整的 response 对象，需要提取 data 字段
+  // 但如果 data 字段本身还有 data 字段（后端嵌套），则需要进一步提取
+  if (res && res.data) {
+    console.log('文件夹树 API data 字段:', res.data)
+    console.log('文件夹树 API data 字段类型:', typeof res.data)
+    console.log('文件夹树 API data 字段是否是数组:', Array.isArray(res.data))
+    
+    // 如果 res.data 是数组，直接返回
+    if (Array.isArray(res.data)) {
+      return res.data
+    }
+    
+    // 如果 res.data 有 data 字段（后端嵌套），返回 res.data.data
+    if (res.data.data && Array.isArray(res.data.data)) {
+      console.log('文件夹树 API 使用 res.data.data')
+      return res.data.data
+    }
+    
+    // 否则返回 res.data
+    return res.data
+  }
+  
+  // 如果响应本身就是数组，直接返回
+  return Array.isArray(res) ? res : []
 }
 
 // ==================== 文件夹操作 API ====================

@@ -82,7 +82,7 @@ request.interceptors.response.use(
         }
 
         // 处理业务错误
-        if (data && typeof data === 'object' && data.code && data.code !== 200) {
+        if (data && typeof data === 'object' && data.code && ![0, 200].includes(data.code)) {
             const msg = data.message || '请求失败'
             const url = response.config.url
             console.error(`API 业务错误 [${url}]:`, data)
@@ -90,7 +90,7 @@ request.interceptors.response.use(
             return Promise.reject(new Error(msg))
         }
 
-        return data
+        return response
     },
     (error: any) => {
         endLoading()
