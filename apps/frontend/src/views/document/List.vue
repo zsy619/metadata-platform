@@ -75,7 +75,9 @@
                             </el-table-column>
                             <el-table-column prop="category" label="分类" width="120">
                                 <template #default="{ row }">
-                                    <el-tag size="small">{{ row.category || '未分类' }}</el-tag>
+                                    <el-tag size="small" :type="getCategoryTagType(getCategoryName(row.category))">
+                                        {{ getCategoryName(row.category) || '未分类' }}
+                                    </el-tag>
                                 </template>
                             </el-table-column>
                             <el-table-column prop="path" label="路径" width="250" show-overflow-tooltip />
@@ -132,7 +134,9 @@
             <div class="document-view-content" v-if="currentDocument">
                 <div class="document-meta">
                     <div class="meta-item">
-                        <el-tag size="small">{{ currentDocument.category }}</el-tag>
+                        <el-tag size="small" :type="getCategoryTagType(getCategoryName(currentDocument.category || ''))">
+                            {{ getCategoryName(currentDocument.category || '') }}
+                        </el-tag>
                     </div>
                     <div class="meta-item">
                         <el-icon><Document /></el-icon>
@@ -228,6 +232,41 @@ onMounted(() => {
     loadDocumentList()
 })
 
+// ==================== 分类映射 ====================
+
+// 分类 ID 到名称的映射
+const categoryMap = ref<Record<string, string>>({})
+
+// 获取分类名称
+const getCategoryName = (categoryId: string): string => {
+    if (!categoryId) return ''
+    return categoryMap.value[categoryId] || categoryId
+}
+
+// 更新分类映射
+const updateCategoryMap = () => {
+    categoryMap.value = {}
+    categories.value.forEach(cat => {
+        categoryMap.value[cat.id] = cat.name
+    })
+    console.log('分类映射:', categoryMap.value)
+}
+
+// 获取分类标签类型
+const getCategoryTagType = (categoryName: string): string => {
+    const typeMap: Record<string, string> = {
+        '系统概述': '',
+        '技术架构': 'success',
+        '核心功能': 'warning',
+        '安全增强': 'danger',
+        '性能优化': 'primary',
+        '测试报告': 'info',
+        '部署指南': 'success',
+        '最佳实践': 'primary'
+    }
+    return typeMap[categoryName] || ''
+}
+
 // ==================== 数据加载 ====================
 
 /**
@@ -260,6 +299,9 @@ const loadCategories = async () => {
         categories.value = categoriesData
         console.log('处理后的分类列表:', categories.value)
         console.log('处理后的分类列表长度:', categories.value.length)
+        
+        // 更新分类映射
+        updateCategoryMap()
     } catch (error: any) {
         console.error('加载分类失败:', error)
         ElMessage.error('加载分类失败：' + (error.message || '未知错误'))
@@ -279,6 +321,7 @@ const loadDocumentList = async () => {
         console.log('当前分页参数:', pagination)
         console.log('当前搜索关键词:', searchKeyword.value)
         console.log('当前分类:', currentCategory.value)
+        console.log('当前文件夹:', currentFolder.value)
         
         const params: any = {
             page: pagination.page,
@@ -291,6 +334,13 @@ const loadDocumentList = async () => {
         
         if (currentCategory.value) {
             params.category = currentCategory.value
+        }
+        
+        // 如果选择了文件夹，添加文件夹筛选参数
+        if (currentFolder.value) {
+            // 使用文件夹路径作为筛选条件
+            params.path = currentFolder.value.path
+            console.log('按文件夹筛选，路径:', params.path)
         }
         
         console.log('请求参数:', params)
@@ -659,6 +709,232 @@ const handlePageChange = () => {
                     
                     :deep(.el-pagination) {
                         padding: 0;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 查看文档对话框样式
+.document-view-dialog {
+    // 对话框容器
+    :deep(.el-dialog) {
+        margin-top: 0 !important;
+        height: calc(100vh - 40px) !important;
+        top: 20px !important;
+        bottom: 20px !important;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    // 对话框头部
+    :deep(.el-dialog__header) {
+        padding: 16px 24px;
+        border-bottom: 1px solid #ebeef5;
+        flex-shrink: 0;
+        min-height: 60px;
+        
+        .el-dialog__title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+    }
+    
+    // 对话框主体
+    :deep(.el-dialog__body) {
+        padding: 0;
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        position: relative;
+    }
+    
+    // 对话框底部操作栏 - 绝对定位在底部
+    :deep(.el-dialog__footer) {
+        padding: 16px 24px;
+        border-top: 1px solid #ebeef5;
+        background: #f5f7fa;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        min-height: 52px;
+        z-index: 10;
+    }
+    
+    .document-view-content {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding-bottom: 70px; // 为底部操作栏留出空间
+        
+        .document-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 16px 32px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+            
+            .meta-item {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px;
+                color: #606266;
+                
+                .el-icon {
+                    font-size: 14px;
+                }
+            }
+        }
+        
+        .document-description {
+            padding: 16px 32px;
+            margin: 0;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+            
+            strong {
+                color: #303133;
+                font-weight: 600;
+                display: block;
+                margin-bottom: 8px;
+            }
+            
+            p {
+                margin: 0;
+                color: #606266;
+                line-height: 1.6;
+            }
+        }
+        
+        .document-body {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 0;
+            
+            .markdown-content {
+                flex: 1;
+                overflow-y: auto;
+                padding: 24px 32px;
+                line-height: 1.8;
+                color: #303133;
+                
+                :deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
+                    margin-top: 24px;
+                    margin-bottom: 16px;
+                    font-weight: 600;
+                    line-height: 1.25;
+                    color: #303133;
+                }
+                
+                :deep(h1) {
+                    font-size: 2em;
+                    border-bottom: 1px solid #ebeef5;
+                    padding-bottom: 0.3em;
+                }
+                
+                :deep(h2) {
+                    font-size: 1.5em;
+                    border-bottom: 1px solid #ebeef5;
+                    padding-bottom: 0.3em;
+                }
+                
+                :deep(p) {
+                    margin-bottom: 16px;
+                }
+                
+                :deep(code) {
+                    background: #f5f7fa;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 0.9em;
+                    color: #e74c3c;
+                }
+                
+                :deep(pre) {
+                    background: #f5f7fa;
+                    padding: 16px;
+                    border-radius: 6px;
+                    overflow-x: auto;
+                    margin: 16px 0;
+                    border: 1px solid #ebeef5;
+                    
+                    code {
+                        background: transparent;
+                        padding: 0;
+                        color: inherit;
+                    }
+                }
+                
+                :deep(blockquote) {
+                    border-left: 4px solid #409EFF;
+                    padding-left: 16px;
+                    margin: 16px 0;
+                    color: #606266;
+                    background: #f5f7fa;
+                    padding: 12px 16px;
+                    border-radius: 4px;
+                }
+                
+                :deep(ul), :deep(ol) {
+                    padding-left: 24px;
+                    margin-bottom: 16px;
+                }
+                
+                :deep(li) {
+                    margin-bottom: 8px;
+                }
+                
+                :deep(table) {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 16px 0;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                    
+                    th, td {
+                        border: 1px solid #ebeef5;
+                        padding: 12px;
+                        text-align: left;
+                    }
+                    
+                    th {
+                        background: #f5f7fa;
+                        font-weight: 600;
+                        color: #606266;
+                    }
+                    
+                    tr:nth-child(even) {
+                        background: #fafafa;
+                    }
+                }
+                
+                :deep(img) {
+                    max-width: 100%;
+                    height: auto;
+                    display: block;
+                    margin: 16px auto;
+                    border-radius: 4px;
+                }
+                
+                :deep(a) {
+                    color: #409EFF;
+                    text-decoration: none;
+                    
+                    &:hover {
+                        text-decoration: underline;
                     }
                 }
             }

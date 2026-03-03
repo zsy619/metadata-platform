@@ -161,12 +161,17 @@ func (r *documentFolderRepository) buildFolderTree(folders []*model.DocumentFold
 
 	for _, folder := range folders {
 		if folder.ParentID == parentID {
+			// 统计该文件夹下的文档数量
+			var docCount int64
+			pathPattern := "/" + folder.ID + "%"
+			r.db.Model(&model.Document{}).Where("path LIKE ?", pathPattern).Count(&docCount)
+			
 			node := &model.DocumentFolderTree{
 				ID:          folder.ID,
 				Name:        folder.Name,
 				Path:        folder.Path,
 				Level:       folder.Level,
-				DocCount:    folder.DocCount,
+				DocCount:    docCount,
 				HasChildren: folder.HasChildren,
 			}
 

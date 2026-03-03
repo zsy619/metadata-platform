@@ -38,52 +38,54 @@
       </div>
     </el-card>
 
-    <!-- 文档列表 -->
-    <el-row :gutter="20" class="doc-grid">
-      <el-col
-        v-for="doc in documentList"
-        :key="doc.id"
-        :xs="24"
-        :sm="12"
-        :md="8"
-        :lg="8"
-        :xl="6"
-        class="doc-col"
+    <!-- 文档列表 - 使用表格布局 -->
+    <el-card class="doc-table-card" shadow="hover">
+      <el-table
+        :data="documentList"
+        style="width: 100%"
+        v-loading="loading"
+        :empty-text="''"
       >
-        <el-card class="doc-card" shadow="hover" @click="openDocument(doc)">
-          <template #header>
-            <div class="doc-card-header">
+        <el-table-column prop="title" label="文档标题" min-width="200">
+          <template #default="{ row }">
+            <div class="doc-title-cell" @click="openDocument(row)">
               <el-icon class="doc-icon"><Document /></el-icon>
-              <el-tag size="small" :type="getCategoryTagType(getCategoryName(doc.category))">{{ getCategoryName(doc.category) }}</el-tag>
+              <span class="doc-title">{{ row.title }}</span>
             </div>
           </template>
-          
-          <div class="doc-card-body">
-            <h3 class="doc-title">{{ doc.title }}</h3>
-            <p class="doc-description">{{ doc.description }}</p>
-          </div>
-          
-          <div class="doc-card-footer">
-            <div class="doc-meta">
-              <el-icon><Clock /></el-icon>
-              <span>{{ formatDate(doc.updatedAt) }}</span>
-            </div>
-            <div class="doc-size">
-              <el-icon><Folder /></el-icon>
-              <span>{{ formatSize(doc.size) }}</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 空状态 -->
-    <el-empty v-if="!loading && (!documentList || documentList.length === 0)" description="暂无文档" />
-
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <el-skeleton :rows="6" animated />
-    </div>
+        </el-table-column>
+        
+        <el-table-column prop="category" label="分类" width="120">
+          <template #default="{ row }">
+            <el-tag size="small" :type="getCategoryTagType(getCategoryName(row.category))">
+              {{ getCategoryName(row.category) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="path" label="路径" width="200">
+          <template #default="{ row }">
+            <span class="doc-path">{{ row.path }}</span>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="updatedAt" label="更新时间" width="160">
+          <template #default="{ row }">
+            <span class="doc-date">{{ formatDate(row.updatedAt) }}</span>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="size" label="大小" width="100" align="right">
+          <template #default="{ row }">
+            <span class="doc-size">{{ formatSize(row.size) }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      
+      <!-- 空状态 - 不显示 -->
+      <div v-if="!loading && (!documentList || documentList.length === 0)" class="empty-placeholder">
+      </div>
+    </el-card>
 
     <!-- 分页 -->
     <el-pagination
@@ -130,14 +132,6 @@ const getCategoryName = (categoryId: string): string => {
   return categoryMap.value[categoryId] || categoryId
 }
 
-// 计算属性
-const searchTimeout = computed(() => {
-  let timeout: NodeJS.Timeout | null = null
-  return (fn: () => void, delay: number) => {
-    if (timeout) clearTimeout(timeout)
-    timeout = setTimeout(fn, delay)
-  }
-})
 
 // 方法
 const fetchCategories = async () => {
@@ -177,44 +171,41 @@ const fetchDocuments = async () => {
       pageSize: pageSize.value
     })
     
-    console.log('文档列表 API 响应:', result)
-    console.log('响应类型:', typeof result)
-    console.log('响应是否是数组:', Array.isArray(result))
+    console.log('=== fetchDocuments 结果 ===')
+    console.log('result:', result)
+    console.log('result 类型:', typeof result)
+    console.log('result 是否是数组:', Array.isArray(result))
+    console.log('result 长度:', Array.isArray(result) ? result.length : 'N/A')
     
-    // 处理响应结构
+    // 简化处理：如果是数组，直接使用
     if (Array.isArray(result)) {
-      // 如果响应是数组，直接使用
       documentList.value = result
       total.value = result.length
-      console.log('使用数组作为文档列表，长度:', result.length)
-    } else if (result && typeof result === 'object') {
-      // 如果响应是对象，检查是否有 list 字段
-      if (result.list !== undefined) {
-        documentList.value = Array.isArray(result.list) ? result.list : []
-        total.value = result.total || documentList.value.length
-        console.log('使用 result.list 作为文档列表')
-      } else {
-        // 其他情况，尝试直接使用 result
-        documentList.value = []
-        total.value = 0
-        console.log('未知的响应结构')
-      }
-    } else {
+      console.log('✓ 使用数组，文档数量:', result.length)
+    } 
+    // 如果有 list 字段
+    else if (result && result.list) {
+      documentList.value = result.list
+      total.value = result.total || result.list.length
+      console.log('✓ 使用 result.list，文档数量:', result.list.length)
+    }
+    // 其他情况
+    else {
+      console.warn('⚠ 未知的响应结构，使用空数组')
       documentList.value = []
       total.value = 0
-      console.log('响应为空或无效')
     }
     
-    console.log('处理后的文档列表:', documentList.value)
-    console.log('处理后的文档列表长度:', documentList.value.length)
-    console.log('处理后的总数量:', total.value)
+    console.log('最终文档列表:', documentList.value.length, '个文档')
+    console.log('最终总数量:', total.value)
   } catch (error) {
-    console.error('获取文档列表失败:', error)
+    console.error('❌ 获取文档列表失败:', error)
     ElMessage.error('加载文档列表失败')
     documentList.value = []
     total.value = 0
   } finally {
     loading.value = false
+    console.log('加载完成，loading:', loading.value)
   }
 }
 
@@ -297,10 +288,13 @@ onMounted(() => {
   padding: 20px;
   background-color: #f5f7fa;
   min-height: calc(100vh - 84px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .header-card {
-  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .page-header {
@@ -327,7 +321,7 @@ onMounted(() => {
 }
 
 .category-card {
-  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .category-tabs {
@@ -347,86 +341,72 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.doc-grid {
-  margin-bottom: 20px;
-}
-
-.doc-col {
-  margin-bottom: 20px;
-}
-
-.doc-card {
-  height: 100%;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.doc-card:hover {
-  transform: translateY(-4px);
-}
-
-.doc-card-header {
+.doc-table-card {
+  flex: 1;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
 }
 
-.doc-icon {
-  font-size: 20px;
+.doc-table-card :deep(.el-card__body) {
+  flex: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-table-card :deep(.el-table) {
+  flex: 1;
+}
+
+.doc-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
   color: #409EFF;
 }
 
-.doc-card-body {
-  padding: 8px 0;
+.doc-title-cell:hover .doc-title {
+  text-decoration: underline;
+}
+
+.doc-icon {
+  font-size: 18px;
+  color: #409EFF;
 }
 
 .doc-title {
-  margin: 0 0 8px 0;
-  font-size: 16px;
+  font-weight: 500;
   color: #303133;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 
-.doc-description {
-  margin: 0;
+.doc-path {
+  color: #909399;
   font-size: 13px;
+}
+
+.doc-date {
   color: #909399;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  line-height: 1.5;
+  font-size: 13px;
 }
 
-.doc-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.doc-meta,
 .doc-size {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
   color: #909399;
+  font-size: 13px;
 }
 
-.loading-container {
-  padding: 20px;
+.empty-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
 }
 
 .pagination {
   display: flex;
   justify-content: center;
   padding: 20px 0;
+  flex-shrink: 0;
 }
 </style>

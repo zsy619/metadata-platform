@@ -55,7 +55,7 @@ func TestDocumentService_GetDocumentList(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 测试获取列表
-	docs, total, err := svc.GetDocumentList(1, 10, "", "")
+	docs, total, err := svc.GetDocumentList(1, 10, "", "", "")
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), total)
 	assert.Len(t, docs, 1)

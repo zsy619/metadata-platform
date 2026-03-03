@@ -17,7 +17,7 @@ type DocumentRepository interface {
 	Delete(id string) error
 	GetByID(id string) (*model.Document, error)
 	GetByPath(path string) (*model.Document, error)
-	GetList(page, pageSize int, category, keyword string) ([]*model.Document, int64, error)
+	GetList(page, pageSize int, category, keyword, path string) ([]*model.Document, int64, error)
 
 	// 分类管理
 	GetCategories() ([]*model.DocumentCategory, error)
@@ -112,7 +112,7 @@ func (r *documentRepository) GetByPath(path string) (*model.Document, error) {
 }
 
 // GetList 获取文档列表（支持分页、筛选、搜索）
-func (r *documentRepository) GetList(page, pageSize int, category, keyword string) ([]*model.Document, int64, error) {
+func (r *documentRepository) GetList(page, pageSize int, category, keyword, path string) ([]*model.Document, int64, error) {
 	var docs []*model.Document
 	var total int64
 
@@ -128,6 +128,11 @@ func (r *documentRepository) GetList(page, pageSize int, category, keyword strin
 		searchPattern := "%" + keyword + "%"
 		query = query.Where("title LIKE ? OR description LIKE ? OR content LIKE ?",
 			searchPattern, searchPattern, searchPattern)
+	}
+
+	// 路径筛选（文件夹筛选）
+	if path != "" {
+		query = query.Where("path = ?", path)
 	}
 
 	// 获取总数

@@ -46,6 +46,7 @@ func (h *DocumentHandler) GetDocumentList(ctx context.Context, c *app.RequestCon
 	pageSizeStr := c.Query("pageSize")
 	category := c.Query("category")
 	keyword := c.Query("keyword")
+	path := c.Query("path")
 
 	page, _ := strconv.Atoi(pageStr)
 	pageSize, _ := strconv.Atoi(pageSizeStr)
@@ -58,7 +59,7 @@ func (h *DocumentHandler) GetDocumentList(ctx context.Context, c *app.RequestCon
 	}
 
 	// 获取文档列表
-	docs, total, err := h.svc.GetDocumentList(page, pageSize, category, keyword)
+	docs, total, err := h.svc.GetDocumentList(page, pageSize, category, keyword, path)
 	if err != nil {
 		c.JSON(consts.StatusInternalServerError, map[string]interface{}{
 			"code":    500,

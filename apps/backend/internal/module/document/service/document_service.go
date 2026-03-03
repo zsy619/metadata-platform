@@ -19,7 +19,7 @@ type DocumentService interface {
 	DeleteDocument(id string) error
 	GetDocumentByID(id string) (*model.Document, error)
 	GetDocumentByPath(path string) (*model.Document, error)
-	GetDocumentList(page, pageSize int, category, keyword string) ([]*model.Document, int64, error)
+	GetDocumentList(page, pageSize int, category, keyword, path string) ([]*model.Document, int64, error)
 
 	// 分类管理
 	GetCategories() ([]*model.DocumentCategory, error)
@@ -186,7 +186,7 @@ func (s *documentService) GetDocumentByPath(path string) (*model.Document, error
 }
 
 // GetDocumentList 获取文档列表
-func (s *documentService) GetDocumentList(page, pageSize int, category, keyword string) ([]*model.Document, int64, error) {
+func (s *documentService) GetDocumentList(page, pageSize int, category, keyword, path string) ([]*model.Document, int64, error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -197,7 +197,7 @@ func (s *documentService) GetDocumentList(page, pageSize int, category, keyword 
 		pageSize = 100
 	}
 
-	return s.repo.GetList(page, pageSize, category, keyword)
+	return s.repo.GetList(page, pageSize, category, keyword, path)
 }
 
 // GetCategories 获取分类列表
