@@ -54,7 +54,7 @@
           <template #header>
             <div class="doc-card-header">
               <el-icon class="doc-icon"><Document /></el-icon>
-              <el-tag size="small" :type="getCategoryTagType(doc.category)">{{ doc.category }}</el-tag>
+              <el-tag size="small" :type="getCategoryTagType(getCategoryName(doc.category))">{{ getCategoryName(doc.category) }}</el-tag>
             </div>
           </template>
           
@@ -121,6 +121,15 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
 
+// 分类 ID 到名称的映射
+const categoryMap = ref<Record<string, string>>({})
+
+// 获取分类名称
+const getCategoryName = (categoryId: string): string => {
+  if (!categoryId) return ''
+  return categoryMap.value[categoryId] || categoryId
+}
+
 // 计算属性
 const searchTimeout = computed(() => {
   let timeout: NodeJS.Timeout | null = null
@@ -133,7 +142,26 @@ const searchTimeout = computed(() => {
 // 方法
 const fetchCategories = async () => {
   try {
-    categories.value = await getDocumentCategories()
+    const cats = await getDocumentCategories()
+    console.log('分类 API 响应:', cats)
+    
+    // 处理分类数据
+    if (Array.isArray(cats)) {
+      categories.value = cats
+    } else if (cats && Array.isArray(cats.data)) {
+      categories.value = cats.data
+    } else {
+      categories.value = []
+    }
+    
+    console.log('处理后的分类列表:', categories.value)
+    
+    // 更新分类映射
+    categoryMap.value = {}
+    categories.value.forEach(cat => {
+      categoryMap.value[cat.id] = cat.name
+    })
+    console.log('分类映射:', categoryMap.value)
   } catch (error) {
     console.error('获取文档分类失败:', error)
   }
@@ -148,8 +176,38 @@ const fetchDocuments = async () => {
       page: currentPage.value,
       pageSize: pageSize.value
     })
-    documentList.value = result.list || []
-    total.value = result.total || 0
+    
+    console.log('文档列表 API 响应:', result)
+    console.log('响应类型:', typeof result)
+    console.log('响应是否是数组:', Array.isArray(result))
+    
+    // 处理响应结构
+    if (Array.isArray(result)) {
+      // 如果响应是数组，直接使用
+      documentList.value = result
+      total.value = result.length
+      console.log('使用数组作为文档列表，长度:', result.length)
+    } else if (result && typeof result === 'object') {
+      // 如果响应是对象，检查是否有 list 字段
+      if (result.list !== undefined) {
+        documentList.value = Array.isArray(result.list) ? result.list : []
+        total.value = result.total || documentList.value.length
+        console.log('使用 result.list 作为文档列表')
+      } else {
+        // 其他情况，尝试直接使用 result
+        documentList.value = []
+        total.value = 0
+        console.log('未知的响应结构')
+      }
+    } else {
+      documentList.value = []
+      total.value = 0
+      console.log('响应为空或无效')
+    }
+    
+    console.log('处理后的文档列表:', documentList.value)
+    console.log('处理后的文档列表长度:', documentList.value.length)
+    console.log('处理后的总数量:', total.value)
   } catch (error) {
     console.error('获取文档列表失败:', error)
     ElMessage.error('加载文档列表失败')

@@ -26,6 +26,12 @@ func MigrateDatabase(db *gorm.DB) error {
 		return err
 	}
 	
+	// 执行迁移：删除文档路径的唯一索引
+	utils.SugarLogger.Info("Migrating document model...")
+	db.Exec("DROP INDEX IF EXISTS idx_sys_document_path")
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_sys_document_path ON sys_document(path)")
+	utils.SugarLogger.Info("Document model migration completed")
+	
 	utils.SugarLogger.Info("Document module database migration completed successfully")
 	return nil
 }

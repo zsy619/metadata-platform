@@ -66,26 +66,27 @@
                         </el-form-item>
 
                         <el-form-item label="文档路径" prop="path">
-                        <el-tree-select
-                            v-model="documentForm.path"
-                            :data="folderTree"
-                            :props="treeProps"
-                            placeholder="请选择文档路径"
-                            check-strictly
-                            :render-after-expand="false"
-                            clearable
-                            filterable
-                            style="width: 100%"
-                            value-key="path"
-                        >
-                            <template #default="{ data }">
-                                <span class="custom-tree-node">
-                                    <font-awesome-icon icon="fa-solid fa-folder" />
-                                    <span style="margin-left: 8px">{{ data.name }}</span>
-                                </span>
-                            </template>
-                        </el-tree-select>
-                    </el-form-item>
+                            <el-tree-select
+                                v-model="documentForm.path"
+                                :data="folderTree"
+                                :props="treeProps"
+                                placeholder="请选择文档路径"
+                                check-strictly
+                                :render-after-expand="false"
+                                clearable
+                                filterable
+                                style="width: 100%"
+                                value-key="id"
+                                :cache-data="false"
+                            >
+                                <template #default="{ data }">
+                                    <span class="custom-tree-node">
+                                        <font-awesome-icon icon="fa-solid fa-folder" />
+                                        <span style="margin-left: 8px">{{ data.name }}</span>
+                                    </span>
+                                </template>
+                            </el-tree-select>
+                        </el-form-item>
 
                         <el-form-item label="文档描述" prop="description">
                             <el-input
@@ -142,9 +143,9 @@
 
 <script setup lang="ts">
 import { createDocument, getDocumentById, getDocumentCategories, updateDocument } from '@/api/document'
-import MarkdownEditor from '@/components/MarkdownEditor/index.vue'
 import { getFolderTree } from '@/api/document-folder'
-import type { DocumentCategory, DocumentDetail } from '@/types/document'
+import MarkdownEditor from '@/components/MarkdownEditor/index.vue'
+import type { DocumentCategory } from '@/types/document'
 import type { DocumentFolderTree } from '@/types/document-folder'
 
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -171,7 +172,7 @@ const commonTags = ref<string[]>(['入门', '教程', 'API', '指南', '示例',
 
 // 树形配置
 const treeProps = {
-    value: 'path',
+    value: 'id',  // 使用文件夹 ID 作为值
     label: 'name',
     children: 'children'
 }
@@ -198,12 +199,7 @@ const formRules = reactive({
     ],
     category: [],
     path: [
-        { required: true, message: '请输入文档路径', trigger: 'blur' },
-        {
-            pattern: /^\/[a-zA-Z0-9/_-]*$/,
-            message: '路径必须以/开头，只能包含字母、数字、下划线和连字符',
-            trigger: 'blur'
-        }
+        { required: true, message: '请选择文档目录', trigger: 'change' }
     ]
 })
 
@@ -232,9 +228,29 @@ onMounted(() => {
 const loadCategories = async () => {
     try {
         const res: any = await getDocumentCategories()
-        categories.value = res.data || res || []
+        console.log('分类 API 响应:', res)
+        console.log('分类 API 响应类型:', typeof res)
+        console.log('分类 API 响应是否是数组:', Array.isArray(res))
+        
+        // 如果响应是数组，直接使用
+        if (Array.isArray(res)) {
+            categories.value = res
+        } 
+        // 如果响应有 data 字段且是数组，使用它
+        else if (res && res.data && Array.isArray(res.data)) {
+            categories.value = res.data
+        }
+        // 否则使用响应本身（如果是对象）
+        else if (res && typeof res === 'object') {
+            categories.value = res
+        }
+        else {
+            categories.value = []
+        }
+        console.log('分类数据:', categories.value)
     } catch (error: any) {
         console.error('加载分类失败:', error)
+        ElMessage.error('加载分类失败：' + (error.message || '未知错误'))
     }
 }
 
@@ -242,52 +258,139 @@ const loadCategories = async () => {
 const loadFolderTree = async () => {
     try {
         const res: any = await getFolderTree()
-        folderTree.value = res.data || res || []
+        console.log('文件夹树 API 响应:', res)
+        console.log('文件夹树 API 响应类型:', typeof res)
+        console.log('文件夹树 API 响应是否是数组:', Array.isArray(res))
+        
+        // 如果响应是数组，直接使用
+        if (Array.isArray(res)) {
+            folderTree.value = res
+        } 
+        // 如果响应有 data 字段且是数组，使用它
+        else if (res && res.data && Array.isArray(res.data)) {
+            folderTree.value = res.data
+        }
+        // 否则使用响应本身（如果是对象）
+        else if (res && typeof res === 'object') {
+            folderTree.value = res
+        }
+        else {
+            folderTree.value = []
+        }
+        console.log('文件夹树数据:', folderTree.value)
     } catch (error: any) {
         console.error('加载文件夹树失败:', error)
+        ElMessage.error('加载文件夹树失败：' + (error.message || '未知错误'))
     }
 }
 
 // 加载文档用于编辑
 const loadDocumentForEdit = async () => {
-    console.log('进入loadDocumentForEdit函数')
+    console.log('=== 开始加载文档 ===')
     console.log('路由参数:', route.params)
+    console.log('是否是编辑模式:', isEditMode.value)
     loading.value = true
     try {
         const docId = route.params.id as string
-        console.log('文档ID:', docId)
-        const doc: DocumentDetail = await getDocumentById(docId)
-        console.log('获取到的文档数据:', doc)
+        console.log('文档 ID:', docId)
         
-        // 填充表单数据
-        documentForm.title = doc.title
+        if (!docId) {
+            console.error('文档 ID 为空')
+            ElMessage.error('文档 ID 为空')
+            return
+        }
+        
+        console.log('调用 getDocumentById API...')
+        const doc: any = await getDocumentById(docId)
+        console.log('=== API 返回的文档数据 ===')
+        console.log('完整数据:', JSON.stringify(doc, null, 2))
+        
+        // 检查文档数据是否有效
+        if (!doc) {
+            console.error('文档数据为 null/undefined')
+            ElMessage.error('文档数据为空')
+            return
+        }
+        
+        // 填充表单数据 - 直接使用 any 类型避免类型检查问题
+        console.log('=== 开始填充表单数据 ===')
+        documentForm.title = doc.title || ''
         documentForm.category = doc.category || ''
-        documentForm.path = doc.path || ''
+        // 路径字段：文档路径就是文档目录 ID
+        const pathValue = doc.path || ''
+        console.log('原始 path 值:', pathValue, '类型:', typeof pathValue)
+        
+        // 路径格式可能是：/folderId 或 /folderId/docId
+        // 我们需要提取文件夹 ID
+        let folderId = ''
+        if (pathValue.startsWith('/')) {
+            // 移除开头的 /
+            const parts = pathValue.substring(1).split('/')
+            folderId = parts[0] || ''
+            console.log('从路径提取的 folderId:', folderId)
+        } else {
+            // 如果没有 / 开头，直接使用
+            folderId = pathValue
+        }
+        
+        // 保存文件夹 ID（el-tree-select 会使用这个 ID 显示对应的文件夹名称）
+        documentForm.path = folderId
+        console.log('填充后的 path (folderId):', documentForm.path, '类型:', typeof documentForm.path)
+        
         documentForm.description = doc.description || ''
         documentForm.content = doc.content || ''
         
+        console.log('表单数据 - title:', documentForm.title)
+        console.log('表单数据 - category:', documentForm.category)
+        console.log('表单数据 - path:', documentForm.path, '类型:', typeof documentForm.path)
+        console.log('表单数据 - description:', documentForm.description)
+        console.log('表单数据 - content:', documentForm.content ? '有内容' : '无内容')
+        
         // 处理标签：如果是 JSON 字符串，解析为数组
-        if (doc.tags) {
-            if (typeof doc.tags === 'string') {
+        const tagsValue = doc.tags
+        console.log('文档标签原始值:', tagsValue, '类型:', typeof tagsValue)
+        
+        if (tagsValue) {
+            if (typeof tagsValue === 'string') {
                 try {
-                    documentForm.tags = JSON.parse(doc.tags)
+                    documentForm.tags = JSON.parse(tagsValue)
+                    console.log('标签解析成功（JSON）:', documentForm.tags)
                 } catch {
                     // 如果解析失败，尝试按逗号分割
-                    documentForm.tags = doc.tags.split(',').filter(t => t.trim())
+                    documentForm.tags = tagsValue.split(',').filter((t: string) => t.trim())
+                    console.log('标签解析成功（逗号分割）:', documentForm.tags)
                 }
-            } else if (Array.isArray(doc.tags)) {
-                documentForm.tags = doc.tags
+            } else if (Array.isArray(tagsValue)) {
+                documentForm.tags = tagsValue
+                console.log('标签直接使用（数组）:', documentForm.tags)
+            } else {
+                documentForm.tags = []
+                console.log('标签类型未知，使用空数组')
             }
+        } else {
+            documentForm.tags = []
+            console.log('标签为空，使用空数组')
         }
         
-        documentForm.isPublished = true // 默认 true
-        console.log('表单数据填充完成:', documentForm)
+        documentForm.isPublished = doc.isPublished ?? true
+        console.log('表单数据 - isPublished:', documentForm.isPublished)
+        
+        console.log('=== 表单数据填充完成 ===')
+        console.log('完整表单数据:', JSON.stringify(documentForm, null, 2))
+        
+        // 验证表单数据
+        console.log('验证表单数据...')
+        console.log('documentForm.title 最终值:', documentForm.title)
+        console.log('documentForm.category 最终值:', documentForm.category)
+        console.log('documentForm.path 最终值:', documentForm.path)
     } catch (error: any) {
-        console.error('加载文档失败:', error)
+        console.error('=== 加载文档失败 ===')
+        console.error('错误消息:', error.message)
+        console.error('错误堆栈:', error.stack)
         ElMessage.error('加载文档失败：' + (error.message || '未知错误'))
-        router.push('/documents/list')
     } finally {
         loading.value = false
+        console.log('文档加载完成，loading 状态:', loading.value)
     }
 }
 
@@ -338,8 +441,32 @@ const handleImageUpload = async (file: File) => {
 const handleSubmit = async () => {
     try {
         // 处理路径值：如果是对象，提取 path 属性
+        console.log('提交前检查 path 值:', documentForm.path)
+        console.log('path 类型:', typeof documentForm.path)
+        console.log('path 是否是对象:', documentForm.path && typeof documentForm.path === 'object')
+        
         if (documentForm.path && typeof documentForm.path === 'object') {
-            documentForm.path = documentForm.path.path || ''
+            const pathObj = documentForm.path as any
+            // 提取 path 属性（文件夹的路径）
+            const folderPath = pathObj.path || ''
+            console.log('path 是对象，提取 folderPath:', folderPath)
+            
+            // 如果是编辑模式，保持原路径不变
+            if (isEditMode.value) {
+                documentForm.path = folderPath
+                console.log('编辑模式，使用原路径:', documentForm.path)
+            } else {
+                // 如果是新建模式，使用文件夹路径，后端会添加文档 ID
+                documentForm.path = folderPath
+                console.log('新建模式，使用文件夹路径:', documentForm.path)
+            }
+        } else if (documentForm.path) {
+            // 如果 path 已经是字符串，直接使用
+            console.log('path 是字符串:', documentForm.path)
+        } else {
+            console.error('path 为空')
+            ElMessage.error('请选择文档路径')
+            return
         }
         
         await documentFormRef.value.validate()
@@ -359,10 +486,18 @@ const handleSubmit = async () => {
             tagsData = JSON.stringify(documentForm.tags)
         }
 
-        const submitData = {
+        // 处理路径：将文件夹 ID 转换为路径格式
+        let submitPath = documentForm.path
+        if (submitPath && !submitPath.startsWith('/')) {
+            // 将文件夹 ID 转换为路径格式：/folderId
+            submitPath = '/' + submitPath
+        }
+        console.log('提交时的路径:', submitPath)
+
+        const submitData: any = {
             title: documentForm.title,
             category: documentForm.category,
-            path: documentForm.path,
+            path: submitPath,
             description: documentForm.description || '',
             content: documentForm.content,
             tags: tagsData,

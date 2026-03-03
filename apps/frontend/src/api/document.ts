@@ -81,20 +81,36 @@ export const getDocumentCategories = async (): Promise<any> => {
  * @param id 文档 ID
  */
 export const getDocumentById = async (id: string): Promise<DocumentDetail> => {
-  console.log('调用getDocumentById，文档ID:', id)
+  console.log('调用 getDocumentById，文档 ID:', id)
   try {
     const response = await request({
       url: `/api/documents/${id}`,
       method: 'get'
     })
-    console.log('API响应:', response)
-    // 检查响应结构，如果有data字段，则返回data
+    console.log('API 响应:', response)
+    console.log('API 响应类型:', typeof response)
+    console.log('API 响应是否有 data 字段:', response && 'data' in response)
+    
+    // 响应拦截器返回的是完整的 response 对象
+    // response.data 是后端返回的数据：{ code: 0, data: {...} }
+    // 我们需要返回后端的 data 字段
     if (response && response.data) {
+      console.log('response.data:', response.data)
+      console.log('response.data 类型:', typeof response.data)
+      console.log('response.data 是否有 data 字段:', response.data && 'data' in response.data)
+      
+      // 如果 response.data 有 data 字段（后端返回的文档对象），返回它
+      if (response.data.data) {
+        console.log('返回 response.data.data:', response.data.data)
+        return response.data.data
+      }
+      
+      // 否则返回 response.data
       return response.data
     }
     return response
   } catch (error) {
-    console.error('API调用失败:', error)
+    console.error('API 调用失败:', error)
     throw error
   }
 }

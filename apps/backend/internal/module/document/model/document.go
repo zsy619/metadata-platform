@@ -9,7 +9,7 @@ type Document struct {
 	ID          string    `gorm:"type:varchar(64);primaryKey" json:"id"`
 	Title       string    `gorm:"type:varchar(255);not null;index:idx_title_category" json:"title"`   // 文档标题
 	Category    string    `gorm:"type:varchar(64);not null;index:idx_title_category" json:"category"` // 文档分类
-	Path        string    `gorm:"type:varchar(512);not null;uniqueIndex" json:"path"`                 // 文档路径
+	Path        string    `gorm:"type:varchar(512);not null;index" json:"path"`                       // 文档路径（文档目录 ID，可重复）
 	Description string    `gorm:"type:text" json:"description"`                                       // 文档描述
 	Content     string    `gorm:"type:text;not null" json:"content"`                                  // 文档内容（Markdown）
 	Size        int64     `gorm:"not null" json:"size"`                                               // 文档大小（字节）

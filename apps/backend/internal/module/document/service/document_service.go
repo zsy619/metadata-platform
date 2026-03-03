@@ -60,6 +60,20 @@ func (s *documentService) CreateDocument(ctx context.Context, doc *model.Documen
 	// 生成 ID
 	doc.ID = utils.GetSnowflake().GenerateIDString()
 
+	// 生成路径：如果路径为空或只包含文件夹路径，添加文档 ID
+	if doc.Path != "" {
+		// 如果路径不以文档 ID 结尾，添加文档 ID
+		if !strings.HasSuffix(doc.Path, doc.ID) {
+			// 移除末尾的斜杠（如果有）
+			doc.Path = strings.TrimSuffix(doc.Path, "/")
+			// 添加文档 ID
+			doc.Path = doc.Path + "/" + doc.ID
+		}
+	} else {
+		// 如果没有路径，使用文档 ID 作为路径
+		doc.Path = "/" + doc.ID
+	}
+
 	// 计算文档大小
 	doc.Size = int64(len(doc.Content))
 
