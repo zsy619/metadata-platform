@@ -21,43 +21,33 @@ export const getDocumentList = async (params?: DocumentQueryParams): Promise<any
     method: 'get',
     params
   })
-  console.log('文档列表 API 原始响应:', response)
-  console.log('文档列表 API 响应类型:', typeof response)
-  console.log('文档列表 API 响应是否有 data 字段:', response && 'data' in response)
+  console.log('[API] 文档列表 - 原始响应:', response)
+  console.log('[API] 文档列表 - response.data:', response.data)
+  console.log('[API] 文档列表 - response.data.data:', response.data?.data)
   
   // 响应拦截器返回的是完整的 response 对象
-  // 后端返回的格式可能是：
-  // 1. { code: 0, data: [{...}], ... } - data 直接是数组
-  // 2. { code: 0, data: { list: [...], total: 1 }, ... } - data 是包含 list 和 total 的对象
-  if (response && response.data) {
-    console.log('文档列表 API data 字段:', response.data)
-    console.log('文档列表 API data 字段类型:', typeof response.data)
-    console.log('文档列表 API data 字段是否是数组:', Array.isArray(response.data))
-    
-    // 如果 response.data 是数组，直接返回
-    if (Array.isArray(response.data)) {
-      console.log('文档列表 API 使用 response.data 数组，长度:', response.data.length)
-      return response.data
-    }
-    
-    // 如果 response.data 有 list 和 total 字段，返回 response.data
-    if (response.data.list !== undefined) {
-      console.log('文档列表 API 使用 response.data 对象')
-      return response.data
-    }
-    
-    // 否则返回 response.data
+  // 后端返回的格式是：{ code: 0, data: [...], total: 2, ... }
+  // response.data 就是后端返回的整个对象
+  if (response.data && response.data.data) {
+    const documents = response.data.data
+    console.log('[API] 文档列表 - 使用 response.data.data，长度:', Array.isArray(documents) ? documents.length : 'N/A')
+    return documents
+  }
+  
+  // 如果 response.data 是数组，直接使用
+  if (response.data && Array.isArray(response.data)) {
+    console.log('[API] 文档列表 - 使用 response.data 数组，长度:', response.data.length)
     return response.data
   }
   
   // 如果响应本身就是数组，直接返回
   if (Array.isArray(response)) {
-    console.log('文档列表 API 使用 response 数组')
+    console.log('[API] 文档列表 - 响应是数组，长度:', response.length)
     return response
   }
   
   // 默认返回空结构
-  console.log('文档列表 API 返回空结构')
+  console.log('[API] 文档列表 - 返回空结构')
   return { list: [], total: 0 }
 }
 
